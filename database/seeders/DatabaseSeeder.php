@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Supplier;
 use App\Models\BahanMasuk;
 use App\Models\BahanKeluar;
 use App\Models\StokBahan;
@@ -52,6 +53,13 @@ class DatabaseSeeder extends Seeder
         ];
 
         $suppliers = ['Tekstil Nusantara', 'Kain Sejahtera', 'Bahan Jaya Textil'];
+
+        // ── Supplier master data ──────────────────────────────────────────────
+        Supplier::insert([
+            ['nama' => 'Tekstil Nusantara',  'telepon' => '021-5551001', 'alamat' => 'Jl. Tekstil No. 12, Jakarta Barat',   'created_at' => now(), 'updated_at' => now()],
+            ['nama' => 'Kain Sejahtera',      'telepon' => '022-5552002', 'alamat' => 'Jl. Kain Indah No. 5, Bandung',       'created_at' => now(), 'updated_at' => now()],
+            ['nama' => 'Bahan Jaya Textil',  'telepon' => '031-5553003', 'alamat' => 'Jl. Raya Industri No. 88, Surabaya',  'created_at' => now(), 'updated_at' => now()],
+        ]);
 
         // ── BahanMasuk ──────────────────────────────────────────────────────
         $bahanMasukData = [

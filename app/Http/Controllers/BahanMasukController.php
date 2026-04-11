@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BahanMasuk;
 use App\Models\StokBahan;
+use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -20,7 +21,10 @@ class BahanMasukController extends Controller
                 ->orWhere('no_surat_jalan', 'ilike', "%{$search}%")
                 ->orWhere('status', 'ilike', "%{$search}%")
             ))->paginate(15)->withQueryString();
-        return Inertia::render('BahanMasuk/Index', ['data' => $data]);
+        return Inertia::render('BahanMasuk/Index', [
+            'data'            => $data,
+            'supplierOptions' => Supplier::orderBy('nama')->pluck('nama'),
+        ]);
     }
 
     public function create()

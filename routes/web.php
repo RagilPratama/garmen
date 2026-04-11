@@ -14,6 +14,7 @@ use App\Http\Controllers\ProsesJualController;
 use App\Http\Controllers\JualGudangController;
 use App\Http\Controllers\StokBahanController;
 use App\Http\Controllers\StokBarangController;
+use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TrackingPoController;
 use Illuminate\Support\Facades\Route;
 
@@ -26,6 +27,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    Route::resource('supplier', SupplierController::class)->except(['show', 'create', 'edit']);
     Route::resource('bahan-masuk', BahanMasukController::class)->except(['show']);
     Route::resource('bahan-keluar', BahanKeluarController::class)->except(['show']);
     Route::resource('bahan-proses-potong', BahanProsesPotongController::class)->except(['show']);
