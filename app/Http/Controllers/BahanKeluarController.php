@@ -12,7 +12,12 @@ class BahanKeluarController extends Controller
 {
     public function index()
     {
-        $data = BahanKeluar::latest()->paginate(15);
+        $search = request('search');
+        $data = BahanKeluar::latest()
+            ->when($search, fn($q) => $q->where(fn($q) => $q
+                ->where('kode_bahan', 'ilike', "%{$search}%")
+                ->orWhere('no_surat_jalan', 'ilike', "%{$search}%")
+            ))->paginate(15)->withQueryString();
         $stok = StokBahan::orderBy('kode_bahan')->where('sisa_stok', '>', 0)->get(['kode_bahan', 'sisa_stok']);
         return Inertia::render('BahanKeluar/Index', ['data' => $data, 'stok' => $stok]);
     }

@@ -2,17 +2,37 @@
   <AdminLayout :title="title">
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
       <!-- Header -->
-      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+      <div class="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 class="text-lg font-semibold text-gray-800">{{ title }}</h2>
           <p class="text-sm text-gray-500 mt-0.5">{{ data?.total ?? 0 }} total data</p>
         </div>
-        <button @click="$emit('open-create')" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-          </svg>
-          Tambah Data
-        </button>
+        <div class="flex items-center gap-2 flex-wrap">
+          <!-- Search -->
+          <div class="relative">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
+            </svg>
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Cari..."
+              class="pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 w-48"
+            />
+            <button v-if="searchQuery" @click="clearSearch"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          <button @click="$emit('open-create')" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm whitespace-nowrap">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Tambah Data
+          </button>
+        </div>
       </div>
 
       <!-- Table -->
@@ -71,7 +91,7 @@
                 <svg class="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                 </svg>
-                <p class="text-sm">Belum ada data. Klik "Tambah Data" untuk memulai.</p>
+                <p class="text-sm">{{ searchQuery ? 'Tidak ada data yang cocok dengan pencarian.' : 'Belum ada data. Klik "Tambah Data" untuk memulai.' }}</p>
               </td>
             </tr>
           </tbody>
@@ -79,15 +99,15 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="data?.last_page > 1" class="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+      <div v-if="data?.last_page > 1" class="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
         <p class="text-sm text-gray-500">
           Menampilkan {{ data.from }}-{{ data.to }} dari {{ data.total }} data
         </p>
-        <div class="flex items-center gap-1">
+        <div class="flex items-center gap-1 flex-wrap justify-center">
           <Link v-for="link in data.links" :key="link.label"
-            :href="link.url || '#'"
+            :href="link.url ? appendSearch(link.url) : '#'"
             class="px-3 py-1.5 text-sm rounded-lg transition-colors"
-            :class="link.active ? 'bg-amber-500 text-white' : 'text-gray-600 hover:bg-gray-100'"
+            :class="link.active ? 'bg-amber-500 text-white' : link.url ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-300 cursor-default'"
             :preserve-scroll="true"
             v-html="link.label"
           />
@@ -120,20 +140,39 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { Link, router } from '@inertiajs/vue3'
+import { ref, watch } from 'vue'
+import { Link, router, usePage } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 
 const props = defineProps({
   title: String,
-  data: Object,
+  data:  Object,
   columns: Array,
   basePath: String,
 })
 
 defineEmits(['open-create', 'open-edit'])
 
+const page = usePage()
+const searchQuery = ref(page.props.ziggy?.query?.search ?? new URLSearchParams(window.location.search).get('search') ?? '')
 const deleteId = ref(null)
+
+let searchTimer = null
+watch(searchQuery, (val) => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    router.get(props.basePath, { search: val || undefined }, { preserveState: true, replace: true })
+  }, 350)
+})
+
+const clearSearch = () => { searchQuery.value = '' }
+
+const appendSearch = (url) => {
+  if (!searchQuery.value) return url
+  const u = new URL(url, window.location.origin)
+  u.searchParams.set('search', searchQuery.value)
+  return u.pathname + u.search
+}
 
 const confirmDelete = (id) => { deleteId.value = id }
 const doDelete = () => {
@@ -143,10 +182,10 @@ const doDelete = () => {
 }
 
 const formatRupiah = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0)
-const formatDate = (d) => d ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'
+const formatDate  = (d) => d ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'
 const statusClass = (s) => ({
-  'bg-green-100 text-green-700': s === 'diterima' || s === 'lunas',
+  'bg-green-100 text-green-700':   s === 'diterima' || s === 'lunas',
   'bg-yellow-100 text-yellow-700': s === 'pending',
-  'bg-red-100 text-red-700': s === 'ditolak' || s === 'batal',
+  'bg-red-100 text-red-700':       s === 'ditolak' || s === 'batal',
 })
 </script>

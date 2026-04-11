@@ -9,7 +9,13 @@ class BarangMasukKantorController extends Controller
 {
     public function index()
     {
-        $data = BarangMasukKantor::latest()->paginate(15);
+        $search = request('search');
+        $data = BarangMasukKantor::latest()
+            ->when($search, fn($q) => $q->where(fn($q) => $q
+                ->where('po', 'ilike', "%{$search}%")
+                ->orWhere('model', 'ilike', "%{$search}%")
+                ->orWhere('no_surat_jalan', 'ilike', "%{$search}%")
+            ))->paginate(15)->withQueryString();
         $alreadyKantor = BarangMasukKantor::select('po', 'model')->get()
             ->map(fn($r) => $r->po . '|||' . $r->model)->toArray();
         $poOptions = ProsesFinishing::selectRaw("po, model, SUM(pcs_barang_jadi) as max_pcs")

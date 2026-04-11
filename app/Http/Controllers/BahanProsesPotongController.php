@@ -9,7 +9,13 @@ class BahanProsesPotongController extends Controller
 {
     public function index()
     {
-        $data = BahanProsesPotong::latest()->paginate(15);
+        $search = request('search');
+        $data = BahanProsesPotong::latest()
+            ->when($search, fn($q) => $q->where(fn($q) => $q
+                ->where('po', 'ilike', "%{$search}%")
+                ->orWhere('model', 'ilike', "%{$search}%")
+                ->orWhere('kode_bahan', 'ilike', "%{$search}%")
+            ))->paginate(15)->withQueryString();
         $bahanOptions = BahanKeluar::selectRaw('kode_bahan, SUM(yard) as total_yard')
             ->groupBy('kode_bahan')->orderBy('kode_bahan')->get();
         return Inertia::render('BahanProsesPotong/Index', ['data' => $data, 'bahanOptions' => $bahanOptions]);

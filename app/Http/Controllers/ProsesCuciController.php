@@ -9,7 +9,13 @@ class ProsesCuciController extends Controller
 {
     public function index()
     {
-        $data = ProsesCuci::latest()->paginate(15);
+        $search = request('search');
+        $data = ProsesCuci::latest()
+            ->when($search, fn($q) => $q->where(fn($q) => $q
+                ->where('po', 'ilike', "%{$search}%")
+                ->orWhere('model', 'ilike', "%{$search}%")
+                ->orWhere('no_surat_jalan', 'ilike', "%{$search}%")
+            ))->paginate(15)->withQueryString();
         $alreadyCuci = ProsesCuci::select('po', 'model')->get()
             ->map(fn($r) => $r->po . '|||' . $r->model)->toArray();
         $poOptions = ProsesJahit::selectRaw("po, model, SUM(pcs_hasil_jahit) as max_pcs")

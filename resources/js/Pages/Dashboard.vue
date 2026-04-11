@@ -8,13 +8,13 @@
       </div>
 
       <!-- Omset Cards -->
-      <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <div class="col-span-2 lg:col-span-1 bg-gradient-to-br from-amber-400 to-amber-500 rounded-xl p-5 text-white shadow-md">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:grid-cols-4">
+        <div class="bg-gradient-to-br from-amber-400 to-amber-500 rounded-xl p-5 text-white shadow-md">
           <p class="text-xs font-medium uppercase tracking-wide opacity-80">Omset Toko — Bulan Ini</p>
           <p class="text-2xl font-bold mt-1 leading-tight">{{ formatRupiah(omsetTokoBulanIni) }}</p>
           <p class="text-xs opacity-70 mt-1">All time lunas: {{ formatRupiah(omsetTokoTotal) }}</p>
         </div>
-        <div class="col-span-2 lg:col-span-1 bg-gradient-to-br from-orange-400 to-orange-500 rounded-xl p-5 text-white shadow-md">
+        <div class="bg-gradient-to-br from-orange-400 to-orange-500 rounded-xl p-5 text-white shadow-md">
           <p class="text-xs font-medium uppercase tracking-wide opacity-80">Omset Gudang — Bulan Ini</p>
           <p class="text-2xl font-bold mt-1 leading-tight">{{ formatRupiah(omsetGudangBulanIni) }}</p>
           <p class="text-xs opacity-70 mt-1">All time lunas: {{ formatRupiah(omsetGudangTotal) }}</p>
@@ -32,7 +32,7 @@
       </div>
 
       <!-- Stok Cards -->
-      <div class="grid grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 flex items-center gap-4">
           <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
             <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
@@ -68,7 +68,7 @@
       <!-- Pipeline Produksi -->
       <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <h3 class="font-semibold text-gray-800 mb-4">Pipeline Produksi <span class="text-xs font-normal text-gray-400 ml-1">(sedang berjalan)</span></h3>
-        <div class="grid grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div v-for="stage in pipelineStages" :key="stage.key" class="rounded-xl border p-4 flex flex-col items-center gap-2" :class="stage.border">
             <div class="w-10 h-10 rounded-full flex items-center justify-center" :class="stage.bg">
               <span class="text-xl font-bold" :class="stage.color">{{ pipeline[stage.key] ?? 0 }}</span>
@@ -155,44 +155,46 @@
         </div>
 
         <!-- Recent Penjualan -->
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
-          <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div class="px-4 py-4 border-b border-gray-100 flex items-center justify-between">
             <h3 class="font-semibold text-gray-800">Penjualan Terbaru</h3>
             <div class="flex gap-3">
               <Link href="/proses-jual" class="text-amber-500 hover:text-amber-600 text-xs font-medium">Toko →</Link>
               <Link href="/jual-gudang" class="text-orange-500 hover:text-orange-600 text-xs font-medium">Gudang →</Link>
             </div>
           </div>
-          <table class="w-full text-sm">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="text-left px-5 py-2.5 text-xs text-gray-400 font-medium">Buyer</th>
-                <th class="text-left px-5 py-2.5 text-xs text-gray-400 font-medium">Model</th>
-                <th class="text-right px-5 py-2.5 text-xs text-gray-400 font-medium">Total</th>
-                <th class="text-center px-5 py-2.5 text-xs text-gray-400 font-medium">Channel</th>
-                <th class="text-center px-5 py-2.5 text-xs text-gray-400 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-50">
-              <tr v-for="item in recentPenjualan" :key="item.channel+item.id" class="hover:bg-gray-50/60">
-                <td class="px-5 py-3 text-gray-800 font-medium">{{ item.buyer }}</td>
-                <td class="px-5 py-3 text-gray-500 truncate max-w-24">{{ item.model }}</td>
-                <td class="px-5 py-3 text-right text-gray-700 font-medium">{{ formatRupiah(item.total_harga) }}</td>
-                <td class="px-5 py-3 text-center">
-                  <span class="px-2 py-0.5 rounded-full text-xs font-medium"
-                    :class="item.channel === 'Toko' ? 'bg-amber-50 text-amber-600' : 'bg-orange-50 text-orange-600'">
-                    {{ item.channel }}
-                  </span>
-                </td>
-                <td class="px-5 py-3 text-center">
-                  <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(item.status)">{{ item.status }}</span>
-                </td>
-              </tr>
-              <tr v-if="!recentPenjualan?.length">
-                <td colspan="5" class="px-5 py-8 text-center text-gray-300 text-sm">Belum ada data</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="text-left px-3 py-2.5 text-xs text-gray-400 font-medium whitespace-nowrap">Buyer</th>
+                  <th class="text-left px-3 py-2.5 text-xs text-gray-400 font-medium whitespace-nowrap">Model</th>
+                  <th class="text-right px-3 py-2.5 text-xs text-gray-400 font-medium whitespace-nowrap">Total</th>
+                  <th class="text-center px-2 py-2.5 text-xs text-gray-400 font-medium whitespace-nowrap">Ch.</th>
+                  <th class="text-center px-2 py-2.5 text-xs text-gray-400 font-medium whitespace-nowrap">Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-50">
+                <tr v-for="item in recentPenjualan" :key="item.channel+item.id" class="hover:bg-gray-50/60">
+                  <td class="px-3 py-2.5 text-gray-800 font-medium max-w-[100px] truncate">{{ item.buyer }}</td>
+                  <td class="px-3 py-2.5 text-gray-500 max-w-[100px] truncate">{{ item.model }}</td>
+                  <td class="px-3 py-2.5 text-right text-gray-700 font-medium whitespace-nowrap">{{ formatRupiah(item.total_harga) }}</td>
+                  <td class="px-2 py-2.5 text-center">
+                    <span class="px-1.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
+                      :class="item.channel === 'Toko' ? 'bg-amber-50 text-amber-600' : 'bg-orange-50 text-orange-600'">
+                      {{ item.channel }}
+                    </span>
+                  </td>
+                  <td class="px-2 py-2.5 text-center">
+                    <span class="px-1.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap" :class="statusClass(item.status)">{{ item.status }}</span>
+                  </td>
+                </tr>
+                <tr v-if="!recentPenjualan?.length">
+                  <td colspan="5" class="px-4 py-8 text-center text-gray-300 text-sm">Belum ada data</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

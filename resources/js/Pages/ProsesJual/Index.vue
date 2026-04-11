@@ -86,7 +86,7 @@ const columns = [
   { key: 'buyer', label: 'Buyer' },
   { key: 'model', label: 'Model' },
   { key: 'pcs', label: 'Pcs' },
-  { key: 'harga_satuan', label: 'Harga Satuan' },
+  { key: 'harga_satuan', label: 'Harga Satuan', type: 'currency' },
   { key: 'status', label: 'Status' },
 ]
 

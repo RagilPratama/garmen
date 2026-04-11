@@ -11,7 +11,15 @@ class BahanMasukController extends Controller
 {
     public function index()
     {
-        $data = BahanMasuk::latest()->paginate(15);
+        $search = request('search');
+        $data = BahanMasuk::latest()
+            ->when($search, fn($q) => $q->where(fn($q) => $q
+                ->where('supplier', 'ilike', "%{$search}%")
+                ->orWhere('kode_bahan', 'ilike', "%{$search}%")
+                ->orWhere('no_nota', 'ilike', "%{$search}%")
+                ->orWhere('no_surat_jalan', 'ilike', "%{$search}%")
+                ->orWhere('status', 'ilike', "%{$search}%")
+            ))->paginate(15)->withQueryString();
         return Inertia::render('BahanMasuk/Index', ['data' => $data]);
     }
 

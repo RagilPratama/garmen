@@ -11,7 +11,15 @@ class JualGudangController extends Controller
 {
     public function index()
     {
-        $data = JualGudang::latest()->paginate(15);
+        $search = request('search');
+        $data = JualGudang::latest()
+            ->when($search, fn($q) => $q->where(fn($q) => $q
+                ->where('buyer', 'ilike', "%{$search}%")
+                ->orWhere('model', 'ilike', "%{$search}%")
+                ->orWhere('po', 'ilike', "%{$search}%")
+                ->orWhere('no_nota', 'ilike', "%{$search}%")
+                ->orWhere('status', 'ilike', "%{$search}%")
+            ))->paginate(15)->withQueryString();
 
         // Stok gudang = total masuk kantor - sudah terjual dari gudang (lunas + pending), per model
         $masuk = BarangMasukKantor::selectRaw('model, SUM(pcs_barang_jadi) as total')

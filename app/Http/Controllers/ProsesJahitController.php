@@ -9,7 +9,12 @@ class ProsesJahitController extends Controller
 {
     public function index()
     {
-        $data = ProsesJahit::latest()->paginate(15);
+        $search = request('search');
+        $data = ProsesJahit::latest()
+            ->when($search, fn($q) => $q->where(fn($q) => $q
+                ->where('po', 'ilike', "%{$search}%")
+                ->orWhere('model', 'ilike', "%{$search}%")
+            ))->paginate(15)->withQueryString();
         $alreadyJahit = ProsesJahit::select('po', 'model')->get()
             ->map(fn($r) => $r->po . '|||' . $r->model)->toArray();
         $poOptions = BahanProsesPotong::selectRaw("po, model, SUM(hasil_potongan) as max_pcs")

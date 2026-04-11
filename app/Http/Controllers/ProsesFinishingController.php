@@ -9,7 +9,12 @@ class ProsesFinishingController extends Controller
 {
     public function index()
     {
-        $data = ProsesFinishing::latest()->paginate(15);
+        $search = request('search');
+        $data = ProsesFinishing::latest()
+            ->when($search, fn($q) => $q->where(fn($q) => $q
+                ->where('po', 'ilike', "%{$search}%")
+                ->orWhere('model', 'ilike', "%{$search}%")
+            ))->paginate(15)->withQueryString();
         $alreadyFinishing = ProsesFinishing::select('po', 'model')->get()
             ->map(fn($r) => $r->po . '|||' . $r->model)->toArray();
         $poOptions = ProsesCuci::selectRaw("po, model, SUM(pcs_kembali) as max_pcs")

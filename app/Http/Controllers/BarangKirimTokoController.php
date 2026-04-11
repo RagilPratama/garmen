@@ -9,7 +9,13 @@ class BarangKirimTokoController extends Controller
 {
     public function index()
     {
-        $data = BarangKirimToko::latest()->paginate(15);
+        $search = request('search');
+        $data = BarangKirimToko::latest()
+            ->when($search, fn($q) => $q->where(fn($q) => $q
+                ->where('po', 'ilike', "%{$search}%")
+                ->orWhere('model', 'ilike', "%{$search}%")
+                ->orWhere('no_surat_jalan', 'ilike', "%{$search}%")
+            ))->paginate(15)->withQueryString();
         $alreadyToko = BarangKirimToko::select('po', 'model')->get()
             ->map(fn($r) => $r->po . '|||' . $r->model)->toArray();
         $poOptions = BarangMasukKantor::selectRaw("po, model, SUM(pcs_barang_jadi) as max_pcs")

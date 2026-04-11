@@ -10,7 +10,14 @@ class ProsesJualController extends Controller
 {
     public function index()
     {
-        $data = ProsesJual::latest()->paginate(15);
+        $search = request('search');
+        $data = ProsesJual::latest()
+            ->when($search, fn($q) => $q->where(fn($q) => $q
+                ->where('buyer', 'ilike', "%{$search}%")
+                ->orWhere('model', 'ilike', "%{$search}%")
+                ->orWhere('no_nota', 'ilike', "%{$search}%")
+                ->orWhere('status', 'ilike', "%{$search}%")
+            ))->paginate(15)->withQueryString();
 
         // Stok toko = total dikirim ke toko - total terjual (lunas + pending), per model
         $dikirim = BarangKirimToko::selectRaw('model, SUM(pcs_barang_jadi) as total')
