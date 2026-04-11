@@ -20,6 +20,8 @@
         "@heroicons/vue": "^2.2.0",
         "@inertiajs/vue3": "^3.0.3",
         "@vitejs/plugin-vue": "^6.0.5",
+        "jspdf": "^4.2.1",
+        "jspdf-autotable": "^5.0.7",
         "vue": "^3.5.32"
     }
 }

@@ -38,6 +38,15 @@
         </svg>
         Bayar
       </button>
+      <button
+        @click.stop="printSuratJalan(item)"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+        title="Cetak Surat Jalan">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+        </svg>
+        SJ
+      </button>
     </template>
 
     <template #modal>
@@ -373,14 +382,23 @@
           </div>
 
           <div class="flex justify-between pt-1">
-            <button @click="openPay"
-              :disabled="(selectedNota.sisa_tagihan ?? selectedNota.grand_total) <= 0"
-              class="px-5 py-2.5 text-sm text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-500">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-              </svg>
-              Bayar
-            </button>
+            <div class="flex items-center gap-2">
+              <button @click="openPay"
+                :disabled="(selectedNota.sisa_tagihan ?? selectedNota.grand_total) <= 0"
+                class="px-5 py-2.5 text-sm text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-500">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                Bayar
+              </button>
+              <button @click="printSuratJalan(selectedNota)"
+                class="px-5 py-2.5 text-sm text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                </svg>
+                Cetak Surat Jalan
+              </button>
+            </div>
             <button @click="showDetailModal = false" class="px-5 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Tutup</button>
           </div>
         </div>
@@ -450,6 +468,8 @@ import { useForm } from '@inertiajs/vue3'
 import DataTable from '@/Components/DataTable.vue'
 import Modal from '@/Components/Modal.vue'
 import SearchableSelect from '@/Components/SearchableSelect.vue'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 const props = defineProps({
   data: Object,
@@ -611,6 +631,134 @@ const rekeningLabel = (id) => {
   const r = props.rekeningOptions.find(r => r.id === id)
   if (!r) return ''
   return r.nomor_rekening ? `${r.bank} — ${r.nama} (${r.nomor_rekening})` : `${r.bank} — ${r.nama}`
+}
+
+// ── Download PDF Surat Jalan ──
+const printSuratJalan = (nota) => {
+  if (!nota) return
+  const items = nota.items ?? []
+  const tanggal = nota.tanggal
+    ? new Date(nota.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+    : '—'
+  const today = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+  const pageW = doc.internal.pageSize.getWidth()
+  const margin = 15
+  let y = margin
+
+  // ── KOP SURAT ──
+  doc.setFontSize(18)
+  doc.setFont('helvetica', 'bold')
+  doc.text('NEWGARMEN', margin, y)
+
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(80)
+  doc.text('Jl. Raya Garmen No. 1, Kota, Provinsi 00000', margin, y + 6)
+  doc.text('Telp: (021) 000-0000  |  Email: info@newgarmen.com', margin, y + 10)
+
+  // Judul kanan
+  doc.setFontSize(14)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(0)
+  doc.text('SURAT JALAN', pageW - margin, y, { align: 'right' })
+
+  y += 15
+  doc.setDrawColor(0)
+  doc.setLineWidth(0.5)
+  doc.line(margin, y, pageW - margin, y)
+  y += 6
+
+  // ── INFO GRID ──
+  const col2 = pageW / 2 + 2
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(120)
+  doc.text('INFORMASI PENGIRIMAN', margin, y)
+  doc.text('PENGIRIM / SUPPLIER', col2, y)
+
+  y += 4
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(0)
+  doc.setFontSize(9)
+
+  const infoLeft = [
+    ['Tanggal', tanggal],
+    ['No. Surat Jalan', nota.no_surat_jalan ?? '—'],
+    ['No. Nota', nota.no_nota ?? '—'],
+  ]
+  const infoRight = [
+    ['Supplier', nota.supplier ?? '—'],
+    ['Tujuan', 'Gudang Newgarmen'],
+  ]
+
+  infoLeft.forEach(([label, val], i) => {
+    doc.setTextColor(100)
+    doc.text(`${label}`, margin, y + i * 5)
+    doc.setTextColor(0)
+    doc.setFont('helvetica', 'bold')
+    doc.text(`: ${val}`, margin + 30, y + i * 5)
+    doc.setFont('helvetica', 'normal')
+  })
+  infoRight.forEach(([label, val], i) => {
+    doc.setTextColor(100)
+    doc.text(`${label}`, col2, y + i * 5)
+    doc.setTextColor(0)
+    doc.setFont('helvetica', 'bold')
+    doc.text(`: ${val}`, col2 + 22, y + i * 5)
+    doc.setFont('helvetica', 'normal')
+  })
+
+  y += infoLeft.length * 5 + 8
+
+  // ── TABEL BAHAN ──
+  const tableRows = items.map((item, i) => [
+    i + 1,
+    item.kode_bahan ?? '—',
+    item.nama_bahan ?? '—',
+    Number(item.yard ?? 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+  ])
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    head: [['No', 'Kode Bahan', 'Nama Bahan', 'Jumlah (Yard)']],
+    body: tableRows,
+    headStyles: { fillColor: [240, 240, 240], textColor: 0, fontStyle: 'bold', fontSize: 8 },
+    bodyStyles: { fontSize: 8, textColor: 30 },
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 10 },
+      1: { cellWidth: 35 },
+      3: { halign: 'right', cellWidth: 35 },
+    },
+  })
+
+  y = doc.lastAutoTable.finalY + 14
+
+  // ── TANDA TANGAN ──
+  const ttdW = (pageW - margin * 2) / 3
+  const ttdLabels = ['Pengirim / Supplier', 'Sopir / Kurir', 'Penerima — Gudang']
+  ttdLabels.forEach((label, i) => {
+    const x = margin + i * ttdW + ttdW / 2
+    doc.setFontSize(8)
+    doc.setTextColor(80)
+    doc.text(label, x, y, { align: 'center' })
+    doc.setDrawColor(150)
+    doc.line(x - ttdW / 2 + 4, y + 20, x + ttdW / 2 - 4, y + 20)
+    doc.setTextColor(0)
+    doc.text('( _________________ )', x, y + 24, { align: 'center' })
+  })
+
+  y += 32
+  doc.setFontSize(7)
+  doc.setTextColor(150)
+  doc.setDrawColor(200)
+  doc.line(margin, y, pageW - margin, y)
+  doc.text(`Dokumen ini dibuat secara otomatis. Newgarmen — ${today}`, margin, y + 4)
+
+  const filename = `SuratJalan_${(nota.no_surat_jalan ?? nota.no_nota ?? 'download').replace(/[^a-zA-Z0-9-_]/g, '_')}.pdf`
+  doc.save(filename)
 }
 
 const openPay = () => {
