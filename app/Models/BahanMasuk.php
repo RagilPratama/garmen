@@ -10,7 +10,7 @@ class BahanMasuk extends Model
 
     protected $fillable = [
         'tanggal', 'no_surat_jalan', 'no_nota', 'supplier',
-        'kode_bahan', 'yard', 'rp_per_yard', 'total', 'status',
+        'kode_bahan', 'nama_bahan', 'yard', 'rp_per_yard', 'total', 'status',
     ];
 
     protected $casts = [

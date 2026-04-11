@@ -41,11 +41,11 @@
           </FormField>
           <div class="grid grid-cols-2 gap-4">
             <FormField label="Yard" required>
-              <input v-model="form.yard" type="number" step="0.01" min="0" placeholder="0.00" v-bind="inputProps" :class="errorClass('yard')" @input="calcTotal"/>
+              <input v-model="form.yard" type="number" min="0" placeholder="0.00" v-bind="inputProps" :class="errorClass('yard')" @input="calcTotal"/>
               <FieldError :error="form.errors.yard"/>
             </FormField>
             <FormField label="Rp/Yard" required>
-              <input v-model="form.rp_per_yard" type="number" step="0.01" min="0" placeholder="0.00" v-bind="inputProps" :class="errorClass('rp_per_yard')" @input="calcTotal"/>
+              <input v-model="form.rp_per_yard" type="number" min="0" placeholder="0.00" v-bind="inputProps" :class="errorClass('rp_per_yard')" @input="calcTotal"/>
               <FieldError :error="form.errors.rp_per_yard"/>
             </FormField>
           </div>

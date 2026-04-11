@@ -9,7 +9,7 @@
         <form @submit.prevent="submit" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <FormField label="Tanggal Potong" required><input v-model="form.tanggal_potong" type="date" v-bind="ip"/><FieldError :error="form.errors.tanggal_potong"/></FormField>
-            <FormField label="Yard" required><input v-model="form.yard" type="number" step="0.01" min="0" v-bind="ip"/></FormField>
+            <FormField label="Yard" required><input v-model="form.yard" type="number" min="0" v-bind="ip"/></FormField>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <FormField label="PO" required><input v-model="form.po" type="text" v-bind="ip"/></FormField>

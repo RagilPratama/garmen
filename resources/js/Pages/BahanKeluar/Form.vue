@@ -12,7 +12,7 @@
             <FormField label="No. Surat Jalan"><input v-model="form.no_surat_jalan" type="text" placeholder="SJ-001" v-bind="ip"/></FormField>
           </div>
           <FormField label="Kode Bahan" required><input v-model="form.kode_bahan" type="text" placeholder="KB-001" v-bind="ip"/><FieldError :error="form.errors.kode_bahan"/></FormField>
-          <FormField label="Yard" required><input v-model="form.yard" type="number" step="0.01" min="0" v-bind="ip"/><FieldError :error="form.errors.yard"/></FormField>
+          <FormField label="Yard" required><input v-model="form.yard" type="number" min="0" v-bind="ip"/><FieldError :error="form.errors.yard"/></FormField>
           <div class="flex gap-3 pt-2">
             <button type="submit" :disabled="form.processing" class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-70">{{ form.processing ? 'Menyimpan...' : 'Simpan' }}</button>
             <Link href="/bahan-keluar" class="px-6 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition">Batal</Link>

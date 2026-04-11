@@ -111,7 +111,7 @@ const openEdit = (item) => {
   editItem.value = item
   form.no_nota = item.no_nota ?? ''; form.tanggal_nota = item.tanggal_nota?.substring(0, 10) ?? ''
   form.buyer = item.buyer ?? ''; form.model = item.model ?? ''
-  form.pcs = item.pcs ?? ''; form.harga_satuan = item.harga_satuan ?? ''; form.status = item.status ?? 'pending'
+  form.pcs = item.pcs ?? ''; form.harga_satuan = item.harga_satuan != null ? parseFloat(item.harga_satuan) : ''; form.status = item.status ?? 'pending'
   selectedStok.value = props.stokOptions.find(o => o.model === item.model) ?? null
   form.clearErrors(); showModal.value = true
 }

@@ -16,7 +16,7 @@
         </div>
         <div class="grid grid-cols-2 gap-4">
           <FormField label="Pcs" required><input v-model="form.pcs" type="number" min="0" v-bind="ip" @input="calcTotal"/></FormField>
-          <FormField label="Harga Satuan" required><input v-model="form.harga_satuan" type="number" step="0.01" min="0" v-bind="ip" @input="calcTotal"/></FormField>
+          <FormField label="Harga Satuan" required><input v-model="form.harga_satuan" type="number" min="0" v-bind="ip" @input="calcTotal"/></FormField>
         </div>
         <FormField label="Total Harga (otomatis)">
           <input :value="formatRupiah(total)" type="text" readonly class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-sm cursor-not-allowed"/>
