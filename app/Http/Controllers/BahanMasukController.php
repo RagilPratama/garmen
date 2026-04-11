@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\BahanMasuk;
-use App\Models\StokBahan;
+use App\Models\BahanMasukPembayaran;
+use App\Models\Rekening;
 use App\Models\Supplier;
 use App\Traits\GeneratesSuratJalan;
 use Illuminate\Http\Request;
@@ -20,11 +21,10 @@ class BahanMasukController extends Controller
 
         $rows = BahanMasuk::latest()
             ->when($search, fn($q) => $q->where(fn($q) => $q
-                ->where('supplier',       'ilike', "%{$search}%")
-                ->orWhere('kode_bahan',   'ilike', "%{$search}%")
-                ->orWhere('no_nota',      'ilike', "%{$search}%")
-                ->orWhere('no_surat_jalan','ilike',"%{$search}%")
-                ->orWhere('status',       'ilike', "%{$search}%")
+                ->where('supplier',        'ilike', "%{$search}%")
+                ->orWhere('kode_bahan',    'ilike', "%{$search}%")
+                ->orWhere('no_nota',       'ilike', "%{$search}%")
+                ->orWhere('no_surat_jalan','ilike', "%{$search}%")
             ))
             ->get();
 
@@ -36,7 +36,6 @@ class BahanMasukController extends Controller
                 'tanggal'        => $items->first()->tanggal,
                 'no_surat_jalan' => $items->first()->no_surat_jalan,
                 'supplier'       => $items->first()->supplier,
-                'status'         => $items->first()->status,
                 'grand_total'    => $items->sum('total'),
                 'items_count'    => $items->count(),
                 'items'          => $items->values()->map(fn($i) => [
@@ -50,8 +49,32 @@ class BahanMasukController extends Controller
             ])
             ->values();
 
+        $pageItems   = $grouped->forPage($page, $perPage)->values();
+        $noNotaList  = $pageItems->pluck('no_nota')->filter()->values()->toArray();
+        $payments    = BahanMasukPembayaran::whereIn('no_nota', $noNotaList)
+            ->orderBy('tanggal_bayar')
+            ->get()
+            ->groupBy('no_nota');
+
+        $pageItems = $pageItems->map(function ($nota) use ($payments) {
+            $pays         = $payments->get($nota['no_nota'], collect());
+            $totalDibayar = (float) $pays->sum('jumlah');
+            return array_merge($nota, [
+                'total_dibayar' => $totalDibayar,
+                'sisa_tagihan'  => (float) $nota['grand_total'] - $totalDibayar,
+                'pembayaran'    => $pays->map(fn($p) => [
+                    'id'            => $p->id,
+                    'tanggal_bayar' => $p->tanggal_bayar,
+                    'jumlah'        => $p->jumlah,
+                    'metode'        => $p->metode,
+                    'rekening_id'   => $p->rekening_id,
+                    'keterangan'    => $p->keterangan,
+                ])->values()->toArray(),
+            ]);
+        });
+
         $data = new \Illuminate\Pagination\LengthAwarePaginator(
-            $grouped->forPage($page, $perPage)->values(),
+            $pageItems,
             $grouped->count(),
             $perPage,
             $page,
@@ -61,6 +84,7 @@ class BahanMasukController extends Controller
         return Inertia::render('BahanMasuk/Index', [
             'data'            => $data,
             'supplierOptions' => Supplier::orderBy('nama')->pluck('nama'),
+            'rekeningOptions' => Rekening::orderBy('bank')->get(['id', 'bank', 'nama', 'nomor_rekening']),
             'nextSuratJalan'  => $this->nextSuratJalan(BahanMasuk::class, 'LJ-'),
             'nextNota'        => $this->nextCode(BahanMasuk::class, 'no_nota', 'NT-'),
             'nextKodeBahan'   => $this->nextCode(BahanMasuk::class, 'kode_bahan', 'KB-'),
@@ -78,7 +102,6 @@ class BahanMasukController extends Controller
             'tanggal'              => 'required|date',
             'no_surat_jalan'       => 'nullable|string|max:100',
             'supplier'             => 'required|string|max:200',
-            'status'               => 'required|string|in:pending,diterima,ditolak',
             'items'                => 'required|array|min:1',
             'items.*.kode_bahan'   => 'required|string|max:100',
             'items.*.nama_bahan'   => 'nullable|string|max:200',
@@ -86,7 +109,8 @@ class BahanMasukController extends Controller
             'items.*.rp_per_yard'  => 'required|numeric|min:0',
         ]);
 
-        $noNota = $this->nextCode(BahanMasuk::class, 'no_nota', 'NT-');
+        $noNota     = $this->nextCode(BahanMasuk::class, 'no_nota', 'NT-');
+        $stokDeltas = [];
 
         foreach ($validated['items'] as $item) {
             BahanMasuk::create([
@@ -99,13 +123,12 @@ class BahanMasukController extends Controller
                 'yard'           => $item['yard'],
                 'rp_per_yard'    => $item['rp_per_yard'],
                 'total'          => $item['yard'] * $item['rp_per_yard'],
-                'status'         => $validated['status'],
             ]);
 
-            if ($validated['status'] === 'diterima') {
-                $this->addStok($item['kode_bahan'], $item['yard']);
-            }
+            $stokDeltas[$item['kode_bahan']] = ($stokDeltas[$item['kode_bahan']] ?? 0) + $item['yard'];
         }
+
+        $this->bulkAddStok($stokDeltas);
 
         return redirect()->route('bahan-masuk.index')->with('message', 'Data berhasil ditambahkan.');
     }
@@ -122,7 +145,6 @@ class BahanMasukController extends Controller
             'no_surat_jalan'       => 'nullable|string|max:100',
             'no_nota'              => 'nullable|string|max:100',
             'supplier'             => 'required|string|max:200',
-            'status'               => 'required|string|in:pending,diterima,ditolak',
             'items'                => 'required|array|min:1',
             'items.*.kode_bahan'   => 'required|string|max:100',
             'items.*.nama_bahan'   => 'nullable|string|max:200',
@@ -130,7 +152,6 @@ class BahanMasukController extends Controller
             'items.*.rp_per_yard'  => 'required|numeric|min:0',
         ]);
 
-        // Find all existing rows for this nota (by no_nota or ID as fallback)
         $existing = BahanMasuk::where('no_nota', $bahanMasuk)->get();
         if ($existing->isEmpty() && is_numeric($bahanMasuk)) {
             $row = BahanMasuk::find($bahanMasuk);
@@ -142,14 +163,13 @@ class BahanMasukController extends Controller
         }
 
         // Reverse stok for all old items
+        $stokDeltas = [];
         foreach ($existing as $item) {
-            if ($item->status === 'diterima') {
-                $this->addStok($item->kode_bahan, -$item->yard);
-            }
-            $item->delete();
+            $stokDeltas[$item->kode_bahan] = ($stokDeltas[$item->kode_bahan] ?? 0) - $item->yard;
         }
+        BahanMasuk::whereIn('id', $existing->pluck('id'))->delete();
 
-        // Re-insert updated items
+        // Re-insert updated items and apply stok
         $noNota = $validated['no_nota'] ?: $bahanMasuk;
         foreach ($validated['items'] as $item) {
             BahanMasuk::create([
@@ -162,13 +182,12 @@ class BahanMasukController extends Controller
                 'yard'           => $item['yard'],
                 'rp_per_yard'    => $item['rp_per_yard'],
                 'total'          => $item['yard'] * $item['rp_per_yard'],
-                'status'         => $validated['status'],
             ]);
 
-            if ($validated['status'] === 'diterima') {
-                $this->addStok($item['kode_bahan'], $item['yard']);
-            }
+            $stokDeltas[$item['kode_bahan']] = ($stokDeltas[$item['kode_bahan']] ?? 0) + $item['yard'];
         }
+
+        $this->bulkAddStok($stokDeltas);
 
         return redirect()->route('bahan-masuk.index')->with('message', 'Data berhasil diperbarui.');
     }
@@ -188,25 +207,45 @@ class BahanMasukController extends Controller
             }
         }
 
+        $stokDeltas = [];
         foreach ($items as $item) {
-            if ($item->status === 'diterima') {
-                $this->addStok($item->kode_bahan, -$item->yard);
-            }
-            $item->delete();
+            $stokDeltas[$item->kode_bahan] = ($stokDeltas[$item->kode_bahan] ?? 0) - $item->yard;
         }
+        BahanMasuk::whereIn('id', $items->pluck('id'))->delete();
+        $this->bulkAddStok($stokDeltas);
 
         return redirect()->route('bahan-masuk.index')->with('message', 'Data berhasil dihapus.');
     }
 
-    private function addStok(string $kodeBahan, float $yard): void
+    private function bulkAddStok(array $deltas): void
     {
-        $stok = StokBahan::firstOrCreate(
-            ['kode_bahan' => $kodeBahan],
-            ['total_masuk' => 0, 'total_keluar' => 0, 'sisa_stok' => 0]
-        );
-        $stok->total_masuk = max(0, $stok->total_masuk + $yard);
-        $stok->sisa_stok   = max(0, $stok->total_masuk - $stok->total_keluar);
-        $stok->save();
+        if (empty($deltas)) {
+            return;
+        }
+
+        // Build a single INSERT ... ON CONFLICT DO UPDATE query (1 query total).
+        // For each kode_bahan: insert with delta as total_masuk, or atomically
+        // increment existing total_masuk and recalculate sisa_stok.
+        $placeholders = [];
+        $bindings     = [];
+
+        foreach ($deltas as $kode => $delta) {
+            $placeholders[] = '(?, ?, 0, GREATEST(0, ?))';
+            $bindings[]     = $kode;
+            $bindings[]     = max(0, $delta); // initial insert value
+            $bindings[]     = max(0, $delta); // initial sisa_stok
+        }
+
+        $values = implode(', ', $placeholders);
+
+        \DB::statement("
+            INSERT INTO stok_bahan (kode_bahan, total_masuk, total_keluar, sisa_stok)
+            VALUES {$values}
+            ON CONFLICT (kode_bahan) DO UPDATE SET
+                total_masuk = GREATEST(0, stok_bahan.total_masuk + EXCLUDED.total_masuk),
+                sisa_stok   = GREATEST(0, GREATEST(0, stok_bahan.total_masuk + EXCLUDED.total_masuk) - stok_bahan.total_keluar),
+                updated_at  = NOW()
+        ", $bindings);
     }
 }
 

@@ -96,6 +96,7 @@
               </td>
               <td class="px-5 py-3.5">
                 <div class="flex items-center justify-center gap-1.5">
+                  <slot name="actions" :item="item" />
                   <button @click="$emit('open-edit', item)"
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
                     title="Edit">

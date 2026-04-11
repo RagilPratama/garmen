@@ -138,11 +138,13 @@ const IconWarehouse = { render: () => h('svg', { fill: 'none', stroke: 'currentC
 const IconMap = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7' })]) }
 
 const IconUsers = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' })]) }
+const IconBank = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M3 10h18M3 14h18M7 6l5-3 5 3M4 10v8a1 1 0 001 1h14a1 1 0 001-1v-8' })]) }
 
 const navItems = [
   { type: 'link', name: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: IconDashboard },
   { type: 'header', label: 'Data Master' },
   { type: 'link', name: 'supplier', label: 'Supplier', href: '/supplier', icon: IconUsers },
+  { type: 'link', name: 'rekening', label: 'Rekening', href: '/rekening', icon: IconBank },
   { type: 'header', label: 'Inventori' },
   { type: 'link', name: 'stok-bahan', label: 'Stok Bahan', href: '/stok-bahan', icon: IconStock },
   { type: 'link', name: 'stok-barang', label: 'Stok Barang', href: '/stok-barang', icon: IconWarehouse },

@@ -15,6 +15,31 @@
       </button>
     </template>
 
+    <!-- Sisa tagihan cell -->
+    <template #cell-sisa_tagihan="{ item }">
+      <span v-if="(item.sisa_tagihan ?? item.grand_total) <= 0"
+        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+        Lunas
+      </span>
+      <span v-else class="text-red-600 font-medium text-sm">
+        {{ formatRupiah(item.sisa_tagihan ?? item.grand_total) }}
+      </span>
+    </template>
+
+    <!-- Pay button in actions column -->
+    <template #actions="{ item }">
+      <button v-if="(item.sisa_tagihan ?? item.grand_total) > 0"
+        @click="openDetailAndPay(item)"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+        title="Bayar">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+        </svg>
+        Bayar
+      </button>
+    </template>
+
     <template #modal>
 
       <!-- ── EDIT MODAL ── -->
@@ -42,14 +67,6 @@
                 <option v-for="s in supplierOptions" :key="s" :value="s">{{ s }}</option>
               </select>
               <p v-if="editForm.errors.supplier" class="mt-1 text-xs text-red-500">{{ editForm.errors.supplier }}</p>
-            </div>
-            <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select v-model="editForm.status" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white">
-                <option value="pending">Pending</option>
-                <option value="diterima">Diterima</option>
-                <option value="ditolak">Ditolak</option>
-              </select>
             </div>
           </div>
 
@@ -152,14 +169,6 @@
               </select>
               <p v-if="createForm.errors.supplier" class="mt-1 text-xs text-red-500">{{ createForm.errors.supplier }}</p>
             </div>
-            <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select v-model="createForm.status" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white">
-                <option value="pending">Pending</option>
-                <option value="diterima">Diterima</option>
-                <option value="ditolak">Ditolak</option>
-              </select>
-            </div>
           </div>
 
           <!-- Items table -->
@@ -245,17 +254,9 @@
               <p class="text-gray-400 text-xs mb-0.5">No. Surat Jalan</p>
               <p class="font-medium text-gray-800">{{ selectedNota.no_surat_jalan ?? '—' }}</p>
             </div>
-            <div>
+            <div class="col-span-2">
               <p class="text-gray-400 text-xs mb-0.5">Supplier</p>
               <p class="font-medium text-gray-800">{{ selectedNota.supplier }}</p>
-            </div>
-            <div>
-              <p class="text-gray-400 text-xs mb-0.5">Status</p>
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
-                :class="statusClass(selectedNota.status)">
-                <span class="w-1.5 h-1.5 rounded-full" :class="statusDotClass(selectedNota.status)"></span>
-                {{ selectedNota.status }}
-              </span>
             </div>
           </div>
 
@@ -289,10 +290,125 @@
             </table>
           </div>
 
-          <div class="flex justify-end pt-1">
+          <!-- Payment Summary -->
+          <div class="grid grid-cols-3 gap-3 border border-gray-200 rounded-xl p-4 text-sm text-center">
+            <div>
+              <p class="text-gray-400 text-xs mb-0.5">Total Tagihan</p>
+              <p class="font-bold text-gray-800">{{ formatRupiah(selectedNota.grand_total) }}</p>
+            </div>
+            <div>
+              <p class="text-gray-400 text-xs mb-0.5">Total Dibayar</p>
+              <p class="font-bold text-green-600">{{ formatRupiah(selectedNota.total_dibayar ?? 0) }}</p>
+            </div>
+            <div>
+              <p class="text-gray-400 text-xs mb-0.5">Sisa Tagihan</p>
+              <p class="font-bold" :class="(selectedNota.sisa_tagihan ?? selectedNota.grand_total) <= 0 ? 'text-green-600' : 'text-red-600'">
+                {{ (selectedNota.sisa_tagihan ?? selectedNota.grand_total) <= 0 ? 'LUNAS' : formatRupiah(selectedNota.sisa_tagihan ?? selectedNota.grand_total) }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Payment History -->
+          <div v-if="selectedNota.pembayaran?.length" class="border border-gray-200 rounded-lg overflow-hidden">
+            <div class="px-3 py-2 bg-gray-50 border-b border-gray-200">
+              <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Riwayat Pembayaran</span>
+            </div>
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">Tanggal</th>
+                  <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">Metode</th>
+                  <th class="px-3 py-2 text-right text-xs font-semibold text-gray-500">Jumlah</th>
+                  <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">Keterangan</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr v-for="p in selectedNota.pembayaran" :key="p.id" class="hover:bg-gray-50/50">
+                  <td class="px-3 py-2">{{ formatDate(p.tanggal_bayar) }}</td>
+                  <td class="px-3 py-2">
+                    <span :class="p.metode === 'cash' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'"
+                      class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize">
+                      {{ p.metode }}
+                    </span>
+                    <span v-if="p.metode === 'transfer' && p.rekening_id" class="ml-1.5 text-xs text-gray-500">
+                      {{ rekeningLabel(p.rekening_id) }}
+                    </span>
+                  </td>
+                  <td class="px-3 py-2 text-right font-medium text-gray-800">{{ formatRupiah(p.jumlah) }}</td>
+                  <td class="px-3 py-2 text-gray-500 text-xs">{{ p.keterangan ?? '—' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="flex justify-between pt-1">
+            <button @click="openPay"
+              :disabled="(selectedNota.sisa_tagihan ?? selectedNota.grand_total) <= 0"
+              class="px-5 py-2.5 text-sm text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-500">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+              </svg>
+              Bayar
+            </button>
             <button @click="showDetailModal = false" class="px-5 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Tutup</button>
           </div>
         </div>
+      </Modal>
+
+      <!-- ── PAYMENT MODAL ── -->
+      <Modal v-model="showPayModal" :title="`Bayar — ${selectedNota?.no_nota ?? ''}`">
+        <form v-if="selectedNota" @submit.prevent="submitPay" class="space-y-4">
+          <div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm">
+            Sisa tagihan:
+            <span class="font-bold text-red-600">{{ formatRupiah(selectedNota.sisa_tagihan ?? selectedNota.grand_total) }}</span>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Bayar <span class="text-red-500">*</span></label>
+            <input v-model="payForm.tanggal_bayar" type="date" required class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white"/>
+            <p v-if="payForm.errors.tanggal_bayar" class="mt-1 text-xs text-red-500">{{ payForm.errors.tanggal_bayar }}</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah <span class="text-red-500">*</span></label>
+            <input v-model="payForm.jumlah" type="number" min="1" required placeholder="0" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white"/>
+            <p v-if="payForm.errors.jumlah" class="mt-1 text-xs text-red-500">{{ payForm.errors.jumlah }}</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Metode <span class="text-red-500">*</span></label>
+            <div class="flex gap-6 mt-1">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input v-model="payForm.metode" type="radio" value="cash" class="text-amber-500"/>
+                <span class="text-sm text-gray-700">Cash</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input v-model="payForm.metode" type="radio" value="transfer" class="text-amber-500"/>
+                <span class="text-sm text-gray-700">Transfer</span>
+              </label>
+            </div>
+            <p v-if="payForm.errors.metode" class="mt-1 text-xs text-red-500">{{ payForm.errors.metode }}</p>
+          </div>
+          <div v-if="payForm.metode === 'transfer'">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Rekening Tujuan <span class="text-red-500">*</span></label>
+            <select v-model="payForm.rekening_id" required
+              class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white">
+              <option :value="null" disabled>-- Pilih rekening --</option>
+              <option v-for="r in rekeningOptions" :key="r.id" :value="r.id">
+                {{ r.bank }} — {{ r.nama }}<span v-if="r.nomor_rekening"> ({{ r.nomor_rekening }})</span>
+              </option>
+            </select>
+            <p v-if="payForm.errors.rekening_id" class="mt-1 text-xs text-red-500">{{ payForm.errors.rekening_id }}</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Keterangan</label>
+            <input v-model="payForm.keterangan" type="text" placeholder="Opsional..." class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white"/>
+          </div>
+          <div class="flex justify-end gap-3 pt-2 border-t border-gray-100">
+            <button type="button" @click="showPayModal = false" class="px-5 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Batal</button>
+            <button type="submit" :disabled="payForm.processing" class="px-5 py-2.5 text-sm text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors disabled:opacity-60 flex items-center gap-2">
+              <svg v-if="payForm.processing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+              Simpan Pembayaran
+            </button>
+          </div>
+        </form>
       </Modal>
 
     </template>
@@ -307,10 +423,11 @@ import Modal from '@/Components/Modal.vue'
 
 const props = defineProps({
   data: Object,
-  supplierOptions: { type: Array, default: () => [] },
-  nextSuratJalan: { type: String, default: '' },
-  nextNota: { type: String, default: '' },
-  nextKodeBahan: { type: String, default: '' },
+  supplierOptions:  { type: Array, default: () => [] },
+  rekeningOptions:  { type: Array, default: () => [] },
+  nextSuratJalan:   { type: String, default: '' },
+  nextNota:         { type: String, default: '' },
+  nextKodeBahan:    { type: String, default: '' },
 })
 
 const columns = [
@@ -320,13 +437,11 @@ const columns = [
   { key: 'supplier',       label: 'Supplier' },
   { key: 'items_count',    label: 'Jml Bahan' },
   { key: 'grand_total',    label: 'Total',          type: 'currency' },
-  { key: 'status',         label: 'Status',         type: 'status' },
+  { key: 'sisa_tagihan',   label: 'Sisa Tagihan' },
 ]
 
 const formatRupiah   = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0)
 const formatDate     = (val) => { if (!val) return '—'; return new Date(val).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) }
-const statusClass    = (s) => ({ pending: 'bg-yellow-50 text-yellow-700', diterima: 'bg-green-50 text-green-700', ditolak: 'bg-red-50 text-red-700' }[s] ?? 'bg-gray-50 text-gray-700')
-const statusDotClass = (s) => ({ pending: 'bg-yellow-400', diterima: 'bg-green-500', ditolak: 'bg-red-500' }[s] ?? 'bg-gray-400')
 
 const incrementCode = (code) => {
   const match = code.match(/^([A-Z]+-)(\d+)$/)
@@ -342,7 +457,6 @@ const createForm = useForm({
   tanggal: '',
   no_surat_jalan: '',
   supplier: '',
-  status: 'pending',
   items: [{ kode_bahan: '', nama_bahan: '', yard: '', rp_per_yard: '' }],
 })
 
@@ -381,7 +495,7 @@ const showEditModal = ref(false)
 const editNota      = ref(null)
 
 const editForm = useForm({
-  tanggal: '', no_surat_jalan: '', no_nota: '', supplier: '', status: 'pending',
+  tanggal: '', no_surat_jalan: '', no_nota: '', supplier: '',
   items: [{ kode_bahan: '', nama_bahan: '', yard: '', rp_per_yard: '' }],
 })
 
@@ -393,7 +507,6 @@ const openEdit = (nota) => {
   editForm.no_surat_jalan = nota.no_surat_jalan ?? ''
   editForm.no_nota        = nota.no_nota ?? ''
   editForm.supplier       = nota.supplier ?? ''
-  editForm.status         = nota.status ?? 'pending'
   editForm.items          = nota.items.map(i => ({
     kode_bahan:  i.kode_bahan  ?? '',
     nama_bahan:  i.nama_bahan  ?? '',
@@ -417,5 +530,48 @@ const selectedNota    = ref(null)
 const openDetail = (item) => {
   selectedNota.value = item
   showDetailModal.value = true
+}
+
+const openDetailAndPay = (item) => {
+  selectedNota.value = item
+  openPay()
+}
+
+// ── Payment Modal ──
+const showPayModal = ref(false)
+
+const payForm = useForm({
+  tanggal_bayar: '',
+  jumlah:        '',
+  metode:        'cash',
+  rekening_id:   null,
+  keterangan:    '',
+})
+
+const rekeningLabel = (id) => {
+  const r = props.rekeningOptions.find(r => r.id === id)
+  if (!r) return ''
+  return r.nomor_rekening ? `${r.bank} — ${r.nama} (${r.nomor_rekening})` : `${r.bank} — ${r.nama}`
+}
+
+const openPay = () => {
+  payForm.tanggal_bayar = new Date().toISOString().substring(0, 10)
+  payForm.jumlah        = ''
+  payForm.metode        = 'cash'
+  payForm.rekening_id   = null
+  payForm.keterangan    = ''
+  payForm.clearErrors()
+  showPayModal.value = true
+}
+
+const submitPay = () => {
+  const noNota = selectedNota.value.no_nota
+  payForm.post(`/bahan-masuk/${noNota}/pembayaran`, {
+    onSuccess: () => {
+      showPayModal.value = false
+      const updated = props.data.data.find(n => n.no_nota === noNota)
+      if (updated) selectedNota.value = updated
+    },
+  })
 }
 </script>

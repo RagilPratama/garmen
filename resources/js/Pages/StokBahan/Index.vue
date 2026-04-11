@@ -11,7 +11,7 @@
           <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
-          Stok otomatis terupdate dari Bahan Masuk (status: diterima) & Bahan Keluar
+          Stok otomatis terupdate dari Bahan Masuk & Bahan Keluar
         </div>
       </div>
 
@@ -51,7 +51,7 @@
                 <svg class="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/>
                 </svg>
-                <p class="text-sm">Belum ada data stok. Tambahkan Bahan Masuk dengan status "diterima".</p>
+                <p class="text-sm">Belum ada data stok. Tambahkan data Bahan Masuk.</p>
               </td>
             </tr>
           </tbody>

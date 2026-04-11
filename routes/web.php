@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\BahanMasukController;
+use App\Http\Controllers\BahanMasukPembayaranController;
 use App\Http\Controllers\BahanKeluarController;
 use App\Http\Controllers\BahanProsesPotongController;
 use App\Http\Controllers\ProsesJahitController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\JualGudangController;
 use App\Http\Controllers\StokBahanController;
 use App\Http\Controllers\StokBarangController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\RekeningController;
 use App\Http\Controllers\TrackingPoController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,7 +30,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('supplier', SupplierController::class)->except(['show', 'create', 'edit']);
+    Route::resource('rekening', RekeningController::class)->except(['show', 'create', 'edit']);
     Route::resource('bahan-masuk', BahanMasukController::class)->except(['show']);
+    Route::post('/bahan-masuk/{noNota}/pembayaran', [BahanMasukPembayaranController::class, 'store'])->name('bahan-masuk.pembayaran.store');
     Route::resource('bahan-keluar', BahanKeluarController::class)->except(['show']);
     Route::resource('bahan-proses-potong', BahanProsesPotongController::class)->except(['show']);
     Route::resource('proses-jahit', ProsesJahitController::class)->except(['show']);
