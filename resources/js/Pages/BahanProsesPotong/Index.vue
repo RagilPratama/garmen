@@ -17,12 +17,11 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Kode Bahan <span class="text-red-500">*</span></label>
-              <select v-model="form.kode_bahan" required class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white">
-                <option value="" disabled>-- Pilih Kode Bahan --</option>
-                <option v-for="b in bahanOptions" :key="b.kode_bahan" :value="b.kode_bahan">
-                  {{ b.kode_bahan }} (terkirim: {{ fmt(b.total_yard) }} yard)
-                </option>
-              </select>
+              <SearchableSelect
+                v-model="form.kode_bahan"
+                :options="bahanOptions.map(b => ({ value: b.kode_bahan, label: b.kode_bahan + ' (terkirim: ' + fmt(b.total_yard) + ' yard)' }))"
+                placeholder="-- Pilih Kode Bahan --"
+              />
               <p v-if="form.errors.kode_bahan" class="mt-1 text-xs text-red-500">{{ form.errors.kode_bahan }}</p>
             </div>
             <div>
@@ -69,6 +68,7 @@ import { ref } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import DataTable from '@/Components/DataTable.vue'
 import Modal from '@/Components/Modal.vue'
+import SearchableSelect from '@/Components/SearchableSelect.vue'
 
 const props = defineProps({ data: Object, bahanOptions: { type: Array, default: () => [] } })
 

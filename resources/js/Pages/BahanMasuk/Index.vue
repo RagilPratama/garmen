@@ -62,10 +62,11 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Supplier <span class="text-red-500">*</span></label>
-              <select v-model="editForm.supplier" required class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white">
-                <option value="" disabled>-- Pilih supplier --</option>
-                <option v-for="s in supplierOptions" :key="s" :value="s">{{ s }}</option>
-              </select>
+              <SearchableSelect
+                v-model="editForm.supplier"
+                :options="supplierOptions"
+                placeholder="-- Pilih supplier --"
+              />
               <p v-if="editForm.errors.supplier" class="mt-1 text-xs text-red-500">{{ editForm.errors.supplier }}</p>
             </div>
           </div>
@@ -163,10 +164,11 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Supplier <span class="text-red-500">*</span></label>
-              <select v-model="createForm.supplier" required class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white">
-                <option value="" disabled>-- Pilih supplier --</option>
-                <option v-for="s in supplierOptions" :key="s" :value="s">{{ s }}</option>
-              </select>
+              <SearchableSelect
+                v-model="createForm.supplier"
+                :options="supplierOptions"
+                placeholder="-- Pilih supplier --"
+              />
               <p v-if="createForm.errors.supplier" class="mt-1 text-xs text-red-500">{{ createForm.errors.supplier }}</p>
             </div>
           </div>
@@ -388,13 +390,11 @@
           </div>
           <div v-if="payForm.metode === 'transfer'">
             <label class="block text-sm font-medium text-gray-700 mb-1">Rekening Tujuan <span class="text-red-500">*</span></label>
-            <select v-model="payForm.rekening_id" required
-              class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white">
-              <option :value="null" disabled>-- Pilih rekening --</option>
-              <option v-for="r in rekeningOptions" :key="r.id" :value="r.id">
-                {{ r.bank }} — {{ r.nama }}<span v-if="r.nomor_rekening"> ({{ r.nomor_rekening }})</span>
-              </option>
-            </select>
+            <SearchableSelect
+              v-model="payForm.rekening_id"
+              :options="rekeningOptions.map(r => ({ value: r.id, label: r.bank + ' — ' + r.nama + (r.nomor_rekening ? ' (' + r.nomor_rekening + ')' : '') }))"
+              placeholder="-- Pilih rekening --"
+            />
             <p v-if="payForm.errors.rekening_id" class="mt-1 text-xs text-red-500">{{ payForm.errors.rekening_id }}</p>
           </div>
           <div>
@@ -420,6 +420,7 @@ import { ref, computed } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import DataTable from '@/Components/DataTable.vue'
 import Modal from '@/Components/Modal.vue'
+import SearchableSelect from '@/Components/SearchableSelect.vue'
 
 const props = defineProps({
   data: Object,

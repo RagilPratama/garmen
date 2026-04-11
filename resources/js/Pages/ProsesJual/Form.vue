@@ -22,11 +22,11 @@
           <input :value="formatRupiah(total)" type="text" readonly class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-sm cursor-not-allowed"/>
         </FormField>
         <FormField label="Status" required>
-          <select v-model="form.status" v-bind="ip">
-            <option value="pending">Pending</option>
-            <option value="lunas">Lunas</option>
-            <option value="batal">Batal</option>
-          </select>
+          <SearchableSelect
+            v-model="form.status"
+            :options="[{ value: 'pending', label: 'Pending' }, { value: 'lunas', label: 'Lunas' }, { value: 'batal', label: 'Batal' }]"
+            placeholder="-- Pilih status --"
+          />
         </FormField>
         <div class="flex gap-3 pt-2">
           <button type="submit" :disabled="form.processing" class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-70">{{ form.processing ? 'Menyimpan...' : 'Simpan' }}</button>
@@ -42,6 +42,7 @@ import { Link, useForm } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import FormField from '@/Components/FormField.vue'
 import FieldError from '@/Components/FieldError.vue'
+import SearchableSelect from '@/Components/SearchableSelect.vue'
 const props = defineProps({ item: { type: Object, default: null } })
 const isEdit = computed(() => !!props.item)
 const form = useForm({ no_nota: props.item?.no_nota ?? '', tanggal_nota: props.item?.tanggal_nota?.split('T')[0] ?? '', buyer: props.item?.buyer ?? '', model: props.item?.model ?? '', pcs: props.item?.pcs ?? 0, harga_satuan: props.item?.harga_satuan ?? 0, status: props.item?.status ?? 'pending' })

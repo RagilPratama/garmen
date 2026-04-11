@@ -10,12 +10,12 @@
         <form @submit.prevent="submit" class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">PO / Model <span class="text-red-500">*</span></label>
-            <select v-model="selectedKey" @change="onSelect" required class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white">
-              <option value="" disabled>-- Pilih PO dari Proses Jahit --</option>
-              <option v-for="o in poOptions" :key="o.po+'||'+o.model" :value="o.po+'||'+o.model">
-                PO: {{ o.po }} | Model: {{ o.model }} ({{ o.max_pcs }} pcs hasil jahit)
-              </option>
-            </select>
+            <SearchableSelect
+              v-model="selectedKey"
+              :options="poOptions.map(o => ({ value: o.po+'||'+o.model, label: 'PO: ' + o.po + ' | Model: ' + o.model + ' (' + o.max_pcs + ' pcs hasil jahit)' }))"
+              placeholder="-- Pilih PO dari Proses Jahit --"
+              @change="onSelect"
+            />
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
@@ -63,6 +63,7 @@ import { ref } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import DataTable from '@/Components/DataTable.vue'
 import Modal from '@/Components/Modal.vue'
+import SearchableSelect from '@/Components/SearchableSelect.vue'
 
 const props = defineProps({ data: Object, poOptions: { type: Array, default: () => [] }, nextSuratJalan: { type: String, default: '' } })
 

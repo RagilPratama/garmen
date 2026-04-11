@@ -15,11 +15,11 @@
               <FieldError :error="form.errors.tanggal"/>
             </FormField>
             <FormField label="Status" required>
-              <select v-model="form.status" v-bind="inputProps" :class="errorClass('status')">
-                <option value="pending">Pending</option>
-                <option value="diterima">Diterima</option>
-                <option value="ditolak">Ditolak</option>
-              </select>
+              <SearchableSelect
+                v-model="form.status"
+                :options="[{ value: 'pending', label: 'Pending' }, { value: 'diterima', label: 'Diterima' }, { value: 'ditolak', label: 'Ditolak' }]"
+                placeholder="-- Pilih status --"
+              />
               <FieldError :error="form.errors.status"/>
             </FormField>
           </div>
@@ -70,6 +70,7 @@ import { Link, useForm } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import FormField from '@/Components/FormField.vue'
 import FieldError from '@/Components/FieldError.vue'
+import SearchableSelect from '@/Components/SearchableSelect.vue'
 
 const props = defineProps({ item: { type: Object, default: null } })
 const isEdit = computed(() => !!props.item)
