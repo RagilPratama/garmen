@@ -69,7 +69,7 @@ class DashboardController extends Controller
             ->values();
 
         // Recent data
-        $recentBahanMasuk = BahanMasuk::latest()->take(5)->get(['id', 'supplier', 'kode_bahan', 'yard', 'status', 'created_at']);
+        $recentBahanMasuk = BahanMasuk::latest()->take(5)->get(['id', 'supplier', 'kode_bahan', 'yard', 'created_at']);
 
         $recentPenjualan = ProsesJual::latest()->take(5)->get(['id', 'buyer', 'model', 'pcs', 'total_harga', 'status', 'tanggal_nota'])
             ->map(fn($r) => array_merge($r->toArray(), ['channel' => 'Toko']))

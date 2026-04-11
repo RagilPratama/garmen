@@ -33,7 +33,7 @@
           <!-- Nav Link -->
           <Link v-else
             :href="item.href"
-            @click="() => { if (window.innerWidth < 1024) sidebarOpen = false }"
+            @click="() => { if (typeof window !== 'undefined' && window.innerWidth < 1024) sidebarOpen = false }"
             class="flex items-center rounded-lg px-2 py-2.5 text-sm font-medium transition-colors group"
             :class="isActive(item.href)
               ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30'

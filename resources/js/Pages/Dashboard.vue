@@ -135,7 +135,6 @@
                 <th class="text-left px-5 py-2.5 text-xs text-gray-400 font-medium">Supplier</th>
                 <th class="text-left px-5 py-2.5 text-xs text-gray-400 font-medium">Kode</th>
                 <th class="text-right px-5 py-2.5 text-xs text-gray-400 font-medium">Yard</th>
-                <th class="text-center px-5 py-2.5 text-xs text-gray-400 font-medium">Status</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
@@ -143,12 +142,9 @@
                 <td class="px-5 py-3 text-gray-800 font-medium">{{ item.supplier }}</td>
                 <td class="px-5 py-3 text-gray-500">{{ item.kode_bahan }}</td>
                 <td class="px-5 py-3 text-right text-gray-700">{{ item.yard }}</td>
-                <td class="px-5 py-3 text-center">
-                  <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(item.status)">{{ item.status }}</span>
-                </td>
               </tr>
               <tr v-if="!recentBahanMasuk?.length">
-                <td colspan="4" class="px-5 py-8 text-center text-gray-300 text-sm">Belum ada data</td>
+                <td colspan="3" class="px-5 py-8 text-center text-gray-300 text-sm">Belum ada data</td>
               </tr>
             </tbody>
           </table>
