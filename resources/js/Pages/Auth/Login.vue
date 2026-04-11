@@ -126,15 +126,6 @@
               </div>
             </div>
 
-            <!-- Remember Me -->
-            <div class="flex items-center justify-between">
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input v-model="form.remember" type="checkbox"
-                  class="w-4 h-4 text-amber-500 border-gray-300 rounded focus:ring-amber-400 cursor-pointer"/>
-                <span class="text-sm text-gray-600">Ingat saya</span>
-              </label>
-            </div>
-
             <!-- Submit -->
             <button
               type="submit"

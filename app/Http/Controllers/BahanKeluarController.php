@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\BahanKeluar;
 use App\Models\StokBahan;
+use App\Traits\GeneratesSuratJalan;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class BahanKeluarController extends Controller
 {
+    use GeneratesSuratJalan;
     public function index()
     {
         $search = request('search');
@@ -19,7 +21,7 @@ class BahanKeluarController extends Controller
                 ->orWhere('no_surat_jalan', 'ilike', "%{$search}%")
             ))->paginate(15)->withQueryString();
         $stok = StokBahan::orderBy('kode_bahan')->where('sisa_stok', '>', 0)->get(['kode_bahan', 'sisa_stok']);
-        return Inertia::render('BahanKeluar/Index', ['data' => $data, 'stok' => $stok]);
+        return Inertia::render('BahanKeluar/Index', ['data' => $data, 'stok' => $stok, 'nextSuratJalan' => $this->nextSuratJalan(BahanKeluar::class, 'BK-')]);
     }
 
     public function create()

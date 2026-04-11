@@ -2,11 +2,13 @@
 namespace App\Http\Controllers;
 use App\Models\BarangMasukKantor;
 use App\Models\ProsesFinishing;
+use App\Traits\GeneratesSuratJalan;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class BarangMasukKantorController extends Controller
 {
+    use GeneratesSuratJalan;
     public function index()
     {
         $search = request('search');
@@ -22,7 +24,7 @@ class BarangMasukKantorController extends Controller
             ->whereNotNull('pcs_barang_jadi')->where('pcs_barang_jadi', '>', 0)
             ->groupBy('po', 'model')->orderBy('po')->get()
             ->filter(fn($r) => !in_array($r->po . '|||' . $r->model, $alreadyKantor))->values();
-        return Inertia::render('BarangMasukKantor/Index', ['data' => $data, 'poOptions' => $poOptions]);
+        return Inertia::render('BarangMasukKantor/Index', ['data' => $data, 'poOptions' => $poOptions, 'nextSuratJalan' => $this->nextSuratJalan(BarangMasukKantor::class, 'SJ-KANTOR-')]);
     }
     public function create() { return Inertia::render('BarangMasukKantor/Form'); }
     public function store(Request $request) {

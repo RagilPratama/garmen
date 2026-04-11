@@ -197,23 +197,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Alur Proses -->
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h3 class="font-semibold text-gray-800 mb-4">Alur Proses Produksi</h3>
-        <div class="flex flex-wrap items-center gap-2">
-          <div v-for="(step, i) in processSteps" :key="step.name" class="flex items-center gap-2">
-            <div class="flex flex-col items-center">
-              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow"
-                :class="step.color">{{ i + 1 }}</div>
-              <span class="text-xs text-gray-500 mt-1 text-center w-16 leading-tight">{{ step.name }}</span>
-            </div>
-            <svg v-if="i < processSteps.length - 1" class="w-4 h-4 text-gray-200 shrink-0 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-            </svg>
-          </div>
-        </div>
-      </div>
     </div>
   </AdminLayout>
 </template>

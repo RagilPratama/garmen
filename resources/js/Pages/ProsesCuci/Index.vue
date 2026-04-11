@@ -25,7 +25,10 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">No. Surat Jalan</label>
-              <input v-model="form.no_surat_jalan" type="text" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white" placeholder="No. Surat Jalan"/>
+              <div class="relative">
+                <input v-model="form.no_surat_jalan" type="text" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white pr-16" placeholder="No. Surat Jalan"/>
+                <span v-if="!editItem" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">Auto</span>
+              </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Pcs Kirim <span class="text-red-500">*</span></label>
@@ -61,7 +64,7 @@ import { useForm } from '@inertiajs/vue3'
 import DataTable from '@/Components/DataTable.vue'
 import Modal from '@/Components/Modal.vue'
 
-const props = defineProps({ data: Object, poOptions: { type: Array, default: () => [] } })
+const props = defineProps({ data: Object, poOptions: { type: Array, default: () => [] }, nextSuratJalan: { type: String, default: '' } })
 
 const columns = [
   { key: 'tanggal_kirim_cuci', label: 'Tgl Kirim', type: 'date' },
@@ -84,7 +87,7 @@ const onSelect = () => {
   if (selectedOpt.value) { form.po = selectedOpt.value.po; form.model = selectedOpt.value.model; form.pcs_kirim = selectedOpt.value.max_pcs }
 }
 
-const openCreate = () => { editItem.value = null; selectedKey.value = ''; selectedOpt.value = null; form.reset(); form.clearErrors(); showModal.value = true }
+const openCreate = () => { editItem.value = null; selectedKey.value = ''; selectedOpt.value = null; form.reset(); form.no_surat_jalan = props.nextSuratJalan; form.clearErrors(); showModal.value = true }
 const openEdit = (item) => {
   editItem.value = item
   form.tanggal_kirim_cuci = item.tanggal_kirim_cuci?.substring(0, 10) ?? ''

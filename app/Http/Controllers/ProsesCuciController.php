@@ -2,11 +2,13 @@
 namespace App\Http\Controllers;
 use App\Models\ProsesCuci;
 use App\Models\ProsesJahit;
+use App\Traits\GeneratesSuratJalan;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class ProsesCuciController extends Controller
 {
+    use GeneratesSuratJalan;
     public function index()
     {
         $search = request('search');
@@ -22,7 +24,7 @@ class ProsesCuciController extends Controller
             ->whereNotNull('pcs_hasil_jahit')->where('pcs_hasil_jahit', '>', 0)
             ->groupBy('po', 'model')->orderBy('po')->get()
             ->filter(fn($r) => !in_array($r->po . '|||' . $r->model, $alreadyCuci))->values();
-        return Inertia::render('ProsesCuci/Index', ['data' => $data, 'poOptions' => $poOptions]);
+        return Inertia::render('ProsesCuci/Index', ['data' => $data, 'poOptions' => $poOptions, 'nextSuratJalan' => $this->nextSuratJalan(ProsesCuci::class, 'SJ-CUCI-')]);
     }
     public function create() { return Inertia::render('ProsesCuci/Form'); }
     public function store(Request $request) {

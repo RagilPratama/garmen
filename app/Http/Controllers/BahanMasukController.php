@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\BahanMasuk;
 use App\Models\StokBahan;
 use App\Models\Supplier;
+use App\Traits\GeneratesSuratJalan;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class BahanMasukController extends Controller
 {
+    use GeneratesSuratJalan;
     public function index()
     {
         $search = request('search');
@@ -24,6 +26,7 @@ class BahanMasukController extends Controller
         return Inertia::render('BahanMasuk/Index', [
             'data'            => $data,
             'supplierOptions' => Supplier::orderBy('nama')->pluck('nama'),
+            'nextSuratJalan'  => $this->nextSuratJalan(BahanMasuk::class, 'LJ-'),
         ]);
     }
 
