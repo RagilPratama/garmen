@@ -20,7 +20,7 @@
         >
           <div v-if="modelValue"
             class="relative bg-white rounded-2xl shadow-2xl w-full overflow-hidden"
-            :class="size === 'lg' ? 'max-w-2xl' : size === 'xl' ? 'max-w-3xl' : 'max-w-lg'"
+            :class="size === 'lg' ? 'max-w-2xl' : size === 'xl' ? 'max-w-3xl' : size === '2xl' ? 'max-w-4xl' : 'max-w-lg'"
             style="max-height: 90vh;"
           >
             <!-- Header -->

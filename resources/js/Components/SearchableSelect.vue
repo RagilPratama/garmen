@@ -54,7 +54,13 @@
           class="px-4 py-2 text-sm text-gray-400 hover:bg-gray-50 cursor-pointer italic">
           — Hapus pilihan —
         </li>
-        <li v-if="filtered.length === 0"
+        <li v-if="allowCustom && query.trim() && !normalised.find(o => o.value === query.trim())"
+          @click="select(query.trim())"
+          class="px-4 py-2 text-sm cursor-pointer text-amber-600 hover:bg-amber-50 italic border-b border-gray-100 flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Gunakan "{{ query.trim() }}"
+        </li>
+        <li v-if="filtered.length === 0 && !(allowCustom && query.trim())"
           class="px-4 py-2 text-sm text-gray-400 text-center py-4">
           Tidak ada hasil
         </li>
@@ -93,6 +99,7 @@ const props = defineProps({
   clearable:         { type: Boolean, default: false },
   labelKey:          { type: String, default: 'label' },
   valueKey:          { type: String, default: 'value' },
+  allowCustom:       { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update:modelValue', 'change'])
@@ -122,7 +129,10 @@ const filtered = computed(() => {
 
 const selectedLabel = computed(() => {
   const opt = normalised.value.find(o => o.value == props.modelValue)
-  return opt?.label ?? null
+  if (opt) return opt.label
+  // For allowCustom: show the raw value if it's not in the options list
+  if (props.allowCustom && props.modelValue !== null && props.modelValue !== '') return String(props.modelValue)
+  return null
 })
 
 const open = async () => {
@@ -152,6 +162,8 @@ const selectFirst = () => {
     select(filtered.value[focusedIndex.value].value)
   } else if (filtered.value.length === 1) {
     select(filtered.value[0].value)
+  } else if (props.allowCustom && query.value.trim()) {
+    select(query.value.trim())
   }
 }
 

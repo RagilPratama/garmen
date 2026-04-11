@@ -82,12 +82,24 @@ class BahanMasukController extends Controller
         );
 
         return Inertia::render('BahanMasuk/Index', [
-            'data'            => $data,
-            'supplierOptions' => Supplier::orderBy('nama')->pluck('nama'),
-            'rekeningOptions' => Rekening::orderBy('bank')->get(['id', 'bank', 'nama', 'nomor_rekening']),
-            'nextSuratJalan'  => $this->nextSuratJalan(BahanMasuk::class, 'LJ-'),
-            'nextNota'        => $this->nextCode(BahanMasuk::class, 'no_nota', 'NT-'),
-            'nextKodeBahan'   => $this->nextCode(BahanMasuk::class, 'kode_bahan', 'KB-'),
+            'data'              => $data,
+            'supplierOptions'   => Supplier::orderBy('nama')->pluck('nama'),
+            'rekeningOptions'   => Rekening::orderBy('bank')->get(['id', 'bank', 'nama', 'nomor_rekening']),
+            'nextSuratJalan'    => $this->nextSuratJalan(BahanMasuk::class, 'LJ-'),
+            'nextNota'          => $this->nextCode(BahanMasuk::class, 'no_nota', 'NT-'),
+            'nextKodeBahan'     => $this->nextCode(BahanMasuk::class, 'kode_bahan', 'KB-'),
+            'supplierBahanMap'  => BahanMasuk::select('supplier', 'kode_bahan', 'nama_bahan')
+                ->whereNotNull('kode_bahan')
+                ->distinct()
+                ->orderBy('supplier')
+                ->orderBy('kode_bahan')
+                ->get()
+                ->groupBy('supplier')
+                ->map(fn($items) => $items->map(fn($i) => [
+                    'kode_bahan' => $i->kode_bahan,
+                    'nama_bahan' => $i->nama_bahan,
+                ])->values())
+                ->toArray(),
         ]);
     }
 
@@ -230,10 +242,10 @@ class BahanMasukController extends Controller
         $bindings     = [];
 
         foreach ($deltas as $kode => $delta) {
-            $placeholders[] = '(?, ?, 0, GREATEST(0, ?))';
+            $placeholders[] = '(?, ?::numeric, 0::numeric, GREATEST(0::numeric, ?::numeric))';
             $bindings[]     = $kode;
-            $bindings[]     = max(0, $delta); // initial insert value
-            $bindings[]     = max(0, $delta); // initial sisa_stok
+            $bindings[]     = (float) max(0, $delta); // initial insert value
+            $bindings[]     = (float) max(0, $delta); // initial sisa_stok
         }
 
         $values = implode(', ', $placeholders);
@@ -242,8 +254,8 @@ class BahanMasukController extends Controller
             INSERT INTO stok_bahan (kode_bahan, total_masuk, total_keluar, sisa_stok)
             VALUES {$values}
             ON CONFLICT (kode_bahan) DO UPDATE SET
-                total_masuk = GREATEST(0, stok_bahan.total_masuk + EXCLUDED.total_masuk),
-                sisa_stok   = GREATEST(0, GREATEST(0, stok_bahan.total_masuk + EXCLUDED.total_masuk) - stok_bahan.total_keluar),
+                total_masuk = GREATEST(0::numeric, stok_bahan.total_masuk + EXCLUDED.total_masuk),
+                sisa_stok   = GREATEST(0::numeric, GREATEST(0::numeric, stok_bahan.total_masuk + EXCLUDED.total_masuk) - stok_bahan.total_keluar),
                 updated_at  = NOW()
         ", $bindings);
     }

@@ -43,7 +43,7 @@
     <template #modal>
 
       <!-- ── EDIT MODAL ── -->
-      <Modal v-model="showEditModal" :title="`Edit Nota — ${editNota?.no_nota ?? ''}`" size="lg">
+      <Modal v-model="showEditModal" :title="`Edit Nota — ${editNota?.no_nota ?? ''}`" size="2xl">
         <form v-if="editNota" @submit.prevent="submitEdit" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
@@ -68,6 +68,22 @@
                 placeholder="-- Pilih supplier --"
               />
               <p v-if="editForm.errors.supplier" class="mt-1 text-xs text-red-500">{{ editForm.errors.supplier }}</p>
+            </div>
+          </div>
+
+          <!-- Bahan history chips (edit) -->
+          <div v-if="editForm.supplier && editBahanOptions.length" class="space-y-2">
+            <p class="text-xs font-medium text-gray-500">Bahan pernah dipesan dari <span class="text-amber-600 font-semibold">{{ editForm.supplier }}</span> — klik untuk tambah:</p>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="opt in editBahanOptions" :key="opt.kode_bahan"
+                type="button"
+                @click="addFromHistory(opt, 'edit')"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 rounded-full hover:bg-amber-100 transition-colors"
+              >
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                {{ opt.kode_bahan }}<span v-if="opt.nama_bahan" class="text-amber-500">— {{ opt.nama_bahan }}</span>
+              </button>
             </div>
           </div>
 
@@ -98,7 +114,7 @@
                       <input v-model="item.nama_bahan" type="text" placeholder="Nama bahan" class="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-amber-400"/>
                     </td>
                     <td class="px-2 py-1.5">
-                      <input v-model="item.yard" type="number" min="0" required placeholder="0.00" class="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-amber-400"/>
+                      <input v-model="item.yard" type="number" min="0" step="any" required placeholder="0.00" class="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-amber-400"/>
                       <p v-if="editForm.errors[`items.${idx}.yard`]" class="mt-0.5 text-xs text-red-500">{{ editForm.errors[`items.${idx}.yard`] }}</p>
                     </td>
                     <td class="px-2 py-1.5">
@@ -140,7 +156,7 @@
       </Modal>
 
       <!-- ── CREATE FORM (multi-item) ── -->
-      <Modal v-model="showCreateModal" title="Tambah Bahan Masuk" size="lg">
+      <Modal v-model="showCreateModal" title="Tambah Bahan Masuk" size="2xl">
         <form @submit.prevent="submitCreate" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
@@ -173,6 +189,22 @@
             </div>
           </div>
 
+          <!-- Bahan history chips (create) -->
+          <div v-if="createForm.supplier && createBahanOptions.length" class="space-y-2">
+            <p class="text-xs font-medium text-gray-500">Bahan pernah dipesan dari <span class="text-amber-600 font-semibold">{{ createForm.supplier }}</span> — klik untuk tambah:</p>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="opt in createBahanOptions" :key="opt.kode_bahan"
+                type="button"
+                @click="addFromHistory(opt, 'create')"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 rounded-full hover:bg-amber-100 transition-colors"
+              >
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                {{ opt.kode_bahan }}<span v-if="opt.nama_bahan" class="text-amber-500">— {{ opt.nama_bahan }}</span>
+              </button>
+            </div>
+          </div>
+
           <!-- Items table -->
           <div>
             <div class="flex items-center justify-between mb-2">
@@ -193,17 +225,14 @@
                 <tbody class="divide-y divide-gray-100">
                   <tr v-for="(item, idx) in createForm.items" :key="idx">
                     <td class="px-2 py-1.5">
-                      <div class="relative">
-                        <input v-model="item.kode_bahan" type="text" required placeholder="KB-001" class="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-amber-400 pr-12"/>
-                        <span v-if="idx === 0" class="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs bg-amber-100 text-amber-700 px-1 py-0.5 rounded font-medium">Auto</span>
-                      </div>
+                      <input v-model="item.kode_bahan" type="text" required placeholder="KB-001" class="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-amber-400"/>
                       <p v-if="createForm.errors[`items.${idx}.kode_bahan`]" class="mt-0.5 text-xs text-red-500">{{ createForm.errors[`items.${idx}.kode_bahan`] }}</p>
                     </td>
                     <td class="px-2 py-1.5">
                       <input v-model="item.nama_bahan" type="text" placeholder="Nama bahan" class="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-amber-400"/>
                     </td>
                     <td class="px-2 py-1.5">
-                      <input v-model="item.yard" type="number" min="0" required placeholder="0.00" class="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-amber-400"/>
+                      <input v-model="item.yard" type="number" min="0" step="any" required placeholder="0.00" class="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-amber-400"/>
                       <p v-if="createForm.errors[`items.${idx}.yard`]" class="mt-0.5 text-xs text-red-500">{{ createForm.errors[`items.${idx}.yard`] }}</p>
                     </td>
                     <td class="px-2 py-1.5">
@@ -416,7 +445,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import DataTable from '@/Components/DataTable.vue'
 import Modal from '@/Components/Modal.vue'
@@ -429,7 +458,28 @@ const props = defineProps({
   nextSuratJalan:   { type: String, default: '' },
   nextNota:         { type: String, default: '' },
   nextKodeBahan:    { type: String, default: '' },
+  supplierBahanMap: { type: Object, default: () => ({}) },
 })
+
+// Bahan options from previous orders for the selected supplier
+const createBahanOptions = ref([])
+const editBahanOptions = ref([])
+
+const buildBahanOptions = (supplier) => {
+  return props.supplierBahanMap[supplier] ?? []
+}
+
+// Add a history bahan to the items list (fill first empty row or append)
+const addFromHistory = (opt, formType) => {
+  const form = formType === 'create' ? createForm : editForm
+  const emptyIdx = form.items.findIndex(i => !i.kode_bahan)
+  if (emptyIdx >= 0) {
+    form.items[emptyIdx].kode_bahan = opt.kode_bahan
+    form.items[emptyIdx].nama_bahan = opt.nama_bahan ?? ''
+  } else {
+    form.items.push({ kode_bahan: opt.kode_bahan, nama_bahan: opt.nama_bahan ?? '', yard: '', rp_per_yard: '' })
+  }
+}
 
 const columns = [
   { key: 'tanggal',        label: 'Tanggal',        type: 'date' },
@@ -459,6 +509,10 @@ const createForm = useForm({
   no_surat_jalan: '',
   supplier: '',
   items: [{ kode_bahan: '', nama_bahan: '', yard: '', rp_per_yard: '' }],
+})
+
+watch(() => createForm.supplier, (supplier) => {
+  createBahanOptions.value = buildBahanOptions(supplier)
 })
 
 const itemTotal  = (item) => (parseFloat(item.yard) || 0) * (parseFloat(item.rp_per_yard) || 0)
@@ -498,6 +552,10 @@ const editNota      = ref(null)
 const editForm = useForm({
   tanggal: '', no_surat_jalan: '', no_nota: '', supplier: '',
   items: [{ kode_bahan: '', nama_bahan: '', yard: '', rp_per_yard: '' }],
+})
+
+watch(() => editForm.supplier, (supplier) => {
+  editBahanOptions.value = buildBahanOptions(supplier)
 })
 
 const editGrandTotal = computed(() => editForm.items.reduce((sum, item) => sum + itemTotal(item), 0))
