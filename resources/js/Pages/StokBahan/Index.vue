@@ -22,6 +22,7 @@
             <tr>
               <th class="text-left px-4 py-3 text-gray-500 font-medium w-10">No</th>
               <th class="text-left px-4 py-3 text-gray-500 font-medium">Kode Bahan</th>
+              <th class="text-left px-4 py-3 text-gray-500 font-medium">Nama Bahan</th>
               <th class="text-right px-4 py-3 text-gray-500 font-medium">Total Masuk (yard)</th>
               <th class="text-right px-4 py-3 text-gray-500 font-medium">Total Keluar (yard)</th>
               <th class="text-right px-4 py-3 text-gray-500 font-medium">Sisa Stok (yard)</th>
@@ -32,6 +33,7 @@
             <tr v-for="(item, index) in data?.data" :key="item.id" class="hover:bg-gray-50 transition-colors">
               <td class="px-4 py-3 text-gray-500">{{ (data.current_page - 1) * data.per_page + index + 1 }}</td>
               <td class="px-4 py-3 font-medium text-gray-800">{{ item.kode_bahan }}</td>
+              <td class="px-4 py-3 text-gray-600">{{ item.nama_bahan ?? '—' }}</td>
               <td class="px-4 py-3 text-right text-green-700">{{ formatYard(item.total_masuk) }}</td>
               <td class="px-4 py-3 text-right text-red-600">{{ formatYard(item.total_keluar) }}</td>
               <td class="px-4 py-3 text-right">
@@ -47,7 +49,7 @@
               </td>
             </tr>
             <tr v-if="!data?.data?.length">
-              <td colspan="6" class="px-4 py-12 text-center text-gray-400">
+              <td colspan="7" class="px-4 py-12 text-center text-gray-400">
                 <svg class="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/>
                 </svg>

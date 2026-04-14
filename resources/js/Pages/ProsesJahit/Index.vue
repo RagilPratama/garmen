@@ -1,102 +1,333 @@
 <template>
-  <DataTable title="Proses Jahit" :data="data" :columns="columns" base-path="/proses-jahit"
-    @open-create="openCreate" @open-edit="openEdit">
-    <template #modal>
-      <Modal v-model="showModal" :title="editItem ? 'Edit Proses Jahit' : 'Tambah Proses Jahit'" size="lg">
-        <div v-if="!poOptions.length" class="mb-4 flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
-          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          Belum ada data dari <strong class="ml-1">Proses Potong</strong>. Lengkapi kolom Hasil Potongan terlebih dahulu.
-        </div>
-        <form @submit.prevent="submit" class="space-y-4">
+  <AdminLayout title="Proses Jahit">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="h-1 bg-gradient-to-r from-orange-400 via-amber-500 to-amber-400"></div>
+
+      <!-- Header -->
+      <div class="px-6 py-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center">
+            <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">PO / Model <span class="text-red-500">*</span></label>
-            <SearchableSelect
-              v-model="selectedKey"
-              :options="poOptions.map(o => ({ value: o.po+'||'+o.model, label: 'PO: ' + o.po + ' | Model: ' + o.model + ' (' + o.max_pcs + ' pcs siap jahit)' }))"
-              placeholder="-- Pilih PO dari Proses Potong --"
-              @change="onSelect"
-            />
+            <h2 class="text-base font-semibold text-gray-800">Proses Jahit</h2>
+            <p class="text-xs text-gray-400 mt-0.5">{{ data?.total ?? 0 }} PO</p>
           </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Jahit <span class="text-red-500">*</span></label>
-              <input v-model="form.tanggal_jahit" type="date" required class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white"/>
-              <p v-if="form.errors.tanggal_jahit" class="mt-1 text-xs text-red-500">{{ form.errors.tanggal_jahit }}</p>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Pcs Potongan <span class="text-red-500">*</span></label>
-              <input v-model="form.pcs_potongan" type="number" required class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white" placeholder="0"/>
-              <p v-if="form.errors.pcs_potongan" class="mt-1 text-xs text-red-500">{{ form.errors.pcs_potongan }}</p>
-              <p v-if="selectedOpt" class="mt-1 text-xs text-gray-500">Maks: <span class="font-medium text-amber-600">{{ selectedOpt.max_pcs }} pcs</span></p>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Selesai Jahit</label>
-              <input v-model="form.tanggal_selesai_jahit" type="date" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white"/>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Pcs Hasil Jahit</label>
-              <input v-model="form.pcs_hasil_jahit" type="number" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white" placeholder="0"/>
-            </div>
-          </div>
-          <div class="flex justify-end gap-3 pt-2 border-t border-gray-100">
-            <button type="button" @click="showModal = false" class="px-5 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">Batal</button>
-            <button type="submit" :disabled="form.processing" class="px-5 py-2.5 text-sm text-white bg-amber-500 hover:bg-amber-600 rounded-lg disabled:opacity-60 flex items-center gap-2">
-              <svg v-if="form.processing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-              {{ editItem ? 'Simpan Perubahan' : 'Tambah Data' }}
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="relative">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+            <input v-model="searchQuery" type="text" placeholder="Cari PO / model..."
+              class="pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent w-52 transition-all"/>
+            <button v-if="searchQuery" @click="searchQuery = ''"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full bg-gray-300 hover:bg-gray-400 transition-colors">
+              <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
           </div>
-        </form>
-      </Modal>
-    </template>
-  </DataTable>
+          <button @click="openCreate"
+            class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-sm font-medium rounded-xl transition-all shadow-sm hover:shadow-md whitespace-nowrap">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+            Tambah Data
+          </button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-100">
+              <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide w-12">No</th>
+              <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">No. PO</th>
+              <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tanggal Jahit</th>
+              <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Jumlah Model</th>
+              <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Pcs Hasil Jahit</th>
+              <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide w-24">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(group, index) in data?.data" :key="group.po"
+              class="border-b border-gray-50 hover:bg-orange-50/40 transition-colors group cursor-pointer"
+              :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'"
+              @click="openDetail(group)">
+              <td class="px-5 py-3.5">
+                <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-xs font-medium text-gray-500 group-hover:bg-orange-100 group-hover:text-orange-700 transition-colors">
+                  {{ (data.current_page - 1) * data.per_page + index + 1 }}
+                </span>
+              </td>
+              <td class="px-5 py-3.5">
+                <span class="font-semibold text-orange-600">{{ group.po }}</span>
+              </td>
+              <td class="px-5 py-3.5 text-gray-600">
+                <span class="inline-flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  {{ formatDate(group.tanggal_jahit) }}
+                </span>
+              </td>
+              <td class="px-5 py-3.5 text-center">
+                <span class="inline-flex items-center justify-center px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full">{{ group.jumlah_model }} model</span>
+              </td>
+              <td class="px-5 py-3.5 text-center">
+                <span class="inline-flex items-center justify-center px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-full">{{ group.total_pcs_hasil_jahit.toLocaleString('id-ID') }} pcs</span>
+              </td>
+              <td class="px-5 py-3.5 text-center" @click.stop>
+                <button @click="openDetail(group)"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                  Detail
+                </button>
+              </td>
+            </tr>
+            <tr v-if="!data?.data?.length">
+              <td colspan="6" class="px-4 py-16 text-center">
+                <div class="flex flex-col items-center gap-3">
+                  <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
+                    <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                  </div>
+                  <p class="text-sm font-medium text-gray-500">{{ searchQuery ? 'Data tidak ditemukan' : 'Belum ada data' }}</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="data?.last_page > 1" class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <p class="text-xs text-gray-500">Menampilkan <span class="font-semibold text-gray-700">{{ data.from }}–{{ data.to }}</span> dari <span class="font-semibold text-gray-700">{{ data.total }}</span> PO</p>
+        <div class="flex items-center gap-1 flex-wrap justify-center">
+          <Link v-for="link in data.links" :key="link.label"
+            :href="link.url ? appendSearch(link.url) : '#'"
+            class="min-w-[32px] h-8 px-2.5 flex items-center justify-center text-xs rounded-lg transition-all"
+            :class="link.active ? 'bg-orange-500 text-white font-semibold shadow-sm' : link.url ? 'text-gray-600 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200' : 'text-gray-300 cursor-default pointer-events-none'"
+            :preserve-scroll="true" v-html="link.label"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── DETAIL MODAL ── -->
+    <Modal v-model="showDetail" :title="'Detail PO: ' + (detailGroup?.po ?? '')" size="xl">
+      <div v-if="detailGroup" class="space-y-4">
+        <div class="flex items-center gap-4 text-sm text-gray-600 bg-gray-50 rounded-lg px-4 py-3">
+          <span><span class="font-medium text-gray-700">Tanggal:</span> {{ formatDate(detailGroup.tanggal_jahit) }}</span>
+          <span><span class="font-medium text-gray-700">Jumlah Model:</span> {{ detailGroup.jumlah_model }}</span>
+          <span><span class="font-medium text-gray-700">Total Hasil:</span> {{ detailGroup.total_pcs_hasil_jahit.toLocaleString('id-ID') }} pcs</span>
+        </div>
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="text-left px-4 py-2.5 text-xs font-medium text-gray-500 rounded-tl-lg">Model</th>
+              <th class="text-center px-4 py-2.5 text-xs font-medium text-gray-500">Pcs Potongan</th>
+              <th class="text-center px-4 py-2.5 text-xs font-medium text-gray-500">Pcs Hasil Jahit</th>
+              <th class="text-left px-4 py-2.5 text-xs font-medium text-gray-500">Tgl Selesai Jahit</th>
+              <th class="w-16 rounded-tr-lg"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr v-for="mRow in detailGroup.models" :key="mRow.id" class="hover:bg-gray-50">
+              <td class="px-4 py-2.5 font-medium text-gray-700">{{ mRow.model }}</td>
+              <td class="px-4 py-2.5 text-center text-gray-600">{{ mRow.pcs_potongan ?? '—' }}</td>
+              <td class="px-4 py-2.5 text-center">
+                <span class="font-semibold text-emerald-700">{{ mRow.pcs_hasil_jahit ?? '—' }}</span>
+              </td>
+              <td class="px-4 py-2.5 text-gray-500 text-xs">{{ mRow.tanggal_selesai_jahit ? formatDate(mRow.tanggal_selesai_jahit) : '—' }}</td>
+              <td class="px-4 py-2.5 text-center">
+                <button @click="openEdit(mRow)" class="text-blue-400 hover:text-blue-600 transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </Modal>
+
+    <!-- ── CREATE MODAL ── -->
+    <Modal v-model="showModal" title="Tambah Proses Jahit" size="lg">
+      <div v-if="!poOptions.length" class="mb-4 flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Belum ada data dari <strong class="ml-1">Proses Potong</strong>. Lengkapi kolom Hasil Potongan terlebih dahulu.
+      </div>
+      <form @submit.prevent="submit" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Nomor PO <span class="text-red-500">*</span></label>
+          <SearchableSelect v-model="selectedPo" :options="uniquePos.map(p => ({ value: p, label: p }))"
+            placeholder="-- Pilih Nomor PO --" @update:modelValue="onPoChange"/>
+        </div>
+
+        <!-- All models shown simultaneously with their own inputs -->
+        <div v-if="selectedPo && modelsForPo.length" class="rounded-lg border border-amber-100 bg-amber-50/60 overflow-hidden">
+          <div class="px-3 py-2 bg-amber-100/70 border-b border-amber-100 flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              <span class="text-xs font-semibold text-amber-700">Model dalam PO {{ selectedPo }}</span>
+            </div>
+            <span class="text-xs text-amber-600">{{ modelsForPo.length }} model</span>
+          </div>
+          <div class="divide-y divide-amber-100">
+            <div v-for="m in modelsForPo" :key="m.model" class="px-3 py-2.5">
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-sm font-medium text-gray-700 flex-1">{{ m.model }}</span>
+                <span class="text-xs font-semibold bg-white border border-amber-200 text-amber-700 px-2 py-0.5 rounded-full shrink-0">
+                  {{ m.max_pcs }} pcs
+                </span>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <label class="text-xs text-gray-500">Hasil jahit:</label>
+                  <input v-model="hasilPerModel[m.model]" type="number" min="0"
+                    class="w-24 px-2.5 py-1.5 border border-amber-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white text-right"
+                    placeholder="0"/>
+                  <span class="text-xs text-gray-400">pcs</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="px-3 py-2 bg-amber-50 border-t border-amber-100 flex items-center justify-between">
+            <span class="text-xs text-gray-500">Total pcs hasil jahit</span>
+            <span class="text-sm font-bold text-amber-700">{{ totalPcsPotongan }} pcs</span>
+          </div>
+        </div>
+
+        <div v-if="selectedPo" class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Jahit <span class="text-red-500">*</span></label>
+            <input v-model="form.tanggal_jahit" type="date" required class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white"/>
+            <p v-if="form.errors.tanggal_jahit" class="mt-1 text-xs text-red-500">{{ form.errors.tanggal_jahit }}</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Selesai Jahit</label>
+            <input v-model="form.tanggal_selesai_jahit" type="date" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white"/>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-2 border-t border-gray-100">
+          <button type="button" @click="showModal = false" class="px-5 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">Batal</button>
+          <button type="submit" :disabled="form.processing || !selectedPo" class="px-5 py-2.5 text-sm text-white bg-orange-500 hover:bg-orange-600 rounded-lg disabled:opacity-60 flex items-center gap-2">
+            <svg v-if="form.processing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+            Tambah Data
+          </button>
+        </div>
+      </form>
+    </Modal>
+
+    <!-- ── EDIT MODAL ── -->
+    <Modal v-model="showEditModal" title="Edit Proses Jahit" size="md">
+      <form @submit.prevent="submitEdit" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Jahit <span class="text-red-500">*</span></label>
+            <input v-model="editForm.tanggal_jahit" type="date" required class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition bg-white"/>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Pcs Hasil Jahit</label>
+            <input v-model="editForm.pcs_hasil_jahit" type="number" min="0" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition bg-white" placeholder="0"/>
+          </div>
+          <div class="col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Selesai Jahit</label>
+            <input v-model="editForm.tanggal_selesai_jahit" type="date" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition bg-white"/>
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 pt-2 border-t border-gray-100">
+          <button type="button" @click="showEditModal = false" class="px-5 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">Batal</button>
+          <button type="submit" :disabled="editForm.processing" class="px-5 py-2.5 text-sm text-white bg-orange-500 hover:bg-orange-600 rounded-lg disabled:opacity-60 flex items-center gap-2">
+            <svg v-if="editForm.processing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+            Simpan
+          </button>
+        </div>
+      </form>
+    </Modal>
+  </AdminLayout>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useForm } from '@inertiajs/vue3'
-import DataTable from '@/Components/DataTable.vue'
+import { ref, computed, watch } from 'vue'
+import { useForm, router, Link } from '@inertiajs/vue3'
+import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Modal from '@/Components/Modal.vue'
 import SearchableSelect from '@/Components/SearchableSelect.vue'
 
-const props = defineProps({ data: Object, poOptions: { type: Array, default: () => [] } })
+const props = defineProps({
+  data:       Object,
+  poOptions:  { type: Array, default: () => [] },
+})
 
-const columns = [
-  { key: 'tanggal_jahit', label: 'Tanggal Jahit', type: 'date' },
-  { key: 'po', label: 'PO' }, { key: 'model', label: 'Model' },
-  { key: 'pcs_potongan', label: 'Pcs Potongan' },
-  { key: 'tanggal_selesai_jahit', label: 'Tgl Selesai', type: 'date' },
-  { key: 'pcs_hasil_jahit', label: 'Pcs Hasil' },
-]
+const formatDate = (d) => d ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
 
-const showModal = ref(false)
-const editItem = ref(null)
-const selectedKey = ref('')
-const selectedOpt = ref(null)
-const form = useForm({ tanggal_jahit: '', po: '', model: '', pcs_potongan: '', tanggal_selesai_jahit: '', pcs_hasil_jahit: '' })
-
-const onSelect = () => {
-  const [po, model] = selectedKey.value.split('||')
-  selectedOpt.value = props.poOptions.find(o => o.po === po && o.model === model) ?? null
-  if (selectedOpt.value) { form.po = selectedOpt.value.po; form.model = selectedOpt.value.model; form.pcs_potongan = selectedOpt.value.max_pcs }
+// Search
+const searchQuery = ref(new URLSearchParams(window.location.search).get('search') ?? '')
+let searchTimer = null
+watch(searchQuery, (val) => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    router.get('/proses-jahit', { search: val || undefined }, { preserveState: true, replace: true })
+  }, 350)
+})
+const appendSearch = (url) => {
+  if (!searchQuery.value) return url
+  const u = new URL(url, window.location.origin)
+  u.searchParams.set('search', searchQuery.value)
+  return u.pathname + u.search
 }
 
-const openCreate = () => { editItem.value = null; selectedKey.value = ''; selectedOpt.value = null; form.reset(); form.clearErrors(); showModal.value = true }
-const openEdit = (item) => {
-  editItem.value = item
-  form.tanggal_jahit = item.tanggal_jahit?.substring(0, 10) ?? ''
-  form.po = item.po ?? ''; form.model = item.model ?? ''
-  form.pcs_potongan = item.pcs_potongan ?? ''
-  form.tanggal_selesai_jahit = item.tanggal_selesai_jahit?.substring(0, 10) ?? ''
-  form.pcs_hasil_jahit = item.pcs_hasil_jahit ?? ''
-  selectedKey.value = (item.po ?? '') + '||' + (item.model ?? '')
-  selectedOpt.value = props.poOptions.find(o => o.po === item.po && o.model === item.model) ?? null
-  form.clearErrors(); showModal.value = true
+// ── Detail modal ──
+const showDetail  = ref(false)
+const detailGroup = ref(null)
+const openDetail  = (group) => { detailGroup.value = group; showDetail.value = true }
+
+// ── Create modal ──
+const showModal   = ref(false)
+const selectedPo  = ref('')
+const uniquePos   = computed(() => [...new Set(props.poOptions.map(o => o.po))])
+const modelsForPo = computed(() => selectedPo.value ? props.poOptions.filter(o => o.po === selectedPo.value) : [])
+
+const form = useForm({ tanggal_jahit: '', po: '', tanggal_selesai_jahit: '' })
+const hasilPerModel    = ref({})
+const totalPcsPotongan = computed(() =>
+  Object.values(hasilPerModel.value).reduce((sum, v) => sum + (parseInt(v) || 0), 0)
+)
+
+const onPoChange = () => {
+  form.po = selectedPo.value
+  hasilPerModel.value = {}
+  // pre-fill all model keys so inputs are reactive
+  modelsForPo.value.forEach(m => { hasilPerModel.value[m.model] = '' })
+}
+const openCreate = () => {
+  selectedPo.value = ''; hasilPerModel.value = {}
+  form.reset(); form.clearErrors(); showModal.value = true
 }
 const submit = () => {
-  if (editItem.value) {
-    form.put(`/proses-jahit/${editItem.value.id}`, { onSuccess: () => { showModal.value = false } })
-  } else {
-    form.post('/proses-jahit', { onSuccess: () => { showModal.value = false; form.reset(); selectedKey.value = '' } })
-  }
+  const models = modelsForPo.value.map(m => ({
+    model: m.model,
+    pcs_potongan: m.max_pcs,
+    pcs_hasil_jahit: parseInt(hasilPerModel.value[m.model]) || null,
+  }))
+  router.post('/proses-jahit', {
+    tanggal_jahit:         form.tanggal_jahit,
+    po:                    selectedPo.value,
+    tanggal_selesai_jahit: form.tanggal_selesai_jahit,
+    models,
+  }, {
+    onSuccess: () => { showModal.value = false; form.reset(); selectedPo.value = ''; hasilPerModel.value = {} },
+    onError:   (e) => { form.setError(e) },
+  })
+}
+
+// ── Edit modal ──
+const showEditModal = ref(false)
+const editId        = ref(null)
+const editForm      = useForm({ tanggal_jahit: '', pcs_hasil_jahit: '', tanggal_selesai_jahit: '' })
+
+const openEdit = (mRow) => {
+  editId.value = mRow.id
+  editForm.tanggal_jahit         = detailGroup.value?.tanggal_jahit?.substring?.(0, 10) ?? ''
+  editForm.pcs_hasil_jahit       = mRow.pcs_hasil_jahit ?? ''
+  editForm.tanggal_selesai_jahit = mRow.tanggal_selesai_jahit?.substring?.(0, 10) ?? ''
+  editForm.clearErrors()
+  showEditModal.value = true
+}
+const submitEdit = () => {
+  editForm.put(`/proses-jahit/${editId.value}`, {
+    onSuccess: () => { showEditModal.value = false; showDetail.value = false }
+  })
 }
 </script>
