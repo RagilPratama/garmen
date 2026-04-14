@@ -15,6 +15,7 @@ use App\Http\Controllers\ProsesJualController;
 use App\Http\Controllers\JualGudangController;
 use App\Http\Controllers\StokBahanController;
 use App\Http\Controllers\StokBarangController;
+use App\Http\Controllers\MasterModelController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\RekeningController;
 use App\Http\Controllers\TrackingPoController;
@@ -29,11 +30,13 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    Route::resource('master-model', MasterModelController::class)->except(['show', 'create', 'edit']);
     Route::resource('supplier', SupplierController::class)->except(['show', 'create', 'edit']);
     Route::resource('rekening', RekeningController::class)->except(['show', 'create', 'edit']);
     Route::resource('bahan-masuk', BahanMasukController::class)->except(['show']);
     Route::post('/bahan-masuk/{noNota}/pembayaran', [BahanMasukPembayaranController::class, 'store'])->name('bahan-masuk.pembayaran.store');
     Route::resource('bahan-keluar', BahanKeluarController::class)->except(['show']);
+    Route::post('/bahan-proses-potong/update-model', [BahanProsesPotongController::class, 'updateModel'])->name('bahan-proses-potong.update-model');
     Route::resource('bahan-proses-potong', BahanProsesPotongController::class)->except(['show']);
     Route::resource('proses-jahit', ProsesJahitController::class)->except(['show']);
     Route::resource('proses-cuci', ProsesCuciController::class)->except(['show']);

@@ -143,6 +143,7 @@ const IconBank = { render: () => h('svg', { fill: 'none', stroke: 'currentColor'
 const navItems = [
   { type: 'link', name: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: IconDashboard },
   { type: 'header', label: 'Data Master' },
+  { type: 'link', name: 'master-model', label: 'Master Model', href: '/master-model', icon: IconUsers },
   { type: 'link', name: 'supplier', label: 'Supplier', href: '/supplier', icon: IconUsers },
   { type: 'link', name: 'rekening', label: 'Rekening', href: '/rekening', icon: IconBank },
   { type: 'header', label: 'Inventori' },

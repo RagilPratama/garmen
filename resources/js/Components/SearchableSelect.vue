@@ -3,6 +3,7 @@
     <!-- Trigger -->
     <button
       type="button"
+      ref="triggerEl"
       @click="toggle"
       @keydown.enter.prevent="toggle"
       @keydown.space.prevent="toggle"
@@ -22,9 +23,12 @@
       </svg>
     </button>
 
-    <!-- Dropdown -->
+    <!-- Dropdown via Teleport to avoid overflow:hidden clipping in tables/modals -->
+    <Teleport to="body">
     <div v-if="isOpen"
-      class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden"
+      ref="dropdownEl"
+      class="fixed z-[9999] bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden"
+      :style="dropdownStyle"
     >
       <!-- Search -->
       <div class="p-2 border-b border-gray-100">
@@ -84,6 +88,7 @@
         </li>
       </ul>
     </div>
+    </Teleport>
   </div>
 </template>
 
@@ -118,8 +123,35 @@ const isOpen       = ref(false)
 const query        = ref('')
 const focusedIndex = ref(-1)
 const wrapper      = ref(null)
+const triggerEl    = ref(null)
+const dropdownEl   = ref(null)
 const searchInput  = ref(null)
 const listEl       = ref(null)
+
+const dropdownStyle = ref({})
+
+const updateDropdownPosition = () => {
+  if (!triggerEl.value) return
+  const rect = triggerEl.value.getBoundingClientRect()
+  const spaceBelow = window.innerHeight - rect.bottom
+  const spaceAbove = rect.top
+  const dropdownHeight = 280 // max approximate height
+
+  if (spaceBelow >= dropdownHeight || spaceBelow >= spaceAbove) {
+    dropdownStyle.value = {
+      top: `${rect.bottom + window.scrollY + 4}px`,
+      left: `${rect.left + window.scrollX}px`,
+      width: `${rect.width}px`,
+    }
+  } else {
+    dropdownStyle.value = {
+      bottom: `${window.innerHeight - rect.top - window.scrollY + 4}px`,
+      top: 'auto',
+      left: `${rect.left + window.scrollX}px`,
+      width: `${rect.width}px`,
+    }
+  }
+}
 
 const filtered = computed(() => {
   const q = query.value.trim().toLowerCase()
@@ -137,6 +169,7 @@ const selectedLabel = computed(() => {
 
 const open = async () => {
   if (props.disabled) return
+  updateDropdownPosition()
   isOpen.value   = true
   query.value    = ''
   focusedIndex.value = -1
@@ -176,8 +209,19 @@ const moveUp = () => {
 
 // Close on outside click
 const onOutsideClick = (e) => {
-  if (wrapper.value && !wrapper.value.contains(e.target)) close()
+  if (wrapper.value && wrapper.value.contains(e.target)) return
+  if (dropdownEl.value && dropdownEl.value.contains(e.target)) return
+  close()
 }
-onMounted(() => document.addEventListener('mousedown', onOutsideClick))
-onBeforeUnmount(() => document.removeEventListener('mousedown', onOutsideClick))
+const onScrollResize = () => { if (isOpen.value) updateDropdownPosition() }
+onMounted(() => {
+  document.addEventListener('mousedown', onOutsideClick)
+  window.addEventListener('scroll', onScrollResize, true)
+  window.addEventListener('resize', onScrollResize)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('mousedown', onOutsideClick)
+  window.removeEventListener('scroll', onScrollResize, true)
+  window.removeEventListener('resize', onScrollResize)
+})
 </script>
