@@ -19,6 +19,7 @@ use App\Http\Controllers\MasterModelController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\RekeningController;
 use App\Http\Controllers\TrackingPoController;
+use App\Http\Controllers\RincianBahanController;
 use Illuminate\Support\Facades\Route;
 
 // Auth routes
@@ -48,5 +49,6 @@ Route::middleware('auth')->group(function () {
     Route::resource('jual-gudang', JualGudangController::class)->except(['show', 'create', 'edit']);
     Route::get('/stok-bahan', [StokBahanController::class, 'index'])->name('stok-bahan.index');
     Route::get('/stok-barang', [StokBarangController::class, 'index'])->name('stok-barang.index');
+    Route::get('/rincian-bahan', [RincianBahanController::class, 'index'])->name('rincian-bahan.index');
     Route::get('/tracking-po', [TrackingPoController::class, 'index'])->name('tracking-po.index');
 });

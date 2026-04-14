@@ -23,7 +23,7 @@
       </div>
 
       <!-- Nav -->
-      <nav class="flex-1 overflow-y-auto py-4 space-y-1 px-2">
+      <nav class="flex-1 overflow-y-auto sidebar-scroll py-4 space-y-1 px-2">
         <template v-for="item in navItems" :key="item.name">
           <!-- Group Header -->
           <div v-if="item.type === 'header'" class="px-2 pt-4 pb-1">
@@ -149,6 +149,7 @@ const navItems = [
   { type: 'header', label: 'Inventori' },
   { type: 'link', name: 'stok-bahan', label: 'Stok Bahan', href: '/stok-bahan', icon: IconStock },
   { type: 'link', name: 'stok-barang', label: 'Stok Barang', href: '/stok-barang', icon: IconWarehouse },
+  { type: 'link', name: 'rincian-bahan', label: 'Rincian Bahan', href: '/rincian-bahan', icon: IconBox },
   { type: 'header', label: 'Bahan' },
   { type: 'link', name: 'bahan-masuk', label: 'Bahan Masuk', href: '/bahan-masuk', icon: IconBox },
   { type: 'link', name: 'bahan-keluar', label: 'Bahan Keluar', href: '/bahan-keluar', icon: IconArrowOut },
@@ -166,3 +167,24 @@ const navItems = [
   { type: 'link', name: 'jual-gudang', label: 'Jual Gudang', href: '/jual-gudang', icon: IconCash },
 ]
 </script>
+
+<style scoped>
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #f59e0b #1f2937; /* amber thumb, gray-800 track */
+}
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: #1f2937; /* gray-800 */
+  border-radius: 9999px;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background-color: #374151; /* gray-700 — subtle default */
+  border-radius: 9999px;
+}
+.sidebar-scroll:hover::-webkit-scrollbar-thumb {
+  background-color: #f59e0b; /* amber-400 on hover */
+}
+</style>
