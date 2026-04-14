@@ -186,11 +186,19 @@
               <div class="flex items-center justify-between gap-3">
                 <span class="text-sm font-medium text-gray-700 flex-1">{{ m.model }}</span>
                 <span class="text-xs font-semibold bg-white border border-cyan-200 text-cyan-700 px-2 py-0.5 rounded-full shrink-0">{{ m.max_pcs }} pcs</span>
-                <div class="flex items-center gap-1.5 shrink-0">
-                  <label class="text-xs text-gray-500">Pcs kirim:</label>
-                  <input v-model="pcsPerModel[m.model]" type="number" min="0"
-                    class="w-24 px-2.5 py-1.5 border border-cyan-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 bg-white text-right"
-                    placeholder="0"/>
+                <div class="flex items-center gap-3 shrink-0">
+                  <div class="flex items-center gap-1">
+                    <label class="text-xs text-gray-500 whitespace-nowrap">Kirim:</label>
+                    <input v-model="pcsPerModel[m.model]" type="number" min="1"
+                      class="w-20 px-2 py-1.5 border border-cyan-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 bg-white text-right"
+                      placeholder="0"/>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <label class="text-xs text-gray-400 whitespace-nowrap">Kembali:</label>
+                    <input v-model="kembaliPerModel[m.model]" type="number" min="0"
+                      class="w-20 px-2 py-1.5 border border-cyan-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300 bg-white text-right text-cyan-700"
+                      placeholder="—"/>
+                  </div>
                   <span class="text-xs text-gray-400">pcs</span>
                 </div>
               </div>
@@ -301,22 +309,24 @@ const selectedPo  = ref('')
 const uniquePos   = computed(() => [...new Set(props.poOptions.map(o => o.po))])
 const modelsForPo = computed(() => selectedPo.value ? props.poOptions.filter(o => o.po === selectedPo.value) : [])
 const form        = useForm({ tanggal_kirim_cuci: '', no_surat_jalan: '' })
-const pcsPerModel = ref({})
+const pcsPerModel     = ref({})
+const kembaliPerModel = ref({})
 const totalPcsKirim = computed(() =>
   Object.values(pcsPerModel.value).reduce((sum, v) => sum + (parseInt(v) || 0), 0)
 )
 const onPoChange = () => {
-  pcsPerModel.value = {}
-  modelsForPo.value.forEach(m => { pcsPerModel.value[m.model] = '' })
+  pcsPerModel.value = {}; kembaliPerModel.value = {}
+  modelsForPo.value.forEach(m => { pcsPerModel.value[m.model] = ''; kembaliPerModel.value[m.model] = '' })
 }
 const openCreate = () => {
-  selectedPo.value = ''; pcsPerModel.value = {}
+  selectedPo.value = ''; pcsPerModel.value = {}; kembaliPerModel.value = {}
   form.reset(); form.no_surat_jalan = props.nextSuratJalan; form.clearErrors(); showModal.value = true
 }
 const submit = () => {
   const models = modelsForPo.value.map(m => ({
-    model: m.model,
-    pcs_kirim: parseInt(pcsPerModel.value[m.model]) || 0,
+    model:       m.model,
+    pcs_kirim:   parseInt(pcsPerModel.value[m.model]) || 0,
+    pcs_kembali: parseInt(kembaliPerModel.value[m.model]) || null,
   }))
   router.post('/proses-cuci', {
     tanggal_kirim_cuci: form.tanggal_kirim_cuci,
@@ -324,7 +334,7 @@ const submit = () => {
     po:                 selectedPo.value,
     models,
   }, {
-    onSuccess: () => { showModal.value = false; form.reset(); selectedPo.value = ''; pcsPerModel.value = {} },
+    onSuccess: () => { showModal.value = false; form.reset(); selectedPo.value = ''; pcsPerModel.value = {}; kembaliPerModel.value = {} },
     onError:   (e) => { form.setError(e) },
   })
 }

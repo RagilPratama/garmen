@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 use App\Models\ProsesFinishing;
 use App\Models\ProsesCuci;
+use App\Models\Defect;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -66,12 +67,26 @@ class ProsesFinishingController extends Controller
             'models.*.pcs'             => 'required|integer|min:0',
         ]);
         foreach ($request->models as $m) {
-            ProsesFinishing::create([
+            $finishing = ProsesFinishing::create([
                 'po'             => $request->po,
                 'tanggal_proses' => $request->tanggal_proses,
                 'model'          => $m['model'],
                 'pcs'            => $m['pcs'],
+                'pcs_barang_jadi' => $m['pcs_barang_jadi'] ?? null,
             ]);
+
+            // Auto-catat defect jika pcs_barang_jadi < pcs
+            $pcsBj = $m['pcs_barang_jadi'] ?? null;
+            if (!is_null($pcsBj) && (int)$m['pcs'] > 0) {
+                $selisih = (int)$m['pcs'] - (int)$pcsBj;
+                if ($selisih > 0) {
+                    Defect::updateOrCreate(
+                        ['sumber' => 'finishing', 'referensi_id' => $finishing->id],
+                        ['po' => $request->po, 'model' => $m['model'], 'pcs_defect' => $selisih,
+                         'keterangan' => 'Pcs masuk: '.$m['pcs'].', barang jadi: '.(int)$pcsBj]
+                    );
+                }
+            }
         }
         return redirect()->route('proses-finishing.index')->with('message', 'Data berhasil ditambahkan.');
     }
@@ -82,10 +97,25 @@ class ProsesFinishingController extends Controller
     {
         $request->validate([
             'tanggal_selesai'  => 'nullable|date',
-            'pcs_barang_jadi'  => 'nullable|integer|min:0',
+            'pcs_barang_jadi'  => 'nullable|integer|min:1',
             'harga'            => 'nullable|integer|min:0',
         ]);
         $prosesFinishing->update($request->only(['tanggal_selesai', 'pcs_barang_jadi', 'harga']));
+
+        // Auto-catat defect jika pcs_barang_jadi < pcs
+        if ($request->filled('pcs_barang_jadi') && $prosesFinishing->pcs > 0) {
+            $selisih = $prosesFinishing->pcs - (int)$request->pcs_barang_jadi;
+            if ($selisih > 0) {
+                Defect::updateOrCreate(
+                    ['sumber' => 'finishing', 'referensi_id' => $prosesFinishing->id],
+                    ['po' => $prosesFinishing->po, 'model' => $prosesFinishing->model, 'pcs_defect' => $selisih,
+                     'keterangan' => 'Pcs masuk: '.$prosesFinishing->pcs.', barang jadi: '.(int)$request->pcs_barang_jadi]
+                );
+            } else {
+                Defect::where('sumber', 'finishing')->where('referensi_id', $prosesFinishing->id)->delete();
+            }
+        }
+
         return redirect()->route('proses-finishing.index')->with('message', 'Data berhasil diperbarui.');
     }
 

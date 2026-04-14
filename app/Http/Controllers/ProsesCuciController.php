@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\ProsesCuci;
+use App\Models\Defect;
 use App\Models\ProsesJahit;
 use App\Traits\GeneratesSuratJalan;
 use Illuminate\Http\Request;
@@ -72,16 +73,30 @@ class ProsesCuciController extends Controller
             'po'                       => 'required|string|max:100',
             'models'                   => 'required|array|min:1',
             'models.*.model'           => 'required|string|max:200',
-            'models.*.pcs_kirim'       => 'required|integer|min:0',
+            'models.*.pcs_kirim'       => 'required|integer|min:1',
         ]);
         foreach ($request->models as $m) {
-            ProsesCuci::create([
+            $cuci = ProsesCuci::create([
                 'tanggal_kirim_cuci' => $request->tanggal_kirim_cuci,
                 'no_surat_jalan'     => $request->no_surat_jalan,
                 'po'                 => $request->po,
                 'model'              => $m['model'],
                 'pcs_kirim'          => $m['pcs_kirim'],
+                'pcs_kembali'        => $m['pcs_kembali'] ?? null,
             ]);
+
+            // Auto-catat defect jika pcs_kembali < pcs_kirim
+            $pcsKembali = $m['pcs_kembali'] ?? null;
+            if (!is_null($pcsKembali) && (int)$m['pcs_kirim'] > 0) {
+                $selisih = (int)$m['pcs_kirim'] - (int)$pcsKembali;
+                if ($selisih > 0) {
+                    Defect::updateOrCreate(
+                        ['sumber' => 'cuci', 'referensi_id' => $cuci->id],
+                        ['po' => $request->po, 'model' => $m['model'], 'pcs_defect' => $selisih,
+                         'keterangan' => 'Pcs kirim: '.$m['pcs_kirim'].', kembali: '.(int)$pcsKembali]
+                    );
+                }
+            }
         }
         return redirect()->route('proses-cuci.index')->with('message', 'Data berhasil ditambahkan.');
     }
@@ -95,6 +110,21 @@ class ProsesCuciController extends Controller
             'pcs_kembali'               => 'nullable|integer|min:0',
         ]);
         $prosesCuci->update($request->only(['tanggal_kembali_dari_cuci', 'pcs_kembali']));
+
+        // Auto-catat defect jika pcs_kembali < pcs_kirim
+        if ($request->filled('pcs_kembali') && $prosesCuci->pcs_kirim > 0) {
+            $selisih = $prosesCuci->pcs_kirim - (int)$request->pcs_kembali;
+            if ($selisih > 0) {
+                Defect::updateOrCreate(
+                    ['sumber' => 'cuci', 'referensi_id' => $prosesCuci->id],
+                    ['po' => $prosesCuci->po, 'model' => $prosesCuci->model, 'pcs_defect' => $selisih,
+                     'keterangan' => 'Pcs kirim: '.$prosesCuci->pcs_kirim.', kembali: '.(int)$request->pcs_kembali]
+                );
+            } else {
+                Defect::where('sumber', 'cuci')->where('referensi_id', $prosesCuci->id)->delete();
+            }
+        }
+
         return redirect()->route('proses-cuci.index')->with('message', 'Data berhasil diperbarui.');
     }
 

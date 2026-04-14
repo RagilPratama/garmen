@@ -179,11 +179,19 @@
               <div class="flex items-center justify-between gap-3">
                 <span class="text-sm font-medium text-gray-700 flex-1">{{ m.model }}</span>
                 <span class="text-xs font-semibold bg-white border border-violet-200 text-violet-700 px-2 py-0.5 rounded-full shrink-0">{{ m.max_pcs }} pcs</span>
-                <div class="flex items-center gap-1.5 shrink-0">
-                  <label class="text-xs text-gray-500">Pcs:</label>
-                  <input v-model="pcsPerModel[m.model]" type="number" min="0"
-                    class="w-24 px-2.5 py-1.5 border border-violet-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white text-right"
-                    placeholder="0"/>
+                <div class="flex items-center gap-3 shrink-0">
+                  <div class="flex items-center gap-1">
+                    <label class="text-xs text-gray-500 whitespace-nowrap">Pcs:</label>
+                    <input v-model="pcsPerModel[m.model]" type="number" min="0"
+                      class="w-20 px-2 py-1.5 border border-violet-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white text-right"
+                      placeholder="0"/>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <label class="text-xs text-gray-400 whitespace-nowrap">Barang jadi:</label>
+                    <input v-model="jadiPerModel[m.model]" type="number" min="1"
+                      class="w-20 px-2 py-1.5 border border-violet-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-300 bg-white text-right text-violet-700"
+                      placeholder="—"/>
+                  </div>
                   <span class="text-xs text-gray-400">pcs</span>
                 </div>
               </div>
@@ -225,7 +233,7 @@
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Pcs Barang Jadi</label>
-            <input v-model="editForm.pcs_barang_jadi" type="number" min="0" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition bg-white" placeholder="0"/>
+            <input v-model="editForm.pcs_barang_jadi" type="number" min="1" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition bg-white" placeholder="0"/>
           </div>
           <div class="col-span-2">
             <label class="block text-sm font-medium text-gray-700 mb-1">Harga / pcs (Rp)</label>
@@ -292,29 +300,31 @@ const selectedPo  = ref('')
 const uniquePos   = computed(() => [...new Set(props.poOptions.map(o => o.po))])
 const modelsForPo = computed(() => selectedPo.value ? props.poOptions.filter(o => o.po === selectedPo.value) : [])
 const form        = useForm({ tanggal_proses: '' })
-const pcsPerModel = ref({})
+const pcsPerModel  = ref({})
+const jadiPerModel = ref({})
 const totalPcs    = computed(() =>
   Object.values(pcsPerModel.value).reduce((sum, v) => sum + (parseInt(v) || 0), 0)
 )
 const onPoChange = () => {
-  pcsPerModel.value = {}
-  modelsForPo.value.forEach(m => { pcsPerModel.value[m.model] = '' })
+  pcsPerModel.value = {}; jadiPerModel.value = {}
+  modelsForPo.value.forEach(m => { pcsPerModel.value[m.model] = ''; jadiPerModel.value[m.model] = '' })
 }
 const openCreate = () => {
-  selectedPo.value = ''; pcsPerModel.value = {}
+  selectedPo.value = ''; pcsPerModel.value = {}; jadiPerModel.value = {}
   form.reset(); form.clearErrors(); showModal.value = true
 }
 const submit = () => {
   const models = modelsForPo.value.map(m => ({
-    model: m.model,
-    pcs:   parseInt(pcsPerModel.value[m.model]) || 0,
+    model:           m.model,
+    pcs:             parseInt(pcsPerModel.value[m.model]) || 0,
+    pcs_barang_jadi: parseInt(jadiPerModel.value[m.model]) || null,
   }))
   router.post('/proses-finishing', {
     po:             selectedPo.value,
     tanggal_proses: form.tanggal_proses,
     models,
   }, {
-    onSuccess: () => { showModal.value = false; form.reset(); selectedPo.value = ''; pcsPerModel.value = {} },
+    onSuccess: () => { showModal.value = false; form.reset(); selectedPo.value = ''; pcsPerModel.value = {}; jadiPerModel.value = {} },
     onError:   (e) => { form.setError(e) },
   })
 }

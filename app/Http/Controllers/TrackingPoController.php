@@ -7,22 +7,16 @@ use App\Models\BahanProsesPotong;
 use App\Models\ProsesJahit;
 use App\Models\ProsesCuci;
 use App\Models\ProsesFinishing;
-use App\Models\BarangMasukKantor;
-use App\Models\BarangKirimToko;
-use App\Models\JualGudang;
 
 class TrackingPoController extends Controller
 {
-    private array $stageOrder = ['potong', 'jahit', 'cuci', 'finishing', 'kantor', 'toko', 'jual'];
+    private array $stageOrder = ['potong', 'jahit', 'cuci', 'finishing'];
 
     private array $stageLabels = [
         'potong'    => 'Proses Potong',
         'jahit'     => 'Proses Jahit',
         'cuci'      => 'Proses Cuci',
         'finishing' => 'Finishing',
-        'kantor'    => 'Masuk Kantor',
-        'toko'      => 'Kirim Toko',
-        'jual'      => 'Jual Gudang',
     ];
 
     public function index()
@@ -35,9 +29,6 @@ class TrackingPoController extends Controller
             ProsesJahit::class,
             ProsesCuci::class,
             ProsesFinishing::class,
-            BarangMasukKantor::class,
-            BarangKirimToko::class,
-            JualGudang::class,
         ];
 
         foreach ($models as $model) {
@@ -61,15 +52,9 @@ class TrackingPoController extends Controller
             ->groupBy(fn($r) => $r->po . '|||' . $r->model);
         $finishingData = ProsesFinishing::select('po', 'model', 'tanggal_selesai')->get()
             ->groupBy(fn($r) => $r->po . '|||' . $r->model);
-        $kantorData    = BarangMasukKantor::select('po', 'model')->get()
-            ->groupBy(fn($r) => $r->po . '|||' . $r->model);
-        $tokoData      = BarangKirimToko::select('po', 'model')->get()
-            ->groupBy(fn($r) => $r->po . '|||' . $r->model);
-        $jualData      = JualGudang::select('po', 'model', 'status')->get()
-            ->groupBy(fn($r) => $r->po . '|||' . $r->model);
 
         $result = $allCombos->values()->map(function ($combo) use (
-            $potongData, $jahitData, $cuciData, $finishingData, $kantorData, $tokoData, $jualData
+            $potongData, $jahitData, $cuciData, $finishingData
         ) {
             $key = $combo['po'] . '|||' . $combo['model'];
 
@@ -77,9 +62,6 @@ class TrackingPoController extends Controller
             $jahit     = $jahitData->get($key);
             $cuci      = $cuciData->get($key);
             $finishing = $finishingData->get($key);
-            $kantor    = $kantorData->get($key);
-            $toko      = $tokoData->get($key);
-            $jual      = $jualData->get($key);
 
             // done = completed, active = in progress, pending = not started yet
             $stages = [
@@ -87,16 +69,13 @@ class TrackingPoController extends Controller
                 'jahit'     => $jahit     ? ($jahit->filter(fn($r) => $r->tanggal_selesai_jahit !== null)->isNotEmpty() ? 'done' : 'active') : 'pending',
                 'cuci'      => $cuci      ? ($cuci->filter(fn($r) => $r->tanggal_kembali_dari_cuci !== null)->isNotEmpty() ? 'done' : 'active') : 'pending',
                 'finishing' => $finishing ? ($finishing->filter(fn($r) => $r->tanggal_selesai !== null)->isNotEmpty() ? 'done' : 'active') : 'pending',
-                'kantor'    => $kantor ? 'done' : 'pending',
-                'toko'      => $toko   ? 'done' : 'pending',
-                'jual'      => $jual   ? ($jual->filter(fn($r) => $r->status === 'lunas')->isNotEmpty() ? 'done' : 'active') : 'pending',
             ];
 
             // Determine current stage (last active, or next after last done)
             $currentStage = 'pending';
             $currentLabel = 'Belum Mulai';
 
-            if ($stages['jual'] === 'done') {
+            if ($stages['finishing'] === 'done') {
                 $currentStage = 'selesai';
                 $currentLabel = 'Selesai';
             } else {

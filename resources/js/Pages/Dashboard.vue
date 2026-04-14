@@ -67,7 +67,7 @@
 
       <!-- Pipeline Produksi -->
       <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h3 class="font-semibold text-gray-800 mb-4">Pipeline Produksi <span class="text-xs font-normal text-gray-400 ml-1">(sedang berjalan)</span></h3>
+        <h3 class="font-semibold text-gray-800 mb-4">Pipeline Produksi <span class="text-xs font-normal text-gray-400 ml-1">(total PO per stage)</span></h3>
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div v-for="stage in pipelineStages" :key="stage.key" class="rounded-xl border p-4 flex flex-col items-center gap-2" :class="stage.border">
             <div class="w-10 h-10 rounded-full flex items-center justify-center" :class="stage.bg">
@@ -75,7 +75,7 @@
             </div>
             <p class="text-xs text-center font-medium text-gray-600">{{ stage.label }}</p>
             <p class="text-xs text-center" :class="(pipeline[stage.key] ?? 0) > 0 ? 'text-amber-500 font-semibold' : 'text-gray-300'">
-              {{ (pipeline[stage.key] ?? 0) > 0 ? 'Sedang proses' : 'Tidak ada' }}
+              {{ (pipeline[stage.key] ?? 0) > 0 ? `${pipeline[stage.key]} PO` : 'Belum ada' }}
             </p>
           </div>
         </div>

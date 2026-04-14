@@ -167,16 +167,13 @@ const props = defineProps({
 const search      = ref('')
 const filterStage = ref('')
 
-const stageOrder = ['potong', 'jahit', 'cuci', 'finishing', 'kantor', 'toko', 'jual']
+const stageOrder = ['potong', 'jahit', 'cuci', 'finishing']
 
 const stageMeta = {
   potong:    { label: 'Proses Potong',  shortLabel: 'Potong',    textColor: 'text-amber-600',   borderColor: 'border-amber-200',   activeBg: 'bg-amber-50',   badgeClass: 'bg-amber-100 text-amber-700' },
   jahit:     { label: 'Proses Jahit',   shortLabel: 'Jahit',     textColor: 'text-orange-600',  borderColor: 'border-orange-200',  activeBg: 'bg-orange-50',  badgeClass: 'bg-orange-100 text-orange-700' },
   cuci:      { label: 'Proses Cuci',    shortLabel: 'Cuci',      textColor: 'text-cyan-600',    borderColor: 'border-cyan-200',    activeBg: 'bg-cyan-50',    badgeClass: 'bg-cyan-100 text-cyan-700' },
   finishing: { label: 'Finishing',      shortLabel: 'Finishing', textColor: 'text-purple-600',  borderColor: 'border-purple-200',  activeBg: 'bg-purple-50',  badgeClass: 'bg-purple-100 text-purple-700' },
-  kantor:    { label: 'Masuk Kantor',   shortLabel: 'Kantor',    textColor: 'text-indigo-600',  borderColor: 'border-indigo-200',  activeBg: 'bg-indigo-50',  badgeClass: 'bg-indigo-100 text-indigo-700' },
-  toko:      { label: 'Kirim Toko',     shortLabel: 'Ke Toko',   textColor: 'text-blue-600',    borderColor: 'border-blue-200',    activeBg: 'bg-blue-50',    badgeClass: 'bg-blue-100 text-blue-700' },
-  jual:      { label: 'Jual Gudang',    shortLabel: 'Jual',      textColor: 'text-green-600',   borderColor: 'border-green-200',   activeBg: 'bg-green-50',   badgeClass: 'bg-green-100 text-green-700' },
   selesai:   { label: 'Selesai',        shortLabel: 'Selesai',   textColor: 'text-emerald-600', borderColor: 'border-emerald-200', activeBg: 'bg-emerald-50', badgeClass: 'bg-emerald-100 text-emerald-700' },
   pending:   { label: 'Belum Mulai',    shortLabel: 'Blm Mulai', textColor: 'text-gray-400',    borderColor: 'border-gray-200',    activeBg: 'bg-gray-50',    badgeClass: 'bg-gray-100 text-gray-500' },
 }
