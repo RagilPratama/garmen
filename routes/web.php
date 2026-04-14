@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('rekening', RekeningController::class)->except(['show', 'create', 'edit']);
     Route::resource('bahan-masuk', BahanMasukController::class)->except(['show']);
     Route::post('/bahan-masuk/{noNota}/pembayaran', [BahanMasukPembayaranController::class, 'store'])->name('bahan-masuk.pembayaran.store');
+    Route::delete('/bahan-masuk/pembayaran/{pembayaran}', [BahanMasukPembayaranController::class, 'destroy'])->name('bahan-masuk.pembayaran.destroy');
     Route::resource('bahan-keluar', BahanKeluarController::class)->except(['show']);
     Route::post('/bahan-proses-potong/update-model', [BahanProsesPotongController::class, 'updateModel'])->name('bahan-proses-potong.update-model');
     Route::resource('bahan-proses-potong', BahanProsesPotongController::class)->except(['show']);

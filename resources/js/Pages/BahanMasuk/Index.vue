@@ -360,6 +360,7 @@
                   <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">Metode</th>
                   <th class="px-3 py-2 text-right text-xs font-semibold text-gray-500">Jumlah</th>
                   <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">Keterangan</th>
+                  <th class="px-3 py-2 w-8"></th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100">
@@ -376,6 +377,12 @@
                   </td>
                   <td class="px-3 py-2 text-right font-medium text-gray-800">{{ formatRupiah(p.jumlah) }}</td>
                   <td class="px-3 py-2 text-gray-500 text-xs">{{ p.keterangan ?? '—' }}</td>
+                  <td class="px-3 py-2 text-center">
+                    <button @click="deletePembayaran(p.id)" type="button"
+                      class="text-red-400 hover:text-red-600 transition" title="Hapus riwayat">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -418,8 +425,13 @@
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah <span class="text-red-500">*</span></label>
-            <input v-model="payForm.jumlah" type="number" min="1" required placeholder="0" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white"/>
+            <input v-model="payForm.jumlah" type="number" min="1"
+              :max="selectedNota ? (selectedNota.sisa_tagihan ?? selectedNota.grand_total) : undefined"
+              required placeholder="0" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white"
+              :class="payForm.jumlah && selectedNota && Number(payForm.jumlah) > (selectedNota.sisa_tagihan ?? selectedNota.grand_total) ? 'border-red-400 ring-1 ring-red-400' : ''"/>
             <p v-if="payForm.errors.jumlah" class="mt-1 text-xs text-red-500">{{ payForm.errors.jumlah }}</p>
+            <p v-else-if="payForm.jumlah && selectedNota && Number(payForm.jumlah) > (selectedNota.sisa_tagihan ?? selectedNota.grand_total)"
+              class="mt-1 text-xs text-red-500">Melebihi sisa tagihan ({{ formatRupiah(selectedNota.sisa_tagihan ?? selectedNota.grand_total) }})</p>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Metode <span class="text-red-500">*</span></label>
@@ -450,7 +462,7 @@
           </div>
           <div class="flex justify-end gap-3 pt-2 border-t border-gray-100">
             <button type="button" @click="showPayModal = false" class="px-5 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Batal</button>
-            <button type="submit" :disabled="payForm.processing" class="px-5 py-2.5 text-sm text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors disabled:opacity-60 flex items-center gap-2">
+            <button type="submit" :disabled="payForm.processing || (payForm.jumlah && selectedNota && Number(payForm.jumlah) > (selectedNota.sisa_tagihan ?? selectedNota.grand_total))" class="px-5 py-2.5 text-sm text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors disabled:opacity-60 flex items-center gap-2">
               <svg v-if="payForm.processing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
               Simpan Pembayaran
             </button>
@@ -464,7 +476,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { useForm } from '@inertiajs/vue3'
+import { useForm, router } from '@inertiajs/vue3'
 import DataTable from '@/Components/DataTable.vue'
 import Modal from '@/Components/Modal.vue'
 import SearchableSelect from '@/Components/SearchableSelect.vue'
@@ -776,6 +788,17 @@ const submitPay = () => {
   payForm.post(`/bahan-masuk/${noNota}/pembayaran`, {
     onSuccess: () => {
       showPayModal.value = false
+      const updated = props.data.data.find(n => n.no_nota === noNota)
+      if (updated) selectedNota.value = updated
+    },
+  })
+}
+
+const deletePembayaran = (id) => {
+  if (!confirm('Hapus riwayat pembayaran ini?')) return
+  router.delete(`/bahan-masuk/pembayaran/${id}`, {
+    onSuccess: () => {
+      const noNota = selectedNota.value?.no_nota
       const updated = props.data.data.find(n => n.no_nota === noNota)
       if (updated) selectedNota.value = updated
     },

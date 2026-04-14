@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 use App\Models\BahanProsesPotong;
 use App\Models\BahanKeluar;
 use App\Models\MasterModel;
+use App\Models\StokBahan;
 use App\Traits\GeneratesSuratJalan;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -102,6 +103,19 @@ class BahanProsesPotongController extends Controller
         }
 
         BahanProsesPotong::insert($rows);
+
+        // Kurangi stok bahan sesuai yard yang digunakan
+        foreach ($request->models as $modelItem) {
+            foreach ($modelItem['bahans'] as $bahan) {
+                $stok = StokBahan::where('kode_bahan', $bahan['kode_bahan'])->first();
+                if ($stok) {
+                    $stok->total_keluar += $bahan['yard'];
+                    $stok->sisa_stok   -= $bahan['yard'];
+                    $stok->save();
+                }
+            }
+        }
+
         return redirect()->route('bahan-proses-potong.index')->with('message', 'Data berhasil ditambahkan.');
     }
     public function edit(BahanProsesPotong $bahanProsesPotong) { return Inertia::render('BahanProsesPotong/Form', ['item' => $bahanProsesPotong]); }
@@ -110,7 +124,17 @@ class BahanProsesPotongController extends Controller
         $bahanProsesPotong->update($request->only(['tanggal_potong','yard','po','model','kode_bahan','hasil_potongan']));
         return redirect()->route('bahan-proses-potong.index')->with('message','Data berhasil diperbarui.');
     }
-    public function destroy(BahanProsesPotong $bahanProsesPotong) { $bahanProsesPotong->delete(); return redirect()->route('bahan-proses-potong.index')->with('message','Data berhasil dihapus.'); }
+    public function destroy(BahanProsesPotong $bahanProsesPotong) {
+        // Kembalikan stok ketika baris dihapus
+        $stok = StokBahan::where('kode_bahan', $bahanProsesPotong->kode_bahan)->first();
+        if ($stok) {
+            $stok->total_keluar -= $bahanProsesPotong->yard;
+            $stok->sisa_stok   += $bahanProsesPotong->yard;
+            $stok->save();
+        }
+        $bahanProsesPotong->delete();
+        return redirect()->route('bahan-proses-potong.index')->with('message','Data berhasil dihapus.');
+    }
 
     public function updateModel(Request $request)
     {
@@ -123,6 +147,19 @@ class BahanProsesPotongController extends Controller
             'bahans.*.kode_bahan'      => 'required|string|max:100',
             'bahans.*.yard'            => 'required|numeric|min:0',
         ]);
+
+        // Kembalikan stok dari baris lama sebelum dihapus
+        $oldRows = BahanProsesPotong::where('po', $request->po)
+            ->where('model', $request->model)
+            ->get();
+        foreach ($oldRows as $old) {
+            $stok = StokBahan::where('kode_bahan', $old->kode_bahan)->first();
+            if ($stok) {
+                $stok->total_keluar -= $old->yard;
+                $stok->sisa_stok   += $old->yard;
+                $stok->save();
+            }
+        }
 
         // Delete all existing rows for this po+model combination
         BahanProsesPotong::where('po', $request->po)
@@ -145,6 +182,17 @@ class BahanProsesPotongController extends Controller
         }
 
         BahanProsesPotong::insert($rows);
+
+        // Deduct stok dari baris baru
+        foreach ($request->bahans as $bahan) {
+            $stok = StokBahan::where('kode_bahan', $bahan['kode_bahan'])->first();
+            if ($stok) {
+                $stok->total_keluar += $bahan['yard'];
+                $stok->sisa_stok   -= $bahan['yard'];
+                $stok->save();
+            }
+        }
+
         return redirect()->route('bahan-proses-potong.index')->with('message', 'Data berhasil diperbarui.');
     }
 }
