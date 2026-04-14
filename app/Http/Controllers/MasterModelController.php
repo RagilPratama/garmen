@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MasterModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class MasterModelController extends Controller
@@ -35,7 +36,29 @@ class MasterModelController extends Controller
             'nama_model'  => 'required|string|max:200|unique:master_models,nama_model,' . $masterModel->id,
             'keterangan'  => 'nullable|string|max:500',
         ]);
+
+        $oldName = $masterModel->nama_model;
+        $newName = $validated['nama_model'];
+
         $masterModel->update($validated);
+
+        // Cascade rename ke semua tabel transaksi yang menyimpan model sebagai string
+        if ($oldName !== $newName) {
+            $tables = [
+                'bahan_proses_potong',
+                'proses_jahit',
+                'proses_cuci',
+                'proses_finishing',
+                'barang_masuk_kantor',
+                'barang_kirim_toko',
+                'proses_jual',
+                'jual_gudang',
+            ];
+            foreach ($tables as $table) {
+                DB::table($table)->where('model', $oldName)->update(['model' => $newName]);
+            }
+        }
+
         return redirect()->route('master-model.index')->with('message', 'Model berhasil diperbarui.');
     }
 
