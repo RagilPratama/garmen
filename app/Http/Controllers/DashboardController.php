@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Inertia\Inertia;
 use App\Models\BahanMasuk;
 use App\Models\BahanKeluar;
+use App\Models\BahanMasukPembayaran;
 use App\Models\StokBahan;
 use App\Models\BahanProsesPotong;
 use App\Models\ProsesJahit;
@@ -32,6 +33,25 @@ class DashboardController extends Controller
         $stokBahan = StokBahan::where('sisa_stok', '>', 0)->count();
         $totalSisaBahan = StokBahan::sum('sisa_stok');
 
+        // Hutang bahan masuk — satu query dengan LEFT JOIN subquery, tanpa N+1
+        $hutangRow = \DB::selectOne("
+            SELECT
+                COALESCE(SUM(bm.total), 0) - COALESCE(SUM(bp.dibayar), 0) AS sisa_hutang,
+                COUNT(CASE WHEN COALESCE(bp.dibayar, 0) < bm.grand_total THEN 1 END) AS nota_belum_lunas
+            FROM (
+                SELECT no_nota, SUM(total) AS grand_total, SUM(total) AS total
+                FROM bahan_masuk
+                GROUP BY no_nota
+            ) bm
+            LEFT JOIN (
+                SELECT no_nota, SUM(jumlah) AS dibayar
+                FROM bahan_masuk_pembayaran
+                GROUP BY no_nota
+            ) bp ON bp.no_nota = bm.no_nota
+        ");
+        $sisaHutang           = max(0, (float) ($hutangRow->sisa_hutang ?? 0));
+        $jumlahNotaBelumLunas = (int) ($hutangRow->nota_belum_lunas ?? 0);
+
         // Stok kantor: masuk kantor - jual gudang per model
         $masukKantor = BarangMasukKantor::selectRaw('model, SUM(pcs_barang_jadi) as total')->groupBy('model')->get()->keyBy('model');
         $jualGudang  = JualGudang::selectRaw('model, SUM(pcs) as total')->whereIn('status', ['lunas', 'pending'])->groupBy('model')->get()->keyBy('model');
@@ -42,23 +62,17 @@ class DashboardController extends Controller
         $jualToko   = ProsesJual::selectRaw('model, SUM(pcs) as total')->whereIn('status', ['lunas', 'pending'])->groupBy('model')->get()->keyBy('model');
         $stokToko   = $kirimToko->sum(fn($r) => max(0, (int)$r->total - (int)($jualToko->get($r->model)?->total ?? 0)));
 
-        // Pipeline produksi — replikasi logika TrackingPo (current_stage per PO+model, exclude selesai)
-        $trackingCombos = collect();
-        foreach ([BahanProsesPotong::class, ProsesJahit::class, ProsesCuci::class, ProsesFinishing::class] as $m) {
-            $m::select('po', 'model')->distinct()->whereNotNull('po')->where('po', '!=', '')->get()
-                ->each(function ($row) use (&$trackingCombos) {
-                    $key = $row->po . '|||' . $row->model;
-                    if (!$trackingCombos->has($key)) $trackingCombos->put($key, ['po' => $row->po, 'model' => $row->model]);
-                });
-        }
+        // Pipeline produksi — load sekali, derive combos dari data yang sudah ada
         $tpotong    = BahanProsesPotong::select('po', 'model', 'hasil_potongan')->get()->groupBy(fn($r) => $r->po.'|||'.$r->model);
         $tjahit     = ProsesJahit::select('po', 'model', 'tanggal_selesai_jahit')->get()->groupBy(fn($r) => $r->po.'|||'.$r->model);
         $tcuci      = ProsesCuci::select('po', 'model', 'tanggal_kembali_dari_cuci')->get()->groupBy(fn($r) => $r->po.'|||'.$r->model);
         $tfinishing = ProsesFinishing::select('po', 'model', 'tanggal_selesai')->get()->groupBy(fn($r) => $r->po.'|||'.$r->model);
+
+        $trackingKeys = $tpotong->keys()->concat($tjahit->keys())->concat($tcuci->keys())->concat($tfinishing->keys())->unique();
+
         $stageOrder = ['potong', 'jahit', 'cuci', 'finishing'];
         $pipeline   = ['potong' => 0, 'jahit' => 0, 'cuci' => 0, 'finishing' => 0];
-        foreach ($trackingCombos->values() as $combo) {
-            $key = $combo['po'].'|||'.$combo['model'];
+        foreach ($trackingKeys as $key) {
             $p = $tpotong->get($key); $j = $tjahit->get($key); $c = $tcuci->get($key); $f = $tfinishing->get($key);
             $stages = [
                 'potong'    => $p ? ($p->filter(fn($r) => $r->hasil_potongan > 0)->isNotEmpty() ? 'done' : 'active') : 'pending',
@@ -109,6 +123,8 @@ class DashboardController extends Controller
             ->sortByDesc('tanggal_nota')->take(8)->values();
 
         return Inertia::render('Dashboard', [
+            'sisaHutang'          => (float) $sisaHutang,
+            'jumlahNotaBelumLunas' => (int) $jumlahNotaBelumLunas,
             'omsetTokoTotal'      => (float) $omsetTokoTotal,
             'omsetGudangTotal'    => (float) $omsetGudangTotal,
             'omsetTokoBulanIni'   => (float) $omsetTokoBulanIni,
