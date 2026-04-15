@@ -155,20 +155,13 @@
     </Modal>
 
     <!-- ── DELETE CONFIRM ── -->
-    <div v-if="deleteId" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="deleteId = null"></div>
-      <div class="relative bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full">
-        <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-          <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
-        </div>
-        <h3 class="text-base font-semibold text-gray-800 text-center mb-1">Hapus Data?</h3>
-        <p class="text-sm text-gray-500 text-center mb-6">Tindakan ini tidak dapat dibatalkan.</p>
-        <div class="flex gap-3">
-          <button @click="deleteId = null" class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">Batal</button>
-          <button @click="doDelete" class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors">Ya, Hapus</button>
-        </div>
-      </div>
-    </div>
+    <ConfirmDialog
+      v-model="showConfirm"
+      title="Hapus Data?"
+      message="Tindakan ini tidak dapat dibatalkan."
+      :loading="deleteLoading"
+      @confirm="doDelete"
+    />
 
     <!-- ── CREATE MODAL ── -->
     <Modal v-model="showModal" title="Tambah Proses Potong" size="2xl">
@@ -306,6 +299,7 @@ import { useForm, router, Link, usePage } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Modal from '@/Components/Modal.vue'
 import SearchableSelect from '@/Components/SearchableSelect.vue'
+import ConfirmDialog from '@/Components/ConfirmDialog.vue'
 
 const props = defineProps({
   data: Object,
@@ -339,15 +333,20 @@ const detailGroup = ref(null)
 const openDetail = (group) => { detailGroup.value = group; showDetail.value = true }
 
 // ── Delete ──
-const deleteId = ref(null)
-const confirmDelete = (id) => { deleteId.value = id }
+const deleteId      = ref(null)
+const showConfirm   = ref(false)
+const deleteLoading = ref(false)
+const confirmDelete = (id) => { deleteId.value = id; showConfirm.value = true }
 const doDelete = () => {
+  deleteLoading.value = true
   router.delete(`/bahan-proses-potong/${deleteId.value}`, {
     onSuccess: () => {
-      deleteId.value = null
-      // refresh detail group if still open
-      showDetail.value = false
-    }
+      deleteId.value      = null
+      showConfirm.value   = false
+      deleteLoading.value = false
+      showDetail.value    = false
+    },
+    onError: () => { deleteLoading.value = false },
   })
 }
 

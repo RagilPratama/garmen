@@ -64,6 +64,24 @@ class MasterModelController extends Controller
 
     public function destroy(MasterModel $masterModel)
     {
+        $name   = $masterModel->nama_model;
+        $tables = [
+            'bahan_proses_potong',
+            'proses_jahit',
+            'proses_cuci',
+            'proses_finishing',
+            'barang_masuk_kantor',
+            'barang_kirim_toko',
+            'proses_jual',
+            'jual_gudang',
+        ];
+
+        foreach ($tables as $table) {
+            if (DB::table($table)->where('model', $name)->exists()) {
+                return back()->with('error', "Model \"$name\" tidak dapat dihapus karena masih digunakan dalam data transaksi.");
+            }
+        }
+
         $masterModel->delete();
         return redirect()->route('master-model.index')->with('message', 'Model berhasil dihapus.');
     }

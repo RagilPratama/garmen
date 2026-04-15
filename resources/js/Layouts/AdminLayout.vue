@@ -80,13 +80,21 @@
           </svg>
         </button>
         <h1 class="flex-1 text-lg font-semibold text-gray-800">{{ title }}</h1>
-        <!-- Flash message -->
+        <!-- Flash success -->
         <div v-if="$page.props.flash?.message"
           class="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 text-sm rounded-lg border border-green-200">
-          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
           </svg>
           {{ $page.props.flash.message }}
+        </div>
+        <!-- Flash error -->
+        <div v-if="$page.props.flash?.error"
+          class="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-700 text-sm rounded-lg border border-red-200 max-w-sm">
+          <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+          </svg>
+          <span class="line-clamp-2">{{ $page.props.flash.error }}</span>
         </div>
         <div class="flex items-center gap-2">
           <span class="text-sm text-gray-500">{{ new Date().toLocaleDateString('id-ID', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) }}</span>

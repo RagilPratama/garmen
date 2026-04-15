@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Supplier;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class SupplierController extends Controller
@@ -44,6 +45,10 @@ class SupplierController extends Controller
 
     public function destroy(Supplier $supplier)
     {
+        if (DB::table('bahan_masuk')->where('supplier', $supplier->nama)->exists()) {
+            return back()->with('error', "Supplier \"{$supplier->nama}\" tidak dapat dihapus karena masih digunakan dalam data transaksi.");
+        }
+
         $supplier->delete();
         return redirect()->route('supplier.index')->with('message', 'Supplier berhasil dihapus.');
     }

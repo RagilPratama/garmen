@@ -245,6 +245,14 @@
         </div>
       </form>
     </Modal>
+
+    <ConfirmDialog
+      v-model="showConfirm"
+      title="Hapus Data?"
+      message="Tindakan ini tidak dapat dibatalkan."
+      :loading="deleteLoading"
+      @confirm="doDelete"
+    />
   </AdminLayout>
 </template>
 
@@ -253,6 +261,7 @@ import { ref, computed, watch } from 'vue'
 import { useForm, router, Link } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Modal from '@/Components/Modal.vue'
+import ConfirmDialog from '@/Components/ConfirmDialog.vue'
 
 const props = defineProps({
   data:           Object,
@@ -359,10 +368,20 @@ const submitEdit = () => {
 }
 
 // Delete
-const confirmDelete = (id) => {
-  if (!confirm('Hapus data ini?')) return
-  router.delete(`/barang-masuk-kantor/${id}`, {
-    onSuccess: () => { showDetail.value = false },
+const deleteId      = ref(null)
+const showConfirm   = ref(false)
+const deleteLoading = ref(false)
+const confirmDelete = (id) => { deleteId.value = id; showConfirm.value = true }
+const doDelete = () => {
+  deleteLoading.value = true
+  router.delete(`/barang-masuk-kantor/${deleteId.value}`, {
+    onSuccess: () => {
+      deleteId.value      = null
+      showConfirm.value   = false
+      deleteLoading.value = false
+      showDetail.value    = false
+    },
+    onError: () => { deleteLoading.value = false },
   })
 }
 </script>

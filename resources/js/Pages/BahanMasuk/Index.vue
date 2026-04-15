@@ -472,6 +472,14 @@
 
     </template>
   </DataTable>
+
+  <ConfirmDialog
+    v-model="showPayConfirm"
+    title="Hapus Pembayaran?"
+    message="Riwayat pembayaran ini akan dihapus dan tidak dapat dikembalikan."
+    :loading="deletePayLoading"
+    @confirm="doDeletePembayaran"
+  />
 </template>
 
 <script setup>
@@ -480,6 +488,7 @@ import { useForm, router } from '@inertiajs/vue3'
 import DataTable from '@/Components/DataTable.vue'
 import Modal from '@/Components/Modal.vue'
 import SearchableSelect from '@/Components/SearchableSelect.vue'
+import ConfirmDialog from '@/Components/ConfirmDialog.vue'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
@@ -794,14 +803,26 @@ const submitPay = () => {
   })
 }
 
+const deletePayLoading = ref(false)
+const deletePaymentId  = ref(null)
+const showPayConfirm   = ref(false)
+
 const deletePembayaran = (id) => {
-  if (!confirm('Hapus riwayat pembayaran ini?')) return
-  router.delete(`/bahan-masuk/pembayaran/${id}`, {
+  deletePaymentId.value = id
+  showPayConfirm.value  = true
+}
+const doDeletePembayaran = () => {
+  deletePayLoading.value = true
+  router.delete(`/bahan-masuk/pembayaran/${deletePaymentId.value}`, {
     onSuccess: () => {
       const noNota = selectedNota.value?.no_nota
       const updated = props.data.data.find(n => n.no_nota === noNota)
       if (updated) selectedNota.value = updated
+      deletePaymentId.value  = null
+      showPayConfirm.value   = false
+      deletePayLoading.value = false
     },
+    onError: () => { deletePayLoading.value = false },
   })
 }
 </script>
