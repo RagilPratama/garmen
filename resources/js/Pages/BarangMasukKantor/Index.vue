@@ -152,48 +152,14 @@
     </Modal>
 
     <!-- CREATE MODAL -->
-    <Modal v-model="showModal" title="Tambah Barang Masuk Kantor" size="lg">
+    <Modal v-model="showModal" title="Tambah Barang Masuk Kantor" size="xl">
       <div v-if="!poOptions.length" class="mb-4 flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         Belum ada data dari <strong class="ml-1">Proses Finishing</strong>. Lengkapi Pcs Barang Jadi terlebih dahulu.
       </div>
       <form @submit.prevent="submit" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Nomor PO <span class="text-red-500">*</span></label>
-          <SearchableSelect v-model="selectedPo" :options="uniquePos.map(p => ({ value: p, label: p }))"
-            placeholder="-- Pilih Nomor PO --" @update:modelValue="onPoChange"/>
-        </div>
-
-        <div v-if="selectedPo && modelsForPo.length" class="rounded-lg border border-teal-100 bg-teal-50/40 overflow-hidden">
-          <div class="px-3 py-2 bg-teal-100/70 border-b border-teal-100 flex items-center justify-between">
-            <div class="flex items-center gap-1.5">
-              <svg class="w-3.5 h-3.5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-              <span class="text-xs font-semibold text-teal-700">Model dari Finishing PO {{ selectedPo }}</span>
-            </div>
-            <span class="text-xs text-teal-600">{{ modelsForPo.length }} model</span>
-          </div>
-          <div class="divide-y divide-teal-100">
-            <div v-for="m in modelsForPo" :key="m.model" class="px-3 py-2.5">
-              <div class="flex items-center justify-between gap-3">
-                <span class="text-sm font-medium text-gray-700 flex-1">{{ m.model }}</span>
-                <span class="text-xs font-semibold bg-white border border-teal-200 text-teal-700 px-2 py-0.5 rounded-full shrink-0">{{ m.max_pcs }} pcs</span>
-                <div class="flex items-center gap-1 shrink-0">
-                  <label class="text-xs text-gray-500 whitespace-nowrap">Pcs barang jadi:</label>
-                  <input v-model="pcsPerModel[m.model]" type="number" min="1" required
-                    class="w-24 px-2 py-1.5 border border-teal-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white text-right"
-                    placeholder="0"/>
-                  <span class="text-xs text-gray-400">pcs</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="px-3 py-2 bg-teal-50 border-t border-teal-100 flex items-center justify-between">
-            <span class="text-xs text-gray-500">Total pcs</span>
-            <span class="text-sm font-bold text-teal-700">{{ totalPcs }} pcs</span>
-          </div>
-        </div>
-
-        <div v-if="selectedPo" class="grid grid-cols-2 gap-4">
+        <!-- SJ + Date -->
+        <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">No. Surat Jalan</label>
             <div class="relative">
@@ -210,9 +176,46 @@
           </div>
         </div>
 
+        <!-- Stock list -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-sm font-medium text-gray-700">Pilih Stok Finishing <span class="text-red-500">*</span></label>
+            <span v-if="checkedItems.size > 0" class="text-xs font-semibold text-teal-600 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full">
+              {{ checkedItems.size }} item · {{ totalPcs }} pcs
+            </span>
+          </div>
+          <!-- Search in modal -->
+          <div class="relative mb-2">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+            <input v-model="modalSearch" type="text" placeholder="Filter PO / model..."
+              class="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent transition"/>
+          </div>
+          <!-- Item list -->
+          <div class="max-h-72 overflow-y-auto border border-gray-200 rounded-xl divide-y divide-gray-100">
+            <label v-for="item in filteredOptions" :key="itemKey(item)"
+              class="flex items-center gap-3 px-3 py-2.5 hover:bg-teal-50/50 cursor-pointer transition-colors"
+              :class="checkedItems.has(itemKey(item)) ? 'bg-teal-50/60' : ''">
+              <input type="checkbox" :checked="checkedItems.has(itemKey(item))" @change="toggleItem(item, $event)"
+                class="w-4 h-4 rounded border-gray-300 text-teal-500 focus:ring-teal-400 shrink-0"/>
+              <span class="text-xs font-mono bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded shrink-0">{{ item.po }}</span>
+              <span class="text-sm font-medium text-gray-700 flex-1 min-w-0 truncate">{{ item.model }}</span>
+              <span class="text-xs text-gray-400 shrink-0">stok: {{ item.max_pcs }} pcs</span>
+              <template v-if="checkedItems.has(itemKey(item))">
+                <input v-model="pcsPerItem[itemKey(item)]" type="number" min="1"
+                  @click.prevent class="w-20 px-2 py-1.5 border border-teal-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white text-right shrink-0"
+                  placeholder="pcs" @click.stop/>
+                <span class="text-xs text-gray-400 shrink-0">pcs</span>
+              </template>
+            </label>
+            <div v-if="!filteredOptions.length" class="px-4 py-8 text-center text-sm text-gray-400">
+              Tidak ada stok finishing yang tersedia
+            </div>
+          </div>
+        </div>
+
         <div class="flex justify-end gap-3 pt-2 border-t border-gray-100">
           <button type="button" @click="showModal = false" class="px-5 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">Batal</button>
-          <button type="submit" :disabled="processing || !selectedPo" class="px-5 py-2.5 text-sm text-white bg-teal-500 hover:bg-teal-600 rounded-lg disabled:opacity-60 flex items-center gap-2">
+          <button type="submit" :disabled="processing || !checkedItems.size" class="px-5 py-2.5 text-sm text-white bg-teal-500 hover:bg-teal-600 rounded-lg disabled:opacity-60 flex items-center gap-2">
             <svg v-if="processing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
             Tambah Data
           </button>
@@ -250,7 +253,6 @@ import { ref, computed, watch } from 'vue'
 import { useForm, router, Link } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Modal from '@/Components/Modal.vue'
-import SearchableSelect from '@/Components/SearchableSelect.vue'
 
 const props = defineProps({
   data:           Object,
@@ -283,37 +285,50 @@ const openDetail  = (group) => { detailGroup.value = group; showDetail.value = t
 
 // Create modal
 const showModal    = ref(false)
-const selectedPo   = ref('')
 const noSuratJalan = ref('')
 const tanggalKirim = ref('')
-const pcsPerModel  = ref({})
+const checkedItems = ref(new Set())
+const pcsPerItem   = ref({})
 const processing   = ref(false)
+const modalSearch  = ref('')
 
-const uniquePos   = computed(() => [...new Set(props.poOptions.map(o => o.po))])
-const modelsForPo = computed(() => selectedPo.value ? props.poOptions.filter(o => o.po === selectedPo.value) : [])
-const totalPcs    = computed(() =>
-  Object.values(pcsPerModel.value).reduce((sum, v) => sum + (parseInt(v) || 0), 0)
-)
-
-const onPoChange = () => {
-  pcsPerModel.value = {}
-  modelsForPo.value.forEach(m => { pcsPerModel.value[m.model] = '' })
+const itemKey = (item) => `${item.po}|||${item.model}`
+const filteredOptions = computed(() => {
+  if (!modalSearch.value) return props.poOptions
+  const q = modalSearch.value.toLowerCase()
+  return props.poOptions.filter(o =>
+    o.po.toLowerCase().includes(q) || o.model.toLowerCase().includes(q)
+  )
+})
+const toggleItem = (item, e) => {
+  const key    = itemKey(item)
+  const newSet = new Set(checkedItems.value)
+  if (e.target.checked) {
+    newSet.add(key)
+    if (!pcsPerItem.value[key]) pcsPerItem.value[key] = item.max_pcs
+  } else {
+    newSet.delete(key)
+  }
+  checkedItems.value = newSet
 }
+const totalPcs = computed(() =>
+  [...checkedItems.value].reduce((sum, key) => sum + (parseInt(pcsPerItem.value[key]) || 0), 0)
+)
 const openCreate = () => {
-  selectedPo.value   = ''
   noSuratJalan.value = props.nextSuratJalan
   tanggalKirim.value = new Date().toISOString().substring(0, 10)
-  pcsPerModel.value  = {}
+  checkedItems.value = new Set()
+  pcsPerItem.value   = {}
+  modalSearch.value  = ''
   showModal.value    = true
 }
 const submit = () => {
   processing.value = true
-  const models = modelsForPo.value.map(m => ({
-    model:           m.model,
-    pcs_barang_jadi: parseInt(pcsPerModel.value[m.model]) || 0,
-  }))
+  const models = [...checkedItems.value].map(key => {
+    const [po, model] = key.split('|||')
+    return { po, model, pcs_barang_jadi: parseInt(pcsPerItem.value[key]) || 0 }
+  })
   router.post('/barang-masuk-kantor', {
-    po:             selectedPo.value,
     no_surat_jalan: noSuratJalan.value || null,
     tanggal_kirim:  tanggalKirim.value,
     models,

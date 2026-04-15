@@ -45,12 +45,19 @@ class BarangMasukKantorController extends Controller
             ['path' => request()->url(), 'query' => request()->query()]
         );
 
-        $alreadyKantor = BarangMasukKantor::select('po', 'model')->get()
-            ->map(fn($r) => $r->po . '|||' . $r->model)->toArray();
+        $kantorSums = BarangMasukKantor::selectRaw("po, model, SUM(pcs_barang_jadi) as total_kantor")
+            ->groupBy('po', 'model')->get()
+            ->mapWithKeys(fn($r) => [$r->po . '|||' . $r->model => (int) $r->total_kantor]);
+
         $poOptions = ProsesFinishing::selectRaw("po, model, SUM(pcs_barang_jadi) as max_pcs")
             ->whereNotNull('pcs_barang_jadi')->where('pcs_barang_jadi', '>', 0)
             ->groupBy('po', 'model')->orderBy('po')->get()
-            ->filter(fn($r) => !in_array($r->po . '|||' . $r->model, $alreadyKantor))->values();
+            ->map(function ($r) use ($kantorSums) {
+                $key        = $r->po . '|||' . $r->model;
+                $r->max_pcs = (int) $r->max_pcs - ($kantorSums[$key] ?? 0);
+                return $r;
+            })
+            ->filter(fn($r) => $r->max_pcs > 0)->values();
 
         return Inertia::render('BarangMasukKantor/Index', [
             'data'           => $data,
@@ -64,18 +71,18 @@ class BarangMasukKantorController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'no_surat_jalan'          => 'nullable|string|max:100',
-            'tanggal_kirim'           => 'required|date',
-            'po'                      => 'required|string|max:100',
-            'models'                  => 'required|array|min:1',
-            'models.*.model'          => 'required|string|max:200',
+            'no_surat_jalan'           => 'nullable|string|max:100',
+            'tanggal_kirim'            => 'required|date',
+            'models'                   => 'required|array|min:1',
+            'models.*.po'              => 'required|string|max:100',
+            'models.*.model'           => 'required|string|max:200',
             'models.*.pcs_barang_jadi' => 'required|integer|min:1',
         ]);
         foreach ($request->models as $m) {
             BarangMasukKantor::create([
                 'no_surat_jalan'  => $request->no_surat_jalan,
                 'tanggal_kirim'   => $request->tanggal_kirim,
-                'po'              => $request->po,
+                'po'              => $m['po'],
                 'model'           => $m['model'],
                 'pcs_barang_jadi' => $m['pcs_barang_jadi'],
             ]);
