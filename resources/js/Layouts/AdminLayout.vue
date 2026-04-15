@@ -95,19 +95,50 @@
 
       <!-- Page Content -->
       <main class="flex-1 p-6 overflow-auto">
-        <slot />
+        <Transition
+          enter-active-class="transition-opacity duration-150"
+          leave-active-class="transition-opacity duration-100"
+          enter-from-class="opacity-0"
+          leave-to-class="opacity-0"
+          mode="out-in">
+          <div v-if="isNavigating" key="skeleton">
+            <DashboardSkeleton v-if="isDashboard" />
+            <TableSkeleton v-else />
+          </div>
+          <div v-else key="content">
+            <slot />
+          </div>
+        </Transition>
       </main>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, h } from 'vue'
+import { ref, computed, h, onMounted, onUnmounted } from 'vue'
 import { Link, usePage, router } from '@inertiajs/vue3'
+import TableSkeleton from '@/Components/TableSkeleton.vue'
+import DashboardSkeleton from '@/Components/DashboardSkeleton.vue'
 
 const props = defineProps({ title: { type: String, default: 'Dashboard' } })
 const page = usePage()
 const sidebarOpen = ref(typeof window !== 'undefined' && window.innerWidth >= 1024)
+const isNavigating = ref(false)
+const nextUrl = ref('')
+const isDashboard = computed(() => {
+  const target = nextUrl.value || page.url
+  return target.split('?')[0] === '/dashboard'
+})
+
+let stopStart, stopFinish
+onMounted(() => {
+  stopStart  = router.on('start',  (e) => { nextUrl.value = e.detail?.visit?.url?.pathname ?? ''; isNavigating.value = true  })
+  stopFinish = router.on('finish', ()  => { isNavigating.value = false })
+})
+onUnmounted(() => {
+  stopStart?.()
+  stopFinish?.()
+})
 
 const userInitial = computed(() => {
   const name = page.props.auth?.user?.name || 'A'
