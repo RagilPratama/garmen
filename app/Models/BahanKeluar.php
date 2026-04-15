@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class BahanKeluar extends Model
 {
@@ -15,4 +16,9 @@ class BahanKeluar extends Model
     protected $casts = [
         'tanggal' => 'date',
     ];
+
+    public function bahanMasuk(): HasOne
+    {
+        return $this->hasOne(BahanMasuk::class, 'kode_bahan', 'kode_bahan');
+    }
 }

@@ -133,6 +133,7 @@
             <thead class="bg-gray-50">
               <tr>
                 <th class="text-left px-4 py-2 text-xs font-medium text-gray-500">Kode Bahan</th>
+                <th class="text-left px-4 py-2 text-xs font-medium text-gray-500">Nama Bahan</th>
                 <th class="text-right px-4 py-2 text-xs font-medium text-gray-500 w-28">Yard</th>
                 <th class="w-12"></th>
               </tr>
@@ -140,6 +141,7 @@
             <tbody>
               <tr v-for="bahan in mRow.bahans" :key="bahan.id" class="border-t border-gray-100 hover:bg-gray-50">
                 <td class="px-4 py-2 font-medium text-gray-700">{{ bahan.kode_bahan }}</td>
+                <td class="px-4 py-2 text-gray-500 text-xs">{{ bahan.nama_bahan ?? '—' }}</td>
                 <td class="px-4 py-2 text-right text-gray-600">{{ fmt(bahan.yard) }}</td>
                 <td class="px-4 py-2 text-center">
                   <button @click="confirmDelete(bahan.id)"
@@ -203,7 +205,7 @@
               <label class="block text-xs font-medium text-gray-500">Bahan yang Digunakan</label>
               <div v-for="(bahan, bIdx) in mRow.bahans" :key="bIdx" class="flex items-center gap-2">
                 <div class="flex-1">
-                  <SearchableSelect v-model="bahan.kode_bahan" :options="bahanOptions.map(b => ({ value: b.kode_bahan, label: b.kode_bahan + ' (' + fmt(b.total_yard) + ' yard)' }))" placeholder="-- Pilih Kode Bahan --"/>
+                  <SearchableSelect v-model="bahan.kode_bahan" :options="bahanOptions.map(b => ({ value: b.kode_bahan, label: b.kode_bahan + (b.nama_bahan ? ' – ' + b.nama_bahan : '') + ' (' + fmt(b.total_yard) + ' yard)' }))" placeholder="-- Pilih Kode Bahan --"/>
                 </div>
                 <div class="w-28">
                   <input v-model="bahan.yard" type="number" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white" placeholder="Yard"/>
@@ -261,7 +263,7 @@
           <div v-for="(bahan, bIdx) in editForm.bahans" :key="bIdx" class="flex items-center gap-2">
             <div class="flex-1">
               <SearchableSelect v-model="bahan.kode_bahan"
-                :options="bahanOptions.map(b => ({ value: b.kode_bahan, label: b.kode_bahan + ' (' + fmt(b.total_yard) + ' yard)' }))"
+                :options="bahanOptions.map(b => ({ value: b.kode_bahan, label: b.kode_bahan + (b.nama_bahan ? ' – ' + b.nama_bahan : '') + ' (' + fmt(b.total_yard) + ' yard)' }))"
                 placeholder="-- Pilih Kode Bahan --"/>
             </div>
             <div class="w-32">

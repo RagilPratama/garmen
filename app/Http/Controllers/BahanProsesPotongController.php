@@ -2,10 +2,12 @@
 namespace App\Http\Controllers;
 use App\Models\BahanProsesPotong;
 use App\Models\BahanKeluar;
+use App\Models\BahanMasuk;
 use App\Models\MasterModel;
 use App\Models\StokBahan;
 use App\Traits\GeneratesSuratJalan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class BahanProsesPotongController extends Controller
@@ -17,6 +19,8 @@ class BahanProsesPotongController extends Controller
         $search = request('search');
 
         $allRows = BahanProsesPotong::query()
+            ->select('id', 'po', 'tanggal_potong', 'model', 'kode_bahan', 'yard', 'hasil_potongan')
+            ->with('bahanMasuk:kode_bahan,nama_bahan')
             ->when($search, fn($q) => $q->where(fn($q) => $q
                 ->where('po', 'ilike', "%{$search}%")
                 ->orWhere('model', 'ilike', "%{$search}%")
@@ -36,6 +40,7 @@ class BahanProsesPotongController extends Controller
                     'bahans'         => $mr->map(fn($r) => [
                         'id'         => $r->id,
                         'kode_bahan' => $r->kode_bahan,
+                        'nama_bahan' => $r->bahanMasuk?->nama_bahan,
                         'yard'       => $r->yard,
                     ])->values(),
                 ];
@@ -62,7 +67,15 @@ class BahanProsesPotongController extends Controller
         );
 
         $bahanOptions = BahanKeluar::selectRaw('kode_bahan, SUM(yard) as total_yard')
-            ->groupBy('kode_bahan')->orderBy('kode_bahan')->get();
+            ->addSelect([
+                'nama_bahan' => BahanMasuk::select('nama_bahan')
+                    ->whereColumn('kode_bahan', 'bahan_keluar.kode_bahan')
+                    ->orderByDesc('id')
+                    ->limit(1),
+            ])
+            ->groupBy('kode_bahan')
+            ->orderBy('kode_bahan')
+            ->get();
         $modelOptions = MasterModel::orderBy('nama_model')->pluck('nama_model');
         $nextPo       = $this->nextCode(BahanProsesPotong::class, 'po', 'PO-');
 
@@ -104,16 +117,18 @@ class BahanProsesPotongController extends Controller
 
         BahanProsesPotong::insert($rows);
 
-        // Kurangi stok bahan sesuai yard yang digunakan
+        // Aggregate yard per kode_bahan → 1 UPDATE per kode unik
+        $yardPerKode = [];
         foreach ($request->models as $modelItem) {
             foreach ($modelItem['bahans'] as $bahan) {
-                $stok = StokBahan::where('kode_bahan', $bahan['kode_bahan'])->first();
-                if ($stok) {
-                    $stok->total_keluar += $bahan['yard'];
-                    $stok->sisa_stok   -= $bahan['yard'];
-                    $stok->save();
-                }
+                $yardPerKode[$bahan['kode_bahan']] = ($yardPerKode[$bahan['kode_bahan']] ?? 0) + $bahan['yard'];
             }
+        }
+        foreach ($yardPerKode as $kode => $totalYard) {
+            StokBahan::where('kode_bahan', $kode)->update([
+                'total_keluar' => DB::raw("total_keluar + {$totalYard}"),
+                'sisa_stok'    => DB::raw("sisa_stok - {$totalYard}"),
+            ]);
         }
 
         return redirect()->route('bahan-proses-potong.index')->with('message', 'Data berhasil ditambahkan.');
@@ -125,13 +140,10 @@ class BahanProsesPotongController extends Controller
         return redirect()->route('bahan-proses-potong.index')->with('message','Data berhasil diperbarui.');
     }
     public function destroy(BahanProsesPotong $bahanProsesPotong) {
-        // Kembalikan stok ketika baris dihapus
-        $stok = StokBahan::where('kode_bahan', $bahanProsesPotong->kode_bahan)->first();
-        if ($stok) {
-            $stok->total_keluar -= $bahanProsesPotong->yard;
-            $stok->sisa_stok   += $bahanProsesPotong->yard;
-            $stok->save();
-        }
+        StokBahan::where('kode_bahan', $bahanProsesPotong->kode_bahan)->update([
+            'total_keluar' => DB::raw("total_keluar - {$bahanProsesPotong->yard}"),
+            'sisa_stok'    => DB::raw("sisa_stok + {$bahanProsesPotong->yard}"),
+        ]);
         $bahanProsesPotong->delete();
         return redirect()->route('bahan-proses-potong.index')->with('message','Data berhasil dihapus.');
     }
@@ -148,17 +160,20 @@ class BahanProsesPotongController extends Controller
             'bahans.*.yard'            => 'required|numeric|min:0',
         ]);
 
-        // Kembalikan stok dari baris lama sebelum dihapus
+        // Kembalikan stok dari baris lama (aggregate per kode unik)
         $oldRows = BahanProsesPotong::where('po', $request->po)
             ->where('model', $request->model)
-            ->get();
+            ->get(['kode_bahan', 'yard']);
+
+        $oldYardPerKode = [];
         foreach ($oldRows as $old) {
-            $stok = StokBahan::where('kode_bahan', $old->kode_bahan)->first();
-            if ($stok) {
-                $stok->total_keluar -= $old->yard;
-                $stok->sisa_stok   += $old->yard;
-                $stok->save();
-            }
+            $oldYardPerKode[$old->kode_bahan] = ($oldYardPerKode[$old->kode_bahan] ?? 0) + $old->yard;
+        }
+        foreach ($oldYardPerKode as $kode => $yard) {
+            StokBahan::where('kode_bahan', $kode)->update([
+                'total_keluar' => DB::raw("total_keluar - {$yard}"),
+                'sisa_stok'    => DB::raw("sisa_stok + {$yard}"),
+            ]);
         }
 
         // Delete all existing rows for this po+model combination
@@ -183,14 +198,16 @@ class BahanProsesPotongController extends Controller
 
         BahanProsesPotong::insert($rows);
 
-        // Deduct stok dari baris baru
+        // Deduct stok dari baris baru (aggregate per kode unik)
+        $newYardPerKode = [];
         foreach ($request->bahans as $bahan) {
-            $stok = StokBahan::where('kode_bahan', $bahan['kode_bahan'])->first();
-            if ($stok) {
-                $stok->total_keluar += $bahan['yard'];
-                $stok->sisa_stok   -= $bahan['yard'];
-                $stok->save();
-            }
+            $newYardPerKode[$bahan['kode_bahan']] = ($newYardPerKode[$bahan['kode_bahan']] ?? 0) + $bahan['yard'];
+        }
+        foreach ($newYardPerKode as $kode => $yard) {
+            StokBahan::where('kode_bahan', $kode)->update([
+                'total_keluar' => DB::raw("total_keluar + {$yard}"),
+                'sisa_stok'    => DB::raw("sisa_stok - {$yard}"),
+            ]);
         }
 
         return redirect()->route('bahan-proses-potong.index')->with('message', 'Data berhasil diperbarui.');

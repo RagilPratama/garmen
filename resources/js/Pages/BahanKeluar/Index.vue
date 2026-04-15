@@ -163,7 +163,7 @@
                     <td class="px-3 py-2">
                       <SearchableSelect
                         v-model="item.kode_bahan"
-                        :options="stok.map(s => ({ value: s.kode_bahan, label: s.kode_bahan + ' (sisa: ' + formatYard(s.sisa_stok) + ')' }))"
+                        :options="editBahanOptions"
                         placeholder="-- Pilih --"
                       />
                       <p v-if="editForm.errors[`items.${idx}.kode_bahan`]" class="mt-0.5 text-xs text-red-500">{{ editForm.errors[`items.${idx}.kode_bahan`] }}</p>
@@ -338,6 +338,22 @@ const editForm = useForm({
 })
 
 const editGrandTotal = computed(() => editForm.items.reduce((sum, item) => sum + itemTotal(item), 0))
+
+// Include kode_bahan that are already selected but may not be in stok (sisa = 0)
+const editBahanOptions = computed(() => {
+  const base = props.stok.map(s => ({ value: s.kode_bahan, sisa: s.sisa_stok }))
+  const inStok = new Set(base.map(s => s.value))
+  editForm.items.forEach(i => {
+    if (i.kode_bahan && !inStok.has(i.kode_bahan)) {
+      base.push({ value: i.kode_bahan, sisa: 0 })
+      inStok.add(i.kode_bahan)
+    }
+  })
+  return base.map(s => ({
+    value: s.value,
+    label: s.value + ' (sisa: ' + formatYard(s.sisa) + ')',
+  }))
+})
 
 const openEdit = (nota) => {
   editNota.value          = nota
