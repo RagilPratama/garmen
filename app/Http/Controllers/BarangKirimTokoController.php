@@ -44,9 +44,9 @@ class BarangKirimTokoController extends Controller
             ['path' => request()->url(), 'query' => request()->query()]
         );
 
-        $tokoSums = BarangKirimToko::selectRaw("po, model, SUM(pcs_barang_jadi) as total_toko")
-            ->groupBy('po', 'model')->get()
-            ->mapWithKeys(fn($r) => [$r->po . '|||' . $r->model => (int) $r->total_toko]);
+        // Derive sums from already-loaded $allRows — no extra DB query needed
+        $tokoSums = $allRows->groupBy(fn($r) => $r->po . '|||' . $r->model)
+            ->map(fn($rows) => $rows->sum(fn($r) => (int) $r->pcs_barang_jadi));
 
         $poOptions = BarangMasukKantor::selectRaw("po, model, SUM(pcs_barang_jadi) as max_pcs")
             ->where('pcs_barang_jadi', '>', 0)
@@ -77,15 +77,17 @@ class BarangKirimTokoController extends Controller
             'models.*.model'           => 'required|string|max:200',
             'models.*.pcs_barang_jadi' => 'required|integer|min:1',
         ]);
-        foreach ($request->models as $m) {
-            BarangKirimToko::create([
-                'no_surat_jalan'  => $request->no_surat_jalan,
-                'tanggal_kirim'   => $request->tanggal_kirim,
-                'po'              => $m['po'],
-                'model'           => $m['model'],
-                'pcs_barang_jadi' => $m['pcs_barang_jadi'],
-            ]);
-        }
+        $now  = now();
+        $rows = collect($request->models)->map(fn($m) => [
+            'no_surat_jalan'  => $request->no_surat_jalan,
+            'tanggal_kirim'   => $request->tanggal_kirim,
+            'po'              => $m['po'],
+            'model'           => $m['model'],
+            'pcs_barang_jadi' => $m['pcs_barang_jadi'],
+            'created_at'      => $now,
+            'updated_at'      => $now,
+        ])->toArray();
+        BarangKirimToko::insert($rows);
         return redirect()->route('barang-kirim-toko.index')->with('message', 'Data berhasil ditambahkan.');
     }
 

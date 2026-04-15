@@ -45,9 +45,9 @@ class BarangMasukKantorController extends Controller
             ['path' => request()->url(), 'query' => request()->query()]
         );
 
-        $kantorSums = BarangMasukKantor::selectRaw("po, model, SUM(pcs_barang_jadi) as total_kantor")
-            ->groupBy('po', 'model')->get()
-            ->mapWithKeys(fn($r) => [$r->po . '|||' . $r->model => (int) $r->total_kantor]);
+        // Derive sums from already-loaded $allRows — no extra DB query needed
+        $kantorSums = $allRows->groupBy(fn($r) => $r->po . '|||' . $r->model)
+            ->map(fn($rows) => $rows->sum(fn($r) => (int) $r->pcs_barang_jadi));
 
         $poOptions = ProsesFinishing::selectRaw("po, model, SUM(pcs_barang_jadi) as max_pcs")
             ->whereNotNull('pcs_barang_jadi')->where('pcs_barang_jadi', '>', 0)
@@ -78,15 +78,17 @@ class BarangMasukKantorController extends Controller
             'models.*.model'           => 'required|string|max:200',
             'models.*.pcs_barang_jadi' => 'required|integer|min:1',
         ]);
-        foreach ($request->models as $m) {
-            BarangMasukKantor::create([
-                'no_surat_jalan'  => $request->no_surat_jalan,
-                'tanggal_kirim'   => $request->tanggal_kirim,
-                'po'              => $m['po'],
-                'model'           => $m['model'],
-                'pcs_barang_jadi' => $m['pcs_barang_jadi'],
-            ]);
-        }
+        $now  = now();
+        $rows = collect($request->models)->map(fn($m) => [
+            'no_surat_jalan'  => $request->no_surat_jalan,
+            'tanggal_kirim'   => $request->tanggal_kirim,
+            'po'              => $m['po'],
+            'model'           => $m['model'],
+            'pcs_barang_jadi' => $m['pcs_barang_jadi'],
+            'created_at'      => $now,
+            'updated_at'      => $now,
+        ])->toArray();
+        BarangMasukKantor::insert($rows);
         return redirect()->route('barang-masuk-kantor.index')->with('message', 'Data berhasil ditambahkan.');
     }
 
