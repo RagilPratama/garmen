@@ -11,7 +11,6 @@ class StokBahanController extends Controller
 {
     public function index()
     {
-        // Pull the most recent nama_bahan per kode_bahan from bahan_masuk
         $namaBahan = BahanMasuk::select('kode_bahan', DB::raw('MAX(nama_bahan) as nama_bahan'))
             ->groupBy('kode_bahan')
             ->pluck('nama_bahan', 'kode_bahan');

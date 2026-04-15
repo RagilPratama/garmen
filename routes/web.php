@@ -14,6 +14,7 @@ use App\Http\Controllers\BarangKirimTokoController;
 use App\Http\Controllers\ProsesJualController;
 use App\Http\Controllers\JualGudangController;
 use App\Http\Controllers\StokBahanController;
+use App\Http\Controllers\StokBahanGarmenController;
 use App\Http\Controllers\StokBarangController;
 use App\Http\Controllers\MasterModelController;
 use App\Http\Controllers\SupplierController;
@@ -49,6 +50,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('proses-jual', ProsesJualController::class)->except(['show']);
     Route::resource('jual-gudang', JualGudangController::class)->except(['show', 'create', 'edit']);
     Route::get('/stok-bahan', [StokBahanController::class, 'index'])->name('stok-bahan.index');
+    Route::get('/stok-bahan-garmen', [StokBahanGarmenController::class, 'index'])->name('stok-bahan-garmen.index');
+    Route::get('/stok-bahan-garmen/detail', [StokBahanGarmenController::class, 'detail'])->name('stok-bahan-garmen.detail');
     Route::get('/stok-barang', [StokBarangController::class, 'index'])->name('stok-barang.index');
     Route::get('/rincian-bahan', [RincianBahanController::class, 'index'])->name('rincian-bahan.index');
     Route::get('/defect', [DefectController::class, 'index'])->name('defect.index');

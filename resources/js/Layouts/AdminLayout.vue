@@ -115,7 +115,9 @@ const userInitial = computed(() => {
 })
 
 const isActive = (href) => {
-  return page.url.startsWith(href) || (href === '/dashboard' && page.url === '/dashboard')
+  const url = page.url.split('?')[0]
+  if (href === '/dashboard') return url === '/dashboard'
+  return url === href || url.startsWith(href + '/') || url.startsWith(href + '?')
 }
 
 const logout = () => {
@@ -156,6 +158,7 @@ const navItems = [
   { type: 'link', name: 'bahan-keluar', label: 'Bahan Keluar', href: '/bahan-keluar', icon: IconArrowOut },
   { type: 'header', label: 'Produksi' },
   { type: 'link', name: 'tracking-po', label: 'Tracking PO', href: '/tracking-po', icon: IconMap },
+  { type: 'link', name: 'stok-bahan-garmen', label: 'Stok Bahan Garmen', href: '/stok-bahan-garmen', icon: IconArrowOut },
   { type: 'link', name: 'bahan-proses-potong', label: 'Proses Potong', href: '/bahan-proses-potong', icon: IconScissors },
   { type: 'link', name: 'proses-jahit', label: 'Proses Jahit', href: '/proses-jahit', icon: IconNeedle },
   { type: 'link', name: 'proses-cuci', label: 'Proses Cuci', href: '/proses-cuci', icon: IconWater },
