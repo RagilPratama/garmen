@@ -15,21 +15,19 @@ class BarangMasukKantorController extends Controller
         $search = request('search');
         $allRows = BarangMasukKantor::latest()
             ->when($search, fn($q) => $q->where(fn($q) => $q
-                ->where('po', 'ilike', "%{$search}%")
                 ->orWhere('model', 'ilike', "%{$search}%")
                 ->orWhere('no_surat_jalan', 'ilike', "%{$search}%")
             ))->get();
 
-        $grouped = $allRows->groupBy('po')->map(function ($rows, $po) {
+        $grouped = $allRows->groupBy('no_surat_jalan')->map(function ($rows, $noSuratJalan) {
             $models = $rows->map(fn($r) => [
                 'id'              => $r->id,
                 'model'           => $r->model,
                 'pcs_barang_jadi' => $r->pcs_barang_jadi,
             ])->values();
             return [
-                'po'              => $po,
-                'tanggal_kirim'   => $rows->min('tanggal_kirim'),
-                'no_surat_jalan'  => $rows->first()->no_surat_jalan,
+                'no_surat_jalan'  => $noSuratJalan,
+                'tanggal_kirim'   => $rows->first()->tanggal_kirim,
                 'jumlah_model'    => $rows->count(),
                 'total_pcs'       => $rows->sum(fn($r) => (int)($r->pcs_barang_jadi ?? 0)),
                 'models'          => $models,
@@ -46,22 +44,21 @@ class BarangMasukKantorController extends Controller
         );
 
         // Derive sums from already-loaded $allRows — no extra DB query needed
-        $kantorSums = $allRows->groupBy(fn($r) => $r->po . '|||' . $r->model)
+        $kantorSums = $allRows->groupBy('model')
             ->map(fn($rows) => $rows->sum(fn($r) => (int) $r->pcs_barang_jadi));
 
-        $poOptions = ProsesFinishing::selectRaw("po, model, SUM(pcs_barang_jadi) as max_pcs")
+        $modelOptions = ProsesFinishing::selectRaw("model, SUM(pcs_barang_jadi) as max_pcs, MAX(harga_satuan) as harga_satuan")
             ->whereNotNull('pcs_barang_jadi')->where('pcs_barang_jadi', '>', 0)
-            ->groupBy('po', 'model')->orderBy('po')->get()
+            ->groupBy('model')->orderBy('model')->get()
             ->map(function ($r) use ($kantorSums) {
-                $key        = $r->po . '|||' . $r->model;
-                $r->max_pcs = (int) $r->max_pcs - ($kantorSums[$key] ?? 0);
+                $r->max_pcs = (int) $r->max_pcs - ($kantorSums[$r->model] ?? 0);
                 return $r;
             })
             ->filter(fn($r) => $r->max_pcs > 0)->values();
 
         return Inertia::render('BarangMasukKantor/Index', [
             'data'           => $data,
-            'poOptions'      => $poOptions,
+            'modelOptions'   => $modelOptions,
             'nextSuratJalan' => $this->nextSuratJalan(BarangMasukKantor::class, 'SJ-KANTOR-'),
         ]);
     }
@@ -74,22 +71,31 @@ class BarangMasukKantorController extends Controller
             'no_surat_jalan'           => 'nullable|string|max:100',
             'tanggal_kirim'            => 'required|date',
             'models'                   => 'required|array|min:1',
-            'models.*.po'              => 'required|string|max:100',
             'models.*.model'           => 'required|string|max:200',
             'models.*.pcs_barang_jadi' => 'required|integer|min:1',
-            'models.*.harga_satuan'    => 'required|numeric|min:0',
         ]);
+        
+        // Generate nomor surat jalan jika kosong
+        $noSuratJalan = $request->no_surat_jalan ?: $this->nextSuratJalan(BarangMasukKantor::class, 'SJ-KANTOR-');
+        
         $now  = now();
-        $rows = collect($request->models)->map(fn($m) => [
-            'no_surat_jalan'  => $request->no_surat_jalan,
-            'tanggal_kirim'   => $request->tanggal_kirim,
-            'po'              => $m['po'],
-            'model'           => $m['model'],
-            'pcs_barang_jadi' => $m['pcs_barang_jadi'],
-            'harga_satuan'    => $m['harga_satuan'],
-            'created_at'      => $now,
-            'updated_at'      => $now,
-        ])->toArray();
+        $rows = collect($request->models)->map(function($m) use ($now, $noSuratJalan, $request) {
+            // Ambil harga dari proses_finishing berdasarkan model (ambil yang terakhir)
+            $finishing = \App\Models\ProsesFinishing::where('model', $m['model'])
+                ->orderBy('id', 'desc')
+                ->first();
+            
+            return [
+                'no_surat_jalan'  => $noSuratJalan,
+                'tanggal_kirim'   => $request->tanggal_kirim,
+                'po'              => $finishing->po ?? null,
+                'model'           => $m['model'],
+                'pcs_barang_jadi' => $m['pcs_barang_jadi'],
+                'harga_satuan'    => $finishing->harga_satuan ?? 0,
+                'created_at'      => $now,
+                'updated_at'      => $now,
+            ];
+        })->toArray();
         BarangMasukKantor::insert($rows);
         return redirect()->route('barang-masuk-kantor.index')->with('message', 'Data berhasil ditambahkan.');
     }
