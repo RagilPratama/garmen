@@ -18,13 +18,6 @@ class BarangSiapKirimController extends Controller
             ->get()
             ->keyBy('model');
 
-        // Harga per pcs per model (ambil dari harga_satuan di proses_finishing)
-        $hargaPerModel = ProsesFinishing::selectRaw('model, MAX(harga_satuan) as harga_per_pcs')
-            ->where('harga_satuan', '>', 0)
-            ->groupBy('model')
-            ->get()
-            ->keyBy('model');
-
         // Total yang sudah masuk kantor per model
         $masukKantor = BarangMasukKantor::selectRaw('model, SUM(pcs_barang_jadi) as total_masuk')
             ->groupBy('model')
@@ -32,19 +25,16 @@ class BarangSiapKirimController extends Controller
             ->keyBy('model');
 
         // Hitung sisa (siap kirim) = finishing - masuk kantor
-        $data = $finishing->map(function ($row) use ($masukKantor, $hargaPerModel) {
-            $totalJadi    = (int) $row->total_jadi;
-            $totalMasuk   = (int) ($masukKantor->get($row->model)?->total_masuk ?? 0);
-            $siapKirim    = $totalJadi - $totalMasuk;
-            $hargaPerPcs  = (int) ($hargaPerModel->get($row->model)?->harga_per_pcs ?? 0);
+        $data = $finishing->map(function ($row) use ($masukKantor) {
+            $totalJadi  = (int) $row->total_jadi;
+            $totalMasuk = (int) ($masukKantor->get($row->model)?->total_masuk ?? 0);
+            $siapKirim  = $totalJadi - $totalMasuk;
 
             return [
-                'model'         => $row->model,
-                'total_jadi'    => $totalJadi,
-                'sudah_kirim'   => $totalMasuk,
-                'siap_kirim'    => max(0, $siapKirim),
-                'harga_per_pcs' => $hargaPerPcs,
-                'nilai_siap_kirim' => max(0, $siapKirim) * $hargaPerPcs,
+                'model'       => $row->model,
+                'total_jadi'  => $totalJadi,
+                'sudah_kirim' => $totalMasuk,
+                'siap_kirim'  => max(0, $siapKirim),
             ];
         })
         ->filter(fn ($r) => $r['total_jadi'] > 0)

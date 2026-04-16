@@ -15,6 +15,7 @@ use App\Models\BarangMasukKantor;
 use App\Models\BarangKirimToko;
 use App\Models\ProsesJual;
 use App\Models\JualGudang;
+use App\Models\PenjualanPembayaran;
 
 class DashboardController extends Controller
 {
@@ -51,6 +52,29 @@ class DashboardController extends Controller
         ");
         $sisaHutang           = max(0, (float) ($hutangRow->sisa_hutang ?? 0));
         $jumlahNotaBelumLunas = (int) ($hutangRow->nota_belum_lunas ?? 0);
+
+        // Piutang penjualan (barang diambil tapi belum bayar)
+        $piutangRow = \DB::selectOne("
+            SELECT
+                COALESCE(SUM(j.total_harga), 0) - COALESCE(SUM(pp.dibayar), 0) AS sisa_piutang,
+                COUNT(DISTINCT CASE WHEN COALESCE(pp.dibayar, 0) < j.total_nota THEN j.no_nota END) AS nota_belum_lunas
+            FROM (
+                SELECT no_nota, 'gudang' as channel, SUM(total_harga) AS total_harga, SUM(total_harga) AS total_nota
+                FROM jual_gudang WHERE status IN ('pending', 'lunas')
+                GROUP BY no_nota
+                UNION ALL
+                SELECT no_nota, 'toko' as channel, SUM(total_harga) AS total_harga, SUM(total_harga) AS total_nota
+                FROM proses_jual WHERE status IN ('pending', 'lunas')
+                GROUP BY no_nota
+            ) j
+            LEFT JOIN (
+                SELECT no_nota, channel, SUM(jumlah) AS dibayar
+                FROM penjualan_pembayaran
+                GROUP BY no_nota, channel
+            ) pp ON pp.no_nota = j.no_nota AND pp.channel = j.channel
+        ");
+        $sisaPiutang              = max(0, (float) ($piutangRow->sisa_piutang ?? 0));
+        $jumlahNotaPiutang        = (int) ($piutangRow->nota_belum_lunas ?? 0);
 
         // Stok kantor: masuk kantor - jual gudang per model
         $masukKantor = BarangMasukKantor::selectRaw('model, SUM(pcs_barang_jadi) as total')->groupBy('model')->get()->keyBy('model');
@@ -123,20 +147,22 @@ class DashboardController extends Controller
             ->sortByDesc('tanggal_nota')->take(8)->values();
 
         return Inertia::render('Dashboard', [
-            'sisaHutang'          => (float) $sisaHutang,
+            'sisaHutang'           => (float) $sisaHutang,
             'jumlahNotaBelumLunas' => (int) $jumlahNotaBelumLunas,
-            'omsetTokoTotal'      => (float) $omsetTokoTotal,
-            'omsetGudangTotal'    => (float) $omsetGudangTotal,
-            'omsetTokoBulanIni'   => (float) $omsetTokoBulanIni,
-            'omsetGudangBulanIni' => (float) $omsetGudangBulanIni,
-            'stokBahan'           => (int) $stokBahan,
-            'totalSisaBahan'      => (float) $totalSisaBahan,
-            'stokKantor'          => (int) $stokKantor,
-            'stokToko'            => (int) $stokToko,
-            'pipeline'            => $pipeline,
-            'recentBahanMasuk'    => $recentBahanMasuk,
-            'recentPenjualan'     => $recentPenjualan,
-            'topModels'           => $topModels,
+            'sisaPiutang'          => (float) $sisaPiutang,
+            'jumlahNotaPiutang'    => (int) $jumlahNotaPiutang,
+            'omsetTokoTotal'       => (float) $omsetTokoTotal,
+            'omsetGudangTotal'     => (float) $omsetGudangTotal,
+            'omsetTokoBulanIni'    => (float) $omsetTokoBulanIni,
+            'omsetGudangBulanIni'  => (float) $omsetGudangBulanIni,
+            'stokBahan'            => (int) $stokBahan,
+            'totalSisaBahan'       => (float) $totalSisaBahan,
+            'stokKantor'           => (int) $stokKantor,
+            'stokToko'             => (int) $stokToko,
+            'pipeline'             => $pipeline,
+            'recentBahanMasuk'     => $recentBahanMasuk,
+            'recentPenjualan'      => $recentPenjualan,
+            'topModels'            => $topModels,
         ]);
     }
 }

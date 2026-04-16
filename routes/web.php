@@ -23,6 +23,7 @@ use App\Http\Controllers\TrackingPoController;
 use App\Http\Controllers\RincianBahanController;
 use App\Http\Controllers\DefectController;
 use App\Http\Controllers\BarangSiapKirimController;
+use App\Http\Controllers\PenjualanPembayaranController;
 use Illuminate\Support\Facades\Route;
 
 // Auth routes
@@ -52,6 +53,10 @@ Route::middleware('auth')->group(function () {
     Route::resource('jual-gudang', JualGudangController::class)->except(['show', 'create', 'edit']);
     Route::put('/jual-gudang-nota-status', [JualGudangController::class, 'updateNotaStatus'])->name('jual-gudang.update-nota-status');
     Route::put('/proses-jual-nota-status', [ProsesJualController::class, 'updateNotaStatus'])->name('proses-jual.update-nota-status');
+    // Pembayaran penjualan (gudang & toko)
+    Route::post('/penjualan-pembayaran/{noNota}', [PenjualanPembayaranController::class, 'store'])->name('penjualan-pembayaran.store');
+    Route::put('/penjualan-pembayaran/{pembayaran}', [PenjualanPembayaranController::class, 'update'])->name('penjualan-pembayaran.update');
+    Route::delete('/penjualan-pembayaran/{pembayaran}', [PenjualanPembayaranController::class, 'destroy'])->name('penjualan-pembayaran.destroy');
     Route::get('/stok-bahan', [StokBahanController::class, 'index'])->name('stok-bahan.index');
     Route::get('/stok-bahan-garmen', [StokBahanGarmenController::class, 'index'])->name('stok-bahan-garmen.index');
     Route::get('/stok-bahan-garmen/detail', [StokBahanGarmenController::class, 'detail'])->name('stok-bahan-garmen.detail');

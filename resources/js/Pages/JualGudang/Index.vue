@@ -42,9 +42,8 @@
               <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tgl Nota</th>
               <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Buyer</th>
               <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-              <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Jumlah Model</th>
-              <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Pcs</th>
               <th class="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Harga</th>
+              <th class="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Sisa Piutang</th>
               <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide w-24">Aksi</th>
             </tr>
           </thead>
@@ -69,17 +68,18 @@
               </td>
               <td class="px-5 py-3.5 font-medium text-gray-700">{{ group.buyer }}</td>
               <td class="px-5 py-3.5 text-center">
-                <span :class="statusClass(group.status)" class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full">
-                  {{ group.status }}
+                <span class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full"
+                  :class="group.sisa_piutang > 0 ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'">
+                  {{ group.sisa_piutang > 0 ? 'Belum Lunas' : 'Lunas' }}
                 </span>
               </td>
-              <td class="px-5 py-3.5 text-center">
-                <span class="inline-flex items-center justify-center px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full">{{ group.jumlah_model }} model</span>
-              </td>
-              <td class="px-5 py-3.5 text-center">
-                <span class="inline-flex items-center justify-center px-2.5 py-1 bg-amber-50 text-amber-700 text-xs font-semibold rounded-full">{{ group.total_pcs.toLocaleString('id-ID') }} pcs</span>
-              </td>
               <td class="px-5 py-3.5 text-right font-semibold text-gray-700">{{ formatRupiah(group.total_harga) }}</td>
+              <td class="px-5 py-3.5 text-right">
+                <span v-if="group.sisa_piutang > 0" class="text-xs font-semibold text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
+                  {{ formatRupiah(group.sisa_piutang) }}
+                </span>
+                <span v-else class="text-xs text-emerald-600 font-semibold">✓ Lunas</span>
+              </td>
               <td class="px-5 py-3.5 text-center" @click.stop>
                 <button @click="openDetail(group)"
                   class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors">
@@ -89,7 +89,7 @@
               </td>
             </tr>
             <tr v-if="!data?.data?.length">
-              <td colspan="9" class="px-4 py-16 text-center">
+              <td colspan="7" class="px-4 py-16 text-center">
                 <div class="flex flex-col items-center gap-3">
                   <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
                     <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
@@ -115,68 +115,195 @@
       </div>
     </div>
 
-    <!-- DETAIL MODAL -->
     <Modal v-model="showDetail" :title="'Detail Nota: ' + (detailGroup?.no_nota ?? '—')" size="xl">
       <div v-if="detailGroup" class="space-y-4">
         <!-- Nota header info -->
-        <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600 bg-gray-50 rounded-lg px-4 py-3">
-          <span><span class="font-medium text-gray-700">Buyer:</span> {{ detailGroup.buyer }}</span>
-          <span><span class="font-medium text-gray-700">Tgl Nota:</span> {{ formatDate(detailGroup.tanggal_nota) }}</span>
-          <span><span class="font-medium text-gray-700">Total:</span> <span class="font-semibold text-amber-700">{{ formatRupiah(detailGroup.total_harga) }}</span></span>
-        </div>
-        <!-- Status update -->
-        <div class="flex items-center gap-3">
-          <span class="text-sm font-medium text-gray-700">Status Nota:</span>
-          <div class="flex gap-2">
-            <button v-for="s in ['pending', 'lunas', 'batal']" :key="s"
-              @click="updateNotaStatus(detailGroup.no_nota, s)"
-              :disabled="statusLoading"
-              :class="detailGroup.status === s ? statusClass(s) + ' ring-2 ring-offset-1 ring-amber-400' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'"
-              class="px-3 py-1 text-xs font-semibold rounded-full transition-all capitalize disabled:opacity-60">
-              {{ s }}
-            </button>
+        <div class="grid grid-cols-2 gap-3 bg-gray-50 rounded-xl p-4 text-sm">
+          <div>
+            <p class="text-gray-400 text-xs mb-0.5">Buyer</p>
+            <p class="font-medium text-gray-800">{{ detailGroup.buyer }}</p>
+          </div>
+          <div>
+            <p class="text-gray-400 text-xs mb-0.5">Tanggal Nota</p>
+            <p class="font-medium text-gray-800">{{ formatDate(detailGroup.tanggal_nota) }}</p>
           </div>
         </div>
+
         <!-- Models table -->
-        <table class="w-full text-sm">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="text-left px-4 py-2.5 text-xs font-medium text-gray-500 rounded-tl-lg">Model</th>
-              <th class="text-center px-4 py-2.5 text-xs font-medium text-gray-500">Pcs</th>
-              <th class="text-right px-4 py-2.5 text-xs font-medium text-gray-500">Harga Satuan</th>
-              <th class="text-right px-4 py-2.5 text-xs font-medium text-gray-500">Total</th>
-              <th class="w-20 rounded-tr-lg"></th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr v-for="mRow in detailGroup.models" :key="mRow.id" class="hover:bg-gray-50">
-              <td class="px-4 py-2.5 font-medium text-gray-700">{{ mRow.model }}</td>
-              <td class="px-4 py-2.5 text-center font-semibold text-amber-700">{{ mRow.pcs }}</td>
-              <td class="px-4 py-2.5 text-right text-gray-600">{{ formatRupiah(mRow.harga_satuan) }}</td>
-              <td class="px-4 py-2.5 text-right font-semibold text-gray-700">{{ formatRupiah(mRow.total_harga) }}</td>
-              <td class="px-4 py-2.5 text-center">
-                <div class="flex items-center justify-center gap-2">
-                  <button @click="openEdit(mRow)" class="text-blue-400 hover:text-blue-600 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        <div class="border border-gray-200 rounded-lg overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">Model</th>
+                <th class="text-center px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">Pcs</th>
+                <th class="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">Harga Satuan</th>
+                <th class="text-center px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">Diskon</th>
+                <th class="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">Total</th>
+                <th class="w-16"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr v-for="mRow in detailGroup.models" :key="mRow.id" class="hover:bg-amber-50/30 transition-colors">
+                <td class="px-4 py-2.5 font-medium text-gray-700">{{ mRow.model }}</td>
+                <td class="px-4 py-2.5 text-center font-semibold text-amber-700">{{ mRow.pcs }}</td>
+                <td class="px-4 py-2.5 text-right text-gray-600">{{ formatRupiah(mRow.harga_satuan) }}</td>
+                <td class="px-4 py-2.5 text-center">
+                  <span v-if="mRow.diskon > 0" class="text-xs font-medium text-red-500 bg-red-50 px-1.5 py-0.5 rounded">{{ mRow.diskon }}%</span>
+                  <span v-else class="text-gray-300">—</span>
+                </td>
+                <td class="px-4 py-2.5 text-right font-semibold text-gray-700">{{ formatRupiah(mRow.total_harga) }}</td>
+                <td class="px-4 py-2.5 text-center">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <button @click="openEdit(mRow)" class="text-blue-400 hover:text-blue-600 transition">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </button>
+                    <button @click="confirmDelete(mRow.id)" class="text-red-400 hover:text-red-600 transition">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot class="bg-gray-50 border-t border-gray-200">
+              <tr>
+                <td colspan="4" class="px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">Grand Total</td>
+                <td class="px-4 py-2.5 text-right font-bold text-amber-600">{{ formatRupiah(detailGroup.total_harga) }}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Payment Summary -->
+        <div class="grid grid-cols-3 gap-3 border border-gray-200 rounded-xl p-4 text-sm text-center">
+          <div>
+            <p class="text-gray-400 text-xs mb-0.5">Total Tagihan</p>
+            <p class="font-bold text-gray-800">{{ formatRupiah(detailGroup.total_harga) }}</p>
+          </div>
+          <div>
+            <p class="text-gray-400 text-xs mb-0.5">Sudah Dibayar</p>
+            <p class="font-bold text-emerald-600">{{ formatRupiah(detailGroup.total_bayar) }}</p>
+          </div>
+          <div>
+            <p class="text-gray-400 text-xs mb-0.5">Sisa Piutang</p>
+            <p class="font-bold" :class="detailGroup.sisa_piutang > 0 ? 'text-orange-600' : 'text-emerald-600'">
+              {{ detailGroup.sisa_piutang <= 0 ? 'LUNAS' : formatRupiah(detailGroup.sisa_piutang) }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Riwayat Pembayaran -->
+        <div v-if="detailGroup.pembayarans?.length" class="border border-gray-200 rounded-lg overflow-hidden">
+          <div class="px-3 py-2 bg-gray-50 border-b border-gray-200">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Riwayat Pembayaran</span>
+          </div>
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">Tanggal</th>
+                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">Metode</th>
+                <th class="px-3 py-2 text-right text-xs font-semibold text-gray-500">Jumlah</th>
+                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">Keterangan</th>
+                <th class="px-3 py-2 w-8"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr v-for="p in detailGroup.pembayarans" :key="p.id" class="hover:bg-gray-50/50">
+                <td class="px-3 py-2">{{ formatDate(p.tanggal_bayar) }}</td>
+                <td class="px-3 py-2">
+                  <span :class="p.metode === 'cash' ? 'bg-green-100 text-green-700' : p.metode === 'transfer' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'"
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize">
+                    {{ p.metode }}
+                  </span>
+                  <span v-if="p.metode === 'transfer' && p.rekening_id" class="ml-1.5 text-xs text-gray-500">
+                    {{ rekeningLabel(p.rekening_id) }}
+                  </span>
+                </td>
+                <td class="px-3 py-2 text-right font-medium text-gray-800">{{ formatRupiah(p.jumlah) }}</td>
+                <td class="px-3 py-2 text-gray-500 text-xs">{{ p.keterangan ?? '—' }}</td>
+                <td class="px-3 py-2 text-center">
+                  <button @click="deletePembayaran(p.id)" type="button"
+                    class="text-red-400 hover:text-red-600 transition" title="Hapus riwayat">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                   </button>
-                  <button @click="confirmDelete(mRow.id)" class="text-red-400 hover:text-red-600 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-          <tfoot class="bg-gray-50">
-            <tr>
-              <td class="px-4 py-2.5 text-xs font-semibold text-gray-500" colspan="1">Total</td>
-              <td class="px-4 py-2.5 text-center font-bold text-amber-700">{{ detailGroup.total_pcs }}</td>
-              <td></td>
-              <td class="px-4 py-2.5 text-right font-bold text-gray-700">{{ formatRupiah(detailGroup.total_harga) }}</td>
-              <td></td>
-            </tr>
-          </tfoot>
-        </table>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Footer buttons -->
+        <div class="flex justify-between pt-1">
+          <button @click="openPay"
+            :disabled="detailGroup.sisa_piutang <= 0"
+            class="px-5 py-2.5 text-sm text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
+            Bayar
+          </button>
+          <button @click="showDetail = false" class="px-5 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Tutup</button>
+        </div>
       </div>
+    </Modal>
+
+    <!-- PAYMENT MODAL -->
+    <Modal v-model="showPayModal" :title="'Bayar — ' + (detailGroup?.no_nota ?? '')">
+      <form v-if="detailGroup" @submit.prevent="submitPembayaran" class="space-y-4">
+        <div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm">
+          Sisa piutang:
+          <span class="font-bold text-orange-600">{{ formatRupiah(detailGroup.sisa_piutang) }}</span>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Bayar <span class="text-red-500">*</span></label>
+          <input v-model="payForm.tanggal_bayar" type="date" required
+            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah <span class="text-red-500">*</span></label>
+          <input v-model.number="payForm.jumlah" type="number" min="1" :max="detailGroup.sisa_piutang" required
+            placeholder="0"
+            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Metode <span class="text-red-500">*</span></label>
+          <div class="flex gap-4 mt-1">
+            <label v-for="m in ['cash','transfer','debit']" :key="m" class="flex items-center gap-2 cursor-pointer">
+              <input v-model="payForm.metode" type="radio" :value="m" class="text-amber-500"/>
+              <span class="text-sm text-gray-700 capitalize">{{ m }}</span>
+            </label>
+          </div>
+        </div>
+        <!-- Rekening (hanya jika transfer) -->
+        <div v-if="payForm.metode === 'transfer'">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Rekening Tujuan <span class="text-red-500">*</span></label>
+          <div v-if="!rekeningOptions.length" class="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Belum ada data master rekening. Tambahkan di menu <a href="/rekening" class="font-semibold underline">Master Rekening</a>.
+          </div>
+          <select v-else v-model="payForm.rekening_id" required
+            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white">
+            <option value="" disabled>-- Pilih rekening --</option>
+            <option v-for="r in rekeningOptions" :key="r.id" :value="r.id">
+              {{ r.bank }} — {{ r.nama }}{{ r.nomor_rekening ? ' (' + r.nomor_rekening + ')' : '' }}
+            </option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Keterangan</label>
+          <input v-model="payForm.keterangan" type="text" placeholder="Opsional..."
+            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white"/>
+        </div>
+        <div class="flex justify-end gap-3 pt-2 border-t border-gray-100">
+          <button type="button" @click="showPayModal = false"
+            class="px-5 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Batal</button>
+          <button type="submit" :disabled="payLoading"
+            class="px-5 py-2.5 text-sm text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors disabled:opacity-60 flex items-center gap-2">
+            <svg v-if="payLoading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+            Simpan Pembayaran
+          </button>
+        </div>
+      </form>
     </Modal>
 
     <!-- CREATE MODAL -->
@@ -336,9 +463,10 @@ import Modal from '@/Components/Modal.vue'
 import ConfirmDialog from '@/Components/ConfirmDialog.vue'
 
 const props = defineProps({
-  data:        Object,
-  stokOptions: { type: Array, default: () => [] },
-  nextNota:    { type: String, default: '' },
+  data:            Object,
+  stokOptions:     { type: Array, default: () => [] },
+  nextNota:        { type: String, default: '' },
+  rekeningOptions: { type: Array, default: () => [] },
 })
 
 const formatDate   = (d) => d ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
@@ -369,15 +497,38 @@ const appendSearch = (url) => {
 const showDetail  = ref(false)
 const detailGroup = ref(null)
 const openDetail  = (group) => { detailGroup.value = { ...group }; showDetail.value = true }
-const statusLoading = ref(false)
-const updateNotaStatus = (noNota, status) => {
-  statusLoading.value = true
-  router.put('/jual-gudang-nota-status', { no_nota: noNota, status }, {
-    onSuccess: () => {
-      if (detailGroup.value) detailGroup.value.status = status
-      statusLoading.value = false
-    },
-    onError: () => { statusLoading.value = false },
+
+// Pembayaran
+const showPayModal = ref(false)
+const payForm     = ref({ tanggal_bayar: new Date().toISOString().substring(0, 10), jumlah: '', metode: 'cash', rekening_id: '', keterangan: '' })
+const payLoading  = ref(false)
+
+const rekeningLabel = (id) => {
+  const r = props.rekeningOptions.find(r => r.id === id)
+  if (!r) return ''
+  return r.nomor_rekening ? `${r.bank} — ${r.nama} (${r.nomor_rekening})` : `${r.bank} — ${r.nama}`
+}
+
+const openPay = () => {
+  payForm.value = { tanggal_bayar: new Date().toISOString().substring(0, 10), jumlah: '', metode: 'cash', rekening_id: '', keterangan: '' }
+  showPayModal.value = true
+}
+
+const submitPembayaran = () => {
+  payLoading.value = true
+  router.post(`/penjualan-pembayaran/${detailGroup.value.no_nota}`, {
+    ...payForm.value,
+    channel: 'gudang',
+  }, {
+    onSuccess: () => { payLoading.value = false; showPayModal.value = false; showDetail.value = false },
+    onError:   () => { payLoading.value = false },
+  })
+}
+
+const deletePembayaran = (id) => {
+  if (!confirm('Hapus pembayaran ini?')) return
+  router.delete(`/penjualan-pembayaran/${id}`, {
+    onSuccess: () => { showDetail.value = false },
   })
 }
 

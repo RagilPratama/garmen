@@ -17,13 +17,25 @@
       </div>
     </div>
 
-    <!-- Hutang banner -->
-    <div class="bg-red-50 border border-red-200 rounded-xl px-5 py-4 flex items-center gap-4">
-      <div class="w-12 h-12 rounded-xl bg-red-100 shrink-0"></div>
-      <div class="flex-1 space-y-1.5">
-        <div class="h-3 w-16 bg-red-200 rounded"></div>
-        <div class="h-6 w-40 bg-red-200 rounded-md"></div>
-        <div class="h-3 w-56 bg-red-100 rounded"></div>
+    <!-- Hutang & Piutang Row Skeleton -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Hutang banner -->
+      <div class="bg-red-50 border border-red-200 rounded-xl px-5 py-4 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-red-100 shrink-0"></div>
+        <div class="flex-1 space-y-1.5 min-w-0">
+          <div class="h-3 w-16 bg-red-200 rounded"></div>
+          <div class="h-6 w-40 bg-red-200 rounded-md"></div>
+          <div class="h-3 w-56 bg-red-100 rounded"></div>
+        </div>
+      </div>
+      <!-- Piutang banner -->
+      <div class="bg-orange-50 border border-orange-200 rounded-xl px-5 py-4 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-orange-100 shrink-0"></div>
+        <div class="flex-1 space-y-1.5 min-w-0">
+          <div class="h-3 w-16 bg-orange-200 rounded"></div>
+          <div class="h-6 w-40 bg-orange-200 rounded-md"></div>
+          <div class="h-3 w-56 bg-orange-100 rounded"></div>
+        </div>
       </div>
     </div>
 

@@ -30,16 +30,34 @@
           <p class="text-xs opacity-70 mt-1">Status lunas</p>
         </div>
       </div>
-
-      <!-- Hutang Bahan -->
-      <div v-if="sisaHutang > 0" class="bg-red-50 border border-red-200 rounded-xl px-5 py-4 flex items-center gap-4">
-        <div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
-          <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+  
+      <!-- Hutang & Piutang Row -->
+      <div v-if="sisaHutang > 0 || sisaPiutang > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Hutang Bahan -->
+        <div v-if="sisaHutang > 0" class="bg-red-50 border border-red-200 rounded-xl px-5 py-4 flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
+            <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-xs text-red-600 font-semibold tracking-wide truncate">Hutang Bahan</p>
+            <p class="text-2xl font-bold text-red-700 mt-0.5 truncate">{{ formatRupiah(sisaHutang) }}</p>
+            <p class="text-xs text-red-500 mt-0.5 truncate">{{ jumlahNotaBelumLunas }} nota belum lunas &mdash; <a href="/bahan-masuk" class="underline hover:text-red-700">Lihat detail →</a></p>
+          </div>
         </div>
-        <div class="flex-1">
-          <p class="text-xs text-red-600 font-semibold tracking-wide">Hutang</p>
-          <p class="text-2xl font-bold text-red-700 mt-0.5">{{ formatRupiah(sisaHutang) }}</p>
-          <p class="text-xs text-red-500 mt-0.5">{{ jumlahNotaBelumLunas }} nota belum lunas &mdash; <a href="/bahan-masuk" class="underline hover:text-red-700">Lihat detail →</a></p>
+
+        <!-- Piutang Penjualan -->
+        <div v-if="sisaPiutang > 0" class="bg-orange-50 border border-orange-200 rounded-xl px-5 py-4 flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
+            <svg class="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-xs text-orange-600 font-semibold tracking-wide truncate">Piutang Penjualan</p>
+            <p class="text-2xl font-bold text-orange-700 mt-0.5 truncate">{{ formatRupiah(sisaPiutang) }}</p>
+            <p class="text-xs text-orange-500 mt-0.5 truncate">{{ jumlahNotaPiutang }} nota belum lunas &mdash;
+              <a href="/jual-gudang" class="underline hover:text-orange-700">Gudang</a> &middot;
+              <a href="/proses-jual" class="underline hover:text-orange-700">Toko</a>
+            </p>
+          </div>
         </div>
       </div>
 
@@ -217,6 +235,8 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 const props = defineProps({
   sisaHutang:           { type: Number, default: 0 },
   jumlahNotaBelumLunas: { type: Number, default: 0 },
+  sisaPiutang:          { type: Number, default: 0 },
+  jumlahNotaPiutang:    { type: Number, default: 0 },
   omsetTokoTotal:      { type: Number, default: 0 },
   omsetGudangTotal:    { type: Number, default: 0 },
   omsetTokoBulanIni:   { type: Number, default: 0 },

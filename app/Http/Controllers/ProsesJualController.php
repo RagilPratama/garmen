@@ -2,6 +2,8 @@
 namespace App\Http\Controllers;
 use App\Models\ProsesJual;
 use App\Models\BarangKirimToko;
+use App\Models\PenjualanPembayaran;
+use App\Models\Rekening;
 use App\Traits\GeneratesSuratJalan;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -22,15 +24,24 @@ class ProsesJualController extends Controller
                 ->orWhere('status', 'ilike', "%{$search}%")
             ))->get();
 
-        $grouped = $allRows->groupBy('no_nota')->map(function ($rows, $nota) {
+        // Load pembayaran per no_nota
+        $pembayaranMap = PenjualanPembayaran::where('channel', 'toko')
+            ->get()
+            ->groupBy('no_nota');
+
+        $grouped = $allRows->groupBy('no_nota')->map(function ($rows, $nota) use ($pembayaranMap) {
             $models = $rows->map(fn($r) => [
                 'id'           => $r->id,
                 'model'        => $r->model,
                 'pcs'          => $r->pcs,
                 'harga_satuan' => $r->harga_satuan,
+                'diskon'       => $r->diskon,
                 'total_harga'  => $r->total_harga,
                 'status'       => $r->status,
             ])->values();
+            $totalHarga  = $rows->sum(fn($r) => (float) $r->total_harga);
+            $pembayarans = $pembayaranMap->get($nota, collect())->values();
+            $totalBayar  = $pembayarans->sum('jumlah');
             return [
                 'no_nota'      => $nota,
                 'tanggal_nota' => $rows->min('tanggal_nota'),
@@ -38,8 +49,11 @@ class ProsesJualController extends Controller
                 'status'       => $rows->first()->status,
                 'jumlah_model' => $rows->count(),
                 'total_pcs'    => $rows->sum(fn($r) => (int) $r->pcs),
-                'total_harga'  => $rows->sum(fn($r) => (float) $r->total_harga),
+                'total_harga'  => $totalHarga,
+                'total_bayar'  => $totalBayar,
+                'sisa_piutang' => max(0, $totalHarga - $totalBayar),
                 'models'       => $models,
+                'pembayarans'  => $pembayarans,
             ];
         })->sortByDesc('tanggal_nota')->values();
 
@@ -83,9 +97,10 @@ class ProsesJualController extends Controller
         })->filter(fn($r) => $r['sisa_stok'] > 0)->values();
 
         return Inertia::render('ProsesJual/Index', [
-            'data'        => $data,
-            'stokOptions' => $stokOptions,
-            'nextNota'    => $this->nextCode(ProsesJual::class, 'no_nota', 'NT-TOKO-'),
+            'data'            => $data,
+            'stokOptions'     => $stokOptions,
+            'nextNota'        => $this->nextCode(ProsesJual::class, 'no_nota', 'NT-TOKO-'),
+            'rekeningOptions' => Rekening::orderBy('bank')->get(['id', 'bank', 'nama', 'nomor_rekening']),
         ]);
     }
 
@@ -96,12 +111,14 @@ class ProsesJualController extends Controller
             'tanggal_nota'          => 'required|date',
             'buyer'                 => 'required|string|max:200',
             'status'                => 'required|string|in:pending,lunas,batal',
+            'discount'              => 'nullable|numeric|min:0|max:100',
             'models'                => 'required|array|min:1',
             'models.*.model'        => 'required|string|max:200',
             'models.*.pcs'          => 'required|integer|min:1',
             'models.*.harga_satuan' => 'required|numeric|min:0',
         ]);
         $now  = now();
+        $diskonPersen = $request->discount ?? 0;
         $rows = collect($request->models)->map(fn($m) => [
             'no_nota'      => $request->no_nota,
             'tanggal_nota' => $request->tanggal_nota,
@@ -110,7 +127,8 @@ class ProsesJualController extends Controller
             'model'        => $m['model'],
             'pcs'          => $m['pcs'],
             'harga_satuan' => $m['harga_satuan'],
-            'total_harga'  => $m['pcs'] * $m['harga_satuan'],
+            'diskon'       => $diskonPersen,
+            'total_harga'  => ($m['pcs'] * $m['harga_satuan']) * (1 - $diskonPersen / 100),
             'created_at'   => $now,
             'updated_at'   => $now,
         ])->toArray();
@@ -124,7 +142,7 @@ class ProsesJualController extends Controller
             'pcs'          => 'required|integer|min:0',
             'harga_satuan' => 'required|numeric|min:0',
         ]);
-        $validated['total_harga'] = $validated['pcs'] * $validated['harga_satuan'];
+        $validated['total_harga'] = ($validated['pcs'] * $validated['harga_satuan']) * (1 - $prosesJual->diskon / 100);
         $prosesJual->update($validated);
         return redirect()->route('proses-jual.index')->with('message', 'Data berhasil diperbarui.');
     }

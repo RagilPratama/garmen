@@ -58,14 +58,12 @@
                 <th class="px-6 py-3 text-right font-medium">Total Barang Jadi</th>
                 <th class="px-6 py-3 text-right font-medium">Sudah Dikirim</th>
                 <th class="px-6 py-3 text-right font-medium">Siap Kirim (pcs)</th>
-                <th class="px-6 py-3 text-right font-medium">Harga / pcs</th>
-                <th class="px-6 py-3 text-right font-medium">Nilai Siap Kirim</th>
                 <th class="px-6 py-3 text-center font-medium">Status</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
               <tr v-if="filtered.length === 0">
-                <td colspan="8" class="px-6 py-12 text-center">
+                <td colspan="6" class="px-6 py-12 text-center">
                   <div class="flex flex-col items-center gap-2">
                     <svg class="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
@@ -90,21 +88,6 @@
                   >
                     {{ row.siap_kirim }}
                   </span>
-                </td>
-                <td class="px-6 py-3.5 text-right text-gray-600">
-                  <span v-if="row.harga_per_pcs > 0" class="font-medium text-gray-700">
-                    {{ formatRupiah(row.harga_per_pcs) }}
-                  </span>
-                  <span v-else class="text-gray-400 text-xs italic">-</span>
-                </td>
-                <td class="px-6 py-3.5 text-right">
-                  <span
-                    v-if="row.nilai_siap_kirim > 0"
-                    class="font-semibold text-amber-700"
-                  >
-                    {{ formatRupiah(row.nilai_siap_kirim) }}
-                  </span>
-                  <span v-else class="text-gray-400 text-xs italic">-</span>
                 </td>
                 <td class="px-6 py-3.5 text-center">
                   <span
@@ -131,8 +114,6 @@
                 <td class="px-6 py-3 text-right">{{ filtered.reduce((s, r) => s + r.total_jadi, 0) }}</td>
                 <td class="px-6 py-3 text-right text-blue-600">{{ filtered.reduce((s, r) => s + r.sudah_kirim, 0) }}</td>
                 <td class="px-6 py-3 text-right text-emerald-600">{{ filtered.reduce((s, r) => s + r.siap_kirim, 0) }}</td>
-                <td></td>
-                <td class="px-6 py-3 text-right text-amber-700">{{ formatRupiah(filtered.reduce((s, r) => s + r.nilai_siap_kirim, 0)) }}</td>
                 <td></td>
               </tr>
             </tfoot>
@@ -184,8 +165,5 @@ const filtered = computed(() => {
   return props.barangSiapKirim.filter(r => r.model?.toLowerCase().includes(q))
 })
 
-function formatRupiah(value) {
-  if (!value || value === 0) return 'Rp 0'
-  return 'Rp ' + Number(value).toLocaleString('id-ID')
-}
+
 </script>
