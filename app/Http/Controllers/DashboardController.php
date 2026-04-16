@@ -27,8 +27,8 @@ class DashboardController extends Controller
         // Omset
         $omsetTokoTotal   = ProsesJual::whereIn('status', ['lunas'])->sum('total_harga');
         $omsetGudangTotal = JualGudang::whereIn('status', ['lunas'])->sum('total_harga');
-        $omsetTokoBulanIni   = ProsesJual::whereIn('status', ['lunas', 'pending'])->whereMonth('tanggal_nota', $bulan)->whereYear('tanggal_nota', $tahun)->sum('total_harga');
-        $omsetGudangBulanIni = JualGudang::whereIn('status', ['lunas', 'pending'])->whereMonth('tanggal_nota', $bulan)->whereYear('tanggal_nota', $tahun)->sum('total_harga');
+        $omsetTokoBulanIni   = ProsesJual::whereIn('status', ['lunas', 'piutang'])->whereMonth('tanggal_nota', $bulan)->whereYear('tanggal_nota', $tahun)->sum('total_harga');
+        $omsetGudangBulanIni = JualGudang::whereIn('status', ['lunas', 'piutang'])->whereMonth('tanggal_nota', $bulan)->whereYear('tanggal_nota', $tahun)->sum('total_harga');
 
         // Stok bahan
         $stokBahan = StokBahan::where('sisa_stok', '>', 0)->count();
@@ -60,11 +60,11 @@ class DashboardController extends Controller
                 COUNT(DISTINCT CASE WHEN COALESCE(pp.dibayar, 0) < j.total_nota THEN j.no_nota END) AS nota_belum_lunas
             FROM (
                 SELECT no_nota, 'gudang' as channel, SUM(total_harga) AS total_harga, SUM(total_harga) AS total_nota
-                FROM jual_gudang WHERE status IN ('pending', 'lunas')
+                FROM jual_gudang WHERE status IN ('piutang', 'lunas')
                 GROUP BY no_nota
                 UNION ALL
                 SELECT no_nota, 'toko' as channel, SUM(total_harga) AS total_harga, SUM(total_harga) AS total_nota
-                FROM proses_jual WHERE status IN ('pending', 'lunas')
+                FROM proses_jual WHERE status IN ('piutang', 'lunas')
                 GROUP BY no_nota
             ) j
             LEFT JOIN (
@@ -78,12 +78,12 @@ class DashboardController extends Controller
 
         // Stok kantor: masuk kantor - jual gudang per model
         $masukKantor = BarangMasukKantor::selectRaw('model, SUM(pcs_barang_jadi) as total')->groupBy('model')->get()->keyBy('model');
-        $jualGudang  = JualGudang::selectRaw('model, SUM(pcs) as total')->whereIn('status', ['lunas', 'pending'])->groupBy('model')->get()->keyBy('model');
+        $jualGudang  = JualGudang::selectRaw('model, SUM(pcs) as total')->whereIn('status', ['lunas', 'piutang'])->groupBy('model')->get()->keyBy('model');
         $stokKantor  = $masukKantor->sum(fn($r) => max(0, (int)$r->total - (int)($jualGudang->get($r->model)?->total ?? 0)));
 
         // Stok toko: kirim toko - jual toko per model
         $kirimToko  = BarangKirimToko::selectRaw('model, SUM(pcs_barang_jadi) as total')->groupBy('model')->get()->keyBy('model');
-        $jualToko   = ProsesJual::selectRaw('model, SUM(pcs) as total')->whereIn('status', ['lunas', 'pending'])->groupBy('model')->get()->keyBy('model');
+        $jualToko   = ProsesJual::selectRaw('model, SUM(pcs) as total')->whereIn('status', ['lunas', 'piutang'])->groupBy('model')->get()->keyBy('model');
         $stokToko   = $kirimToko->sum(fn($r) => max(0, (int)$r->total - (int)($jualToko->get($r->model)?->total ?? 0)));
 
         // Pipeline produksi — load sekali, derive combos dari data yang sudah ada
@@ -119,10 +119,10 @@ class DashboardController extends Controller
 
         // Top model terlaris (gabungan toko + gudang, berdasarkan pcs terjual)
         $topToko   = ProsesJual::selectRaw('model, SUM(pcs) as total_pcs, SUM(total_harga) as total_omset')
-            ->whereIn('status', ['lunas', 'pending'])->groupBy('model')->get()
+            ->whereIn('status', ['lunas', 'piutang'])->groupBy('model')->get()
             ->map(fn($r) => ['model' => $r->model, 'total_pcs' => (int)$r->total_pcs, 'total_omset' => (float)$r->total_omset]);
         $topGudang = JualGudang::selectRaw('model, SUM(pcs) as total_pcs, SUM(total_harga) as total_omset')
-            ->whereIn('status', ['lunas', 'pending'])->groupBy('model')->get()
+            ->whereIn('status', ['lunas', 'piutang'])->groupBy('model')->get()
             ->map(fn($r) => ['model' => $r->model, 'total_pcs' => (int)$r->total_pcs, 'total_omset' => (float)$r->total_omset]);
         $topModels = $topToko->concat($topGudang)
             ->groupBy('model')
