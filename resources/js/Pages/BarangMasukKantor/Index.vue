@@ -201,10 +201,12 @@
               <span class="text-sm font-medium text-gray-700 flex-1 min-w-0 truncate">{{ item.model }}</span>
               <span class="text-xs text-gray-400 shrink-0">stok: {{ item.max_pcs }} pcs</span>
               <template v-if="checkedItems.has(itemKey(item))">
-                <input v-model="pcsPerItem[itemKey(item)]" type="number" min="1"
-                  @click.prevent class="w-20 px-2 py-1.5 border border-teal-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white text-right shrink-0"
-                  placeholder="pcs" @click.stop/>
-                <span class="text-xs text-gray-400 shrink-0">pcs</span>
+                <input v-model.number="hargaPerItem[itemKey(item)]" type="number" min="0" step="1000"
+                  @click.stop class="w-28 px-2 py-1.5 border border-teal-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white text-right shrink-0"
+                  placeholder="Harga"/>
+                <input v-model.number="pcsPerItem[itemKey(item)]" type="number" min="1"
+                  @click.stop class="w-20 px-2 py-1.5 border border-teal-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white text-right shrink-0"
+                  placeholder="Pcs"/>
               </template>
             </label>
             <div v-if="!filteredOptions.length" class="px-4 py-8 text-center text-sm text-gray-400">
@@ -298,6 +300,7 @@ const noSuratJalan = ref('')
 const tanggalKirim = ref('')
 const checkedItems = ref(new Set())
 const pcsPerItem   = ref({})
+const hargaPerItem = ref({})
 const processing   = ref(false)
 const modalSearch  = ref('')
 
@@ -315,6 +318,7 @@ const toggleItem = (item, e) => {
   if (e.target.checked) {
     newSet.add(key)
     if (!pcsPerItem.value[key]) pcsPerItem.value[key] = item.max_pcs
+    if (!hargaPerItem.value[key]) hargaPerItem.value[key] = 0
   } else {
     newSet.delete(key)
   }
@@ -328,6 +332,7 @@ const openCreate = () => {
   tanggalKirim.value = new Date().toISOString().substring(0, 10)
   checkedItems.value = new Set()
   pcsPerItem.value   = {}
+  hargaPerItem.value = {}
   modalSearch.value  = ''
   showModal.value    = true
 }
@@ -335,7 +340,12 @@ const submit = () => {
   processing.value = true
   const models = [...checkedItems.value].map(key => {
     const [po, model] = key.split('|||')
-    return { po, model, pcs_barang_jadi: parseInt(pcsPerItem.value[key]) || 0 }
+    return { 
+      po, 
+      model, 
+      pcs_barang_jadi: parseInt(pcsPerItem.value[key]) || 0,
+      harga_satuan: parseFloat(hargaPerItem.value[key]) || 0
+    }
   })
   router.post('/barang-masuk-kantor', {
     no_surat_jalan: noSuratJalan.value || null,

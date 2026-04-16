@@ -77,6 +77,7 @@ class BarangMasukKantorController extends Controller
             'models.*.po'              => 'required|string|max:100',
             'models.*.model'           => 'required|string|max:200',
             'models.*.pcs_barang_jadi' => 'required|integer|min:1',
+            'models.*.harga_satuan'    => 'required|numeric|min:0',
         ]);
         $now  = now();
         $rows = collect($request->models)->map(fn($m) => [
@@ -85,6 +86,7 @@ class BarangMasukKantorController extends Controller
             'po'              => $m['po'],
             'model'           => $m['model'],
             'pcs_barang_jadi' => $m['pcs_barang_jadi'],
+            'harga_satuan'    => $m['harga_satuan'],
             'created_at'      => $now,
             'updated_at'      => $now,
         ])->toArray();

@@ -9,7 +9,7 @@ class BarangMasukKantor extends Model
     protected $table = 'barang_masuk_kantor';
 
     protected $fillable = [
-        'no_surat_jalan', 'tanggal_kirim', 'po', 'model', 'pcs_barang_jadi',
+        'no_surat_jalan', 'tanggal_kirim', 'po', 'model', 'pcs_barang_jadi', 'harga_satuan',
     ];
 
     protected $casts = [

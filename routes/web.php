@@ -47,8 +47,10 @@ Route::middleware('auth')->group(function () {
     Route::resource('proses-finishing', ProsesFinishingController::class)->except(['show']);
     Route::resource('barang-masuk-kantor', BarangMasukKantorController::class)->except(['show']);
     Route::resource('barang-kirim-toko', BarangKirimTokoController::class)->except(['show']);
-    Route::resource('proses-jual', ProsesJualController::class)->except(['show']);
+    Route::resource('proses-jual', ProsesJualController::class)->except(['show', 'create', 'edit']);
     Route::resource('jual-gudang', JualGudangController::class)->except(['show', 'create', 'edit']);
+    Route::put('/jual-gudang-nota-status', [JualGudangController::class, 'updateNotaStatus'])->name('jual-gudang.update-nota-status');
+    Route::put('/proses-jual-nota-status', [ProsesJualController::class, 'updateNotaStatus'])->name('proses-jual.update-nota-status');
     Route::get('/stok-bahan', [StokBahanController::class, 'index'])->name('stok-bahan.index');
     Route::get('/stok-bahan-garmen', [StokBahanGarmenController::class, 'index'])->name('stok-bahan-garmen.index');
     Route::get('/stok-bahan-garmen/detail', [StokBahanGarmenController::class, 'detail'])->name('stok-bahan-garmen.detail');
