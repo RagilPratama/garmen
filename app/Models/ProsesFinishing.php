@@ -9,7 +9,7 @@ class ProsesFinishing extends Model
     protected $table = 'proses_finishing';
 
     protected $fillable = [
-        'po', 'model', 'tanggal_proses', 'pcs', 'tanggal_selesai', 'pcs_barang_jadi', 'harga', 'harga_satuan',
+        'po', 'model', 'tanggal_proses', 'pcs', 'tanggal_selesai', 'pcs_barang_jadi', 'harga_satuan',
     ];
 
     protected $casts = [

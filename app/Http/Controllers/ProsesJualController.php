@@ -69,7 +69,7 @@ class ProsesJualController extends Controller
         if ($hargaFinishing->count()) {
             $hargaRows = DB::table('proses_finishing')
                 ->whereIn('id', $hargaFinishing->values())
-                ->pluck('harga', 'model');
+                ->pluck('harga_satuan', 'model');
             $hargaPerModel = $hargaRows;
         }
 

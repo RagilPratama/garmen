@@ -24,7 +24,7 @@ class ProsesFinishingController extends Controller
                 'pcs'             => $r->pcs,
                 'pcs_barang_jadi' => $r->pcs_barang_jadi,
                 'tanggal_selesai' => $r->tanggal_selesai,
-                'harga'           => $r->harga,
+                'harga_satuan'    => $r->harga_satuan,
             ])->values();
             return [
                 'po'              => $po,
@@ -98,9 +98,9 @@ class ProsesFinishingController extends Controller
         $request->validate([
             'tanggal_selesai'  => 'nullable|date',
             'pcs_barang_jadi'  => 'nullable|integer|min:1',
-            'harga'            => 'nullable|integer|min:0',
+            'harga_satuan'     => 'nullable|integer|min:0',
         ]);
-        $prosesFinishing->update($request->only(['tanggal_selesai', 'pcs_barang_jadi', 'harga']));
+        $prosesFinishing->update($request->only(['tanggal_selesai', 'pcs_barang_jadi', 'harga_satuan']));
 
         // Auto-catat defect jika pcs_barang_jadi < pcs
         if ($request->filled('pcs_barang_jadi') && $prosesFinishing->pcs > 0) {

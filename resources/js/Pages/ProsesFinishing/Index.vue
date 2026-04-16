@@ -138,7 +138,7 @@
               </td>
               <td class="px-4 py-2.5 text-gray-500 text-xs">{{ mRow.tanggal_selesai ? formatDate(mRow.tanggal_selesai) : '—' }}</td>
               <td class="px-4 py-2.5 text-right">
-                <span v-if="mRow.harga" class="text-violet-700 font-semibold text-xs">{{ formatRupiah(mRow.harga) }}</span>
+                <span v-if="mRow.harga_satuan" class="text-violet-700 font-semibold text-xs">{{ formatRupiah(mRow.harga_satuan) }}</span>
                 <span v-else class="text-gray-400 text-xs">—</span>
               </td>
               <td class="px-4 py-2.5 text-center">
@@ -239,10 +239,10 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">Harga / pcs (Rp)</label>
             <div class="relative">
               <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">Rp</span>
-              <input v-model="editForm.harga" type="number" min="0" class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition bg-white" placeholder="0"/>
+              <input v-model="editForm.harga_satuan" type="number" min="0" class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition bg-white" placeholder="0"/>
             </div>
-            <p v-if="editForm.harga && editRow?.pcs_barang_jadi" class="mt-1 text-xs text-violet-600">
-              Total: {{ formatRupiah(editForm.harga * editRow.pcs_barang_jadi) }} ({{ editRow.pcs_barang_jadi }} pcs)
+            <p v-if="editForm.harga_satuan && editRow?.pcs_barang_jadi" class="mt-1 text-xs text-violet-600">
+              Total: {{ formatRupiah(editForm.harga_satuan * editRow.pcs_barang_jadi) }} ({{ editRow.pcs_barang_jadi }} pcs)
             </p>
           </div>
         </div>
@@ -333,13 +333,13 @@ const submit = () => {
 const showEditModal = ref(false)
 const editRow       = ref(null)
 const editId        = ref(null)
-const editForm      = useForm({ tanggal_selesai: '', pcs_barang_jadi: '', harga: '' })
+const editForm      = useForm({ tanggal_selesai: '', pcs_barang_jadi: '', harga_satuan: '' })
 const openEdit = (mRow) => {
   editRow.value  = mRow
   editId.value   = mRow.id
   editForm.tanggal_selesai  = mRow.tanggal_selesai?.substring?.(0, 10) ?? ''
   editForm.pcs_barang_jadi  = mRow.pcs_barang_jadi ?? ''
-  editForm.harga            = mRow.harga ?? ''
+  editForm.harga_satuan     = mRow.harga_satuan ?? ''
   editForm.clearErrors()
   showEditModal.value = true
 }
