@@ -24,6 +24,7 @@ use App\Http\Controllers\RincianBahanController;
 use App\Http\Controllers\DefectController;
 use App\Http\Controllers\BarangSiapKirimController;
 use App\Http\Controllers\PenjualanPembayaranController;
+use App\Http\Controllers\LaporanPenjualanController;
 use Illuminate\Support\Facades\Route;
 
 // Auth routes
@@ -65,4 +66,5 @@ Route::middleware('auth')->group(function () {
     Route::get('/defect', [DefectController::class, 'index'])->name('defect.index');
     Route::get('/tracking-po', [TrackingPoController::class, 'index'])->name('tracking-po.index');
     Route::get('/barang-siap-kirim', [BarangSiapKirimController::class, 'index'])->name('barang-siap-kirim.index');
+    Route::get('/laporan-penjualan', [LaporanPenjualanController::class, 'index'])->name('laporan-penjualan.index');
 });
