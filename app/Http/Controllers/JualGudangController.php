@@ -109,7 +109,7 @@ class JualGudangController extends Controller
             'no_nota'               => 'nullable|string|max:100',
             'tanggal_nota'          => 'required|date',
             'buyer'                 => 'required|string|max:200',
-            'status'                => 'required|string|in:pending,lunas,batal',
+            'status'                => 'required|string|in:piutang,lunas,batal',
             'discount'              => 'nullable|numeric|min:0|max:100',
             'models'                => 'required|array|min:1',
             'models.*.model'        => 'required|string|max:200',
@@ -151,7 +151,7 @@ class JualGudangController extends Controller
     {
         $request->validate([
             'no_nota' => 'required|string|max:100',
-            'status'  => 'required|string|in:pending,lunas,batal',
+            'status'  => 'required|string|in:piutang,lunas,batal',
         ]);
         JualGudang::where('no_nota', $request->no_nota)->update(['status' => $request->status]);
         return redirect()->route('jual-gudang.index')->with('message', 'Status nota berhasil diperbarui.');
