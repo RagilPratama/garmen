@@ -116,6 +116,11 @@ class ProsesJualController extends Controller
             'models.*.model'        => 'required|string|max:200',
             'models.*.pcs'          => 'required|integer|min:1',
             'models.*.harga_satuan' => 'required|numeric|min:0',
+            // Payment fields
+            'bayar'                 => 'nullable|numeric|min:0',
+            'metode'                => 'nullable|string|in:cash,transfer,debit',
+            'rekening_id'           => 'nullable|exists:rekening,id',
+            'keterangan_pembayaran' => 'nullable|string|max:255',
         ]);
         $now  = now();
         $diskonPersen = $request->discount ?? 0;
@@ -129,10 +134,25 @@ class ProsesJualController extends Controller
             'harga_satuan' => $m['harga_satuan'],
             'diskon'       => $diskonPersen,
             'total_harga'  => ($m['pcs'] * $m['harga_satuan']) * (1 - $diskonPersen / 100),
+            'bayar'        => $request->bayar ?? 0, // Even though we use PenjualanPembayaran, we can store it here too as requested
             'created_at'   => $now,
             'updated_at'   => $now,
         ])->toArray();
         ProsesJual::insert($rows);
+
+        // Record payment in PenjualanPembayaran
+        if ($request->bayar > 0) {
+            PenjualanPembayaran::create([
+                'no_nota'       => $request->no_nota,
+                'channel'       => 'toko',
+                'tanggal_bayar' => $request->tanggal_nota,
+                'jumlah'        => $request->bayar,
+                'metode'        => $request->metode ?? 'cash',
+                'rekening_id'   => $request->rekening_id,
+                'keterangan'    => $request->keterangan_pembayaran ?? 'Pembayaran awal saat buat nota',
+            ]);
+        }
+
         return redirect()->route('proses-jual.index')->with('message', 'Data berhasil ditambahkan.');
     }
 

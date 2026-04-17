@@ -345,6 +345,39 @@
               <option value="batal">Batal</option>
             </select>
           </div>
+          <div v-if="status !== 'batal'">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Nominal Bayar</label>
+            <input v-model.number="nominalBayar" type="number" min="0" :max="totalNilai"
+              class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition bg-white"
+              placeholder="0"/>
+          </div>
+        </div>
+
+        <div v-if="nominalBayar > 0" class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Metode <span class="text-red-500">*</span></label>
+            <div class="flex gap-4 mt-2">
+              <label v-for="m in ['cash','transfer','debit']" :key="m" class="flex items-center gap-2 cursor-pointer">
+                <input v-model="metodeBayar" type="radio" :value="m" class="text-violet-500"/>
+                <span class="text-sm text-gray-700 capitalize">{{ m }}</span>
+              </label>
+            </div>
+          </div>
+          <div v-if="metodeBayar === 'transfer'">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Rekening Tujuan <span class="text-red-500">*</span></label>
+            <select v-model="rekeningId" required
+              class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition bg-white">
+              <option value="" disabled>-- Pilih rekening --</option>
+              <option v-for="r in rekeningOptions" :key="r.id" :value="r.id">
+                {{ r.bank }} — {{ r.nama }}
+              </option>
+            </select>
+          </div>
+          <div class="col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Keterangan Bayar</label>
+            <input v-model="keteranganBayar" type="text" placeholder="Misal: DP awal, Lunas di muka, dll"
+              class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition bg-white"/>
+          </div>
         </div>
 
         <!-- Stock checklist -->
@@ -545,6 +578,11 @@ const pcsPerItem   = ref({})
 const hargaPerItem = ref({})
 const processing   = ref(false)
 const modalSearch  = ref('')
+const nominalBayar = ref(0)
+const metodeBayar  = ref('cash')
+const rekeningId   = ref('')
+const keteranganBayar = ref('')
+
 
 const filteredOptions = computed(() => {
   if (!modalSearch.value) return props.stokOptions
@@ -582,6 +620,15 @@ const discountNominal = computed(() => {
 })
 const totalNilai = computed(() => subtotal.value - discountNominal.value)
 
+watch(status, (newVal) => {
+  if (newVal === 'lunas') nominalBayar.value = totalNilai.value
+  else nominalBayar.value = 0
+})
+
+watch(totalNilai, (newTotal) => {
+  if (status.value === 'lunas') nominalBayar.value = newTotal
+})
+
 const openCreate = () => {
   noNota.value      = props.nextNota
   tanggalNota.value = new Date().toISOString().substring(0, 10)
@@ -592,6 +639,10 @@ const openCreate = () => {
   pcsPerItem.value   = {}
   hargaPerItem.value = {}
   modalSearch.value  = ''
+  nominalBayar.value = 0
+  metodeBayar.value  = 'cash'
+  rekeningId.value   = ''
+  keteranganBayar.value = ''
   showModal.value    = true
 }
 
@@ -609,6 +660,10 @@ const submit = () => {
     status:       status.value,
     models,
     discount:     parseFloat(discount.value) || 0, // persen
+    bayar:        nominalBayar.value,
+    metode:       metodeBayar.value,
+    rekening_id:  rekeningId.value || null,
+    keterangan_pembayaran: keteranganBayar.value,
   }, {
     onSuccess: () => { showModal.value = false; processing.value = false },
     onError:   () => { processing.value = false },

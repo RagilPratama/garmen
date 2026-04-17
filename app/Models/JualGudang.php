@@ -10,7 +10,7 @@ class JualGudang extends Model
 
     protected $fillable = [
         'no_nota', 'tanggal_nota', 'buyer', 'po', 'model',
-        'pcs', 'harga_satuan', 'diskon', 'total_harga', 'status',
+        'pcs', 'harga_satuan', 'diskon', 'total_harga', 'status', 'bayar',
     ];
 
     protected $casts = [
