@@ -26,6 +26,7 @@ use App\Http\Controllers\BarangSiapKirimController;
 use App\Http\Controllers\PenjualanPembayaranController;
 use App\Http\Controllers\LaporanPenjualanController;
 use App\Http\Controllers\LaporanModelTerjualController;
+use App\Http\Controllers\LaporanHppController;
 use Illuminate\Support\Facades\Route;
 
 // Auth routes
@@ -70,5 +71,5 @@ Route::middleware('auth')->group(function () {
     Route::get('/laporan-penjualan', [LaporanPenjualanController::class, 'index'])->name('laporan-penjualan.index');
     Route::get('/laporan-penjualan/export-data', [LaporanPenjualanController::class, 'exportData'])->name('laporan-penjualan.export-data');
     Route::get('/laporan-model-terjual', [LaporanModelTerjualController::class, 'index'])->name('laporan-model-terjual.index');
-
+    Route::get('/laporan-hpp', [LaporanHppController::class, 'index'])->name('laporan-hpp.index');
 });
