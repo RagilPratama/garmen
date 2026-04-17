@@ -8,35 +8,35 @@
       </div>
 
       <!-- Summary Cards -->
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 flex flex-col justify-center">
           <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Stok Kantor</p>
-          <p class="text-2xl font-bold text-blue-600 mt-1">{{ totalSisaKantor }}</p>
+          <p class="text-lg md:text-xl font-bold text-blue-600 mt-1 truncate" :title="totalSisaKantor.toLocaleString('id-ID')">{{ totalSisaKantor.toLocaleString('id-ID') }}</p>
           <p class="text-xs text-gray-400 mt-0.5">pcs tersedia</p>
         </div>
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 flex flex-col justify-center">
           <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Stok Toko</p>
-          <p class="text-2xl font-bold text-emerald-600 mt-1">{{ totalSisaToko }}</p>
+          <p class="text-lg md:text-xl font-bold text-emerald-600 mt-1 truncate" :title="totalSisaToko.toLocaleString('id-ID')">{{ totalSisaToko.toLocaleString('id-ID') }}</p>
           <p class="text-xs text-gray-400 mt-0.5">pcs tersedia</p>
         </div>
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 flex flex-col justify-center">
           <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Jenis Model</p>
-          <p class="text-2xl font-bold text-purple-600 mt-1">{{ uniqueModels }}</p>
+          <p class="text-lg md:text-xl font-bold text-purple-600 mt-1 truncate" :title="uniqueModels.toLocaleString('id-ID')">{{ uniqueModels.toLocaleString('id-ID') }}</p>
           <p class="text-xs text-gray-400 mt-0.5">model aktif</p>
         </div>
-        <div class="col-span-2 sm:col-span-1 bg-white rounded-xl border border-amber-100 shadow-sm px-5 py-4">
+        <div class="bg-white rounded-xl border border-amber-100 shadow-sm px-5 py-4 flex flex-col justify-center">
           <p class="text-xs text-amber-600 uppercase tracking-wide font-semibold">Omset Toko</p>
-          <p class="text-lg font-bold text-amber-700 mt-1 leading-tight">{{ formatRupiah(omsetToko) }}</p>
+          <p class="text-lg md:text-xl font-bold text-amber-700 mt-1 leading-tight truncate" :title="formatRupiah(omsetToko)">{{ formatRupiah(omsetToko) }}</p>
           <p class="text-xs text-gray-400 mt-0.5">lunas + pending</p>
         </div>
-        <div class="col-span-2 sm:col-span-1 bg-white rounded-xl border border-orange-100 shadow-sm px-5 py-4">
+        <div class="bg-white rounded-xl border border-orange-100 shadow-sm px-5 py-4 flex flex-col justify-center">
           <p class="text-xs text-orange-600 uppercase tracking-wide font-semibold">Omset Gudang</p>
-          <p class="text-lg font-bold text-orange-700 mt-1 leading-tight">{{ formatRupiah(omsetGudang) }}</p>
+          <p class="text-lg md:text-xl font-bold text-orange-700 mt-1 leading-tight truncate" :title="formatRupiah(omsetGudang)">{{ formatRupiah(omsetGudang) }}</p>
           <p class="text-xs text-gray-400 mt-0.5">lunas + pending</p>
         </div>
-        <div class="bg-white rounded-xl border border-green-100 shadow-sm px-5 py-4">
+        <div class="bg-white rounded-xl border border-green-100 shadow-sm px-5 py-4 flex flex-col justify-center">
           <p class="text-xs text-green-600 uppercase tracking-wide font-semibold">Total Omset</p>
-          <p class="text-lg font-bold text-green-700 mt-1 leading-tight">{{ formatRupiah(omsetToko + omsetGudang) }}</p>
+          <p class="text-lg md:text-xl font-bold text-green-700 mt-1 leading-tight truncate" :title="formatRupiah(omsetToko + omsetGudang)">{{ formatRupiah(omsetToko + omsetGudang) }}</p>
           <p class="text-xs text-gray-400 mt-0.5">gabungan</p>
         </div>
       </div>

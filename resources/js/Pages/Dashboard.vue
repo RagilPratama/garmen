@@ -9,25 +9,25 @@
 
       <!-- Omset Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:grid-cols-4">
-        <div class="bg-gradient-to-br from-amber-400 to-amber-500 rounded-xl p-5 text-white shadow-md">
-          <p class="text-xs font-medium uppercase tracking-wide opacity-80">Omset Toko — Bulan Ini</p>
-          <p class="text-2xl font-bold mt-1 leading-tight">{{ formatRupiah(omsetTokoBulanIni) }}</p>
-          <p class="text-xs opacity-70 mt-1">All time lunas: {{ formatRupiah(omsetTokoTotal) }}</p>
+        <div class="bg-gradient-to-br from-amber-400 to-amber-500 rounded-xl p-5 text-white shadow-md overflow-hidden">
+          <p class="text-xs font-medium uppercase tracking-wide opacity-80 truncate">Omset Toko — Bulan Ini</p>
+          <p class="text-xl font-bold mt-1 leading-tight truncate" :title="formatRupiah(omsetTokoBulanIni)">{{ formatRupiah(omsetTokoBulanIni) }}</p>
+          <p class="text-xs opacity-70 mt-1 truncate" :title="'All time lunas: ' + formatRupiah(omsetTokoTotal)">All time lunas: {{ formatRupiah(omsetTokoTotal) }}</p>
         </div>
-        <div class="bg-gradient-to-br from-orange-400 to-orange-500 rounded-xl p-5 text-white shadow-md">
-          <p class="text-xs font-medium uppercase tracking-wide opacity-80">Omset Gudang — Bulan Ini</p>
-          <p class="text-2xl font-bold mt-1 leading-tight">{{ formatRupiah(omsetGudangBulanIni) }}</p>
-          <p class="text-xs opacity-70 mt-1">All time lunas: {{ formatRupiah(omsetGudangTotal) }}</p>
+        <div class="bg-gradient-to-br from-orange-400 to-orange-500 rounded-xl p-5 text-white shadow-md overflow-hidden">
+          <p class="text-xs font-medium uppercase tracking-wide opacity-80 truncate">Omset Gudang — Bulan Ini</p>
+          <p class="text-xl font-bold mt-1 leading-tight truncate" :title="formatRupiah(omsetGudangBulanIni)">{{ formatRupiah(omsetGudangBulanIni) }}</p>
+          <p class="text-xs opacity-70 mt-1 truncate" :title="'All time lunas: ' + formatRupiah(omsetGudangTotal)">All time lunas: {{ formatRupiah(omsetGudangTotal) }}</p>
         </div>
-        <div class="bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-xl p-5 text-white shadow-md">
-          <p class="text-xs font-medium uppercase tracking-wide opacity-80">Total Omset Bulan Ini</p>
-          <p class="text-2xl font-bold mt-1 leading-tight">{{ formatRupiah(omsetTokoBulanIni + omsetGudangBulanIni) }}</p>
-          <p class="text-xs opacity-70 mt-1">Gabungan toko + gudang</p>
+        <div class="bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-xl p-5 text-white shadow-md overflow-hidden">
+          <p class="text-xs font-medium uppercase tracking-wide opacity-80 truncate">Total Omset Bulan Ini</p>
+          <p class="text-xl font-bold mt-1 leading-tight truncate" :title="formatRupiah(omsetTokoBulanIni + omsetGudangBulanIni)">{{ formatRupiah(omsetTokoBulanIni + omsetGudangBulanIni) }}</p>
+          <p class="text-xs opacity-70 mt-1 truncate">Gabungan toko + gudang</p>
         </div>
-        <div class="bg-gradient-to-br from-emerald-600 to-teal-600 rounded-xl p-5 text-white shadow-md">
-          <p class="text-xs font-medium uppercase tracking-wide opacity-80">Total Omset All Time</p>
-          <p class="text-2xl font-bold mt-1 leading-tight">{{ formatRupiah(omsetTokoTotal + omsetGudangTotal) }}</p>
-          <p class="text-xs opacity-70 mt-1">Status lunas</p>
+        <div class="bg-gradient-to-br from-emerald-600 to-teal-600 rounded-xl p-5 text-white shadow-md overflow-hidden">
+          <p class="text-xs font-medium uppercase tracking-wide opacity-80 truncate">Total Omset All Time</p>
+          <p class="text-xl font-bold mt-1 leading-tight truncate" :title="formatRupiah(omsetTokoTotal + omsetGudangTotal)">{{ formatRupiah(omsetTokoTotal + omsetGudangTotal) }}</p>
+          <p class="text-xs opacity-70 mt-1 truncate">Status lunas</p>
         </div>
       </div>
   
@@ -40,7 +40,7 @@
           </div>
           <div class="flex-1 min-w-0">
             <p class="text-xs text-red-600 font-semibold tracking-wide truncate">Hutang Bahan</p>
-            <p class="text-2xl font-bold text-red-700 mt-0.5 truncate">{{ formatRupiah(sisaHutang) }}</p>
+            <p class="text-xl font-bold text-red-700 mt-0.5 truncate">{{ formatRupiah(sisaHutang) }}</p>
             <p class="text-xs text-red-500 mt-0.5 truncate">{{ jumlahNotaBelumLunas }} nota belum lunas &mdash; <a href="/bahan-masuk" class="underline hover:text-red-700">Lihat detail →</a></p>
           </div>
         </div>
@@ -52,7 +52,7 @@
           </div>
           <div class="flex-1 min-w-0">
             <p class="text-xs text-orange-600 font-semibold tracking-wide truncate">Piutang Penjualan</p>
-            <p class="text-2xl font-bold text-orange-700 mt-0.5 truncate">{{ formatRupiah(sisaPiutang) }}</p>
+            <p class="text-xl font-bold text-orange-700 mt-0.5 truncate">{{ formatRupiah(sisaPiutang) }}</p>
             <p class="text-xs text-orange-500 mt-0.5 truncate">{{ jumlahNotaPiutang }} nota belum lunas &mdash;
               <a href="/jual-gudang" class="underline hover:text-orange-700">Gudang</a> &middot;
               <a href="/proses-jual" class="underline hover:text-orange-700">Toko</a>
@@ -62,35 +62,44 @@
       </div>
 
       <!-- Stok Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 flex items-center gap-4">
           <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
             <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
           </div>
-          <div>
+          <div class="min-w-0 flex-1">
             <p class="text-xs text-gray-500 font-medium">Stok Bahan</p>
-            <p class="text-2xl font-bold text-gray-800">{{ totalSisaBahan.toLocaleString('id-ID') }} <span class="text-sm font-normal text-gray-400">yard</span></p>
-            <p class="text-xs text-gray-400">{{ stokBahan }} jenis bahan</p>
+            <div class="flex items-baseline gap-1 mt-0.5">
+              <p class="text-xl font-bold text-gray-800 truncate" :title="totalSisaBahan.toLocaleString('id-ID')">{{ totalSisaBahan.toLocaleString('id-ID') }}</p>
+              <span class="text-sm font-normal text-gray-400 shrink-0">yard</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-0.5">{{ stokBahan }} jenis bahan</p>
           </div>
         </div>
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 flex items-center gap-4">
           <div class="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
             <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
           </div>
-          <div>
+          <div class="min-w-0 flex-1">
             <p class="text-xs text-gray-500 font-medium">Stok Kantor</p>
-            <p class="text-2xl font-bold text-gray-800">{{ stokKantor.toLocaleString('id-ID') }} <span class="text-sm font-normal text-gray-400">pcs</span></p>
-            <p class="text-xs text-gray-400">Siap jual dari gudang</p>
+            <div class="flex items-baseline gap-1 mt-0.5">
+              <p class="text-xl font-bold text-gray-800 truncate" :title="stokKantor.toLocaleString('id-ID')">{{ stokKantor.toLocaleString('id-ID') }}</p>
+              <span class="text-sm font-normal text-gray-400 shrink-0">pcs</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-0.5">Siap jual dari gudang</p>
           </div>
         </div>
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 flex items-center gap-4">
           <div class="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
             <svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
           </div>
-          <div>
+          <div class="min-w-0 flex-1">
             <p class="text-xs text-gray-500 font-medium">Stok Toko</p>
-            <p class="text-2xl font-bold text-gray-800">{{ stokToko.toLocaleString('id-ID') }} <span class="text-sm font-normal text-gray-400">pcs</span></p>
-            <p class="text-xs text-gray-400">Siap jual dari toko</p>
+             <div class="flex items-baseline gap-1 mt-0.5">
+              <p class="text-xl font-bold text-gray-800 truncate" :title="stokToko.toLocaleString('id-ID')">{{ stokToko.toLocaleString('id-ID') }}</p>
+              <span class="text-sm font-normal text-gray-400 shrink-0">pcs</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-0.5">Siap jual dari toko</p>
           </div>
         </div>
       </div>
