@@ -12,11 +12,15 @@ class MasterModelController extends Controller
     public function index()
     {
         $search = request('search');
-        $data = MasterModel::latest()
+        $data = MasterModel::select('id', 'nama_model', 'keterangan', 'created_at')
+            ->latest()
             ->when($search, fn($q) => $q->where(fn($q) => $q
                 ->where('nama_model', 'like', "%{$search}%")
                 ->orWhere('keterangan', 'like', "%{$search}%")
-            ))->paginate(15)->withQueryString();
+            ))
+            ->paginate(15)
+            ->withQueryString();
+        
         return Inertia::render('MasterModel/Index', ['data' => $data]);
     }
 

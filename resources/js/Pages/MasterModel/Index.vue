@@ -45,10 +45,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, defineAsyncComponent } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import DataTable from '@/Components/DataTable.vue'
-import Modal from '@/Components/Modal.vue'
+
+// Lazy load Modal component
+const Modal = defineAsyncComponent(() => import('@/Components/Modal.vue'))
 
 defineProps({ data: Object })
 
