@@ -109,9 +109,8 @@
           enter-from-class="opacity-0"
           leave-to-class="opacity-0"
           mode="out-in">
-          <div v-if="isNavigating" key="skeleton">
-            <DashboardSkeleton v-if="isDashboard" />
-            <TableSkeleton v-else />
+          <div v-if="isNavigating && isDashboard" key="skeleton">
+            <DashboardSkeleton />
           </div>
           <div v-else key="content">
             <slot />
@@ -125,7 +124,6 @@
 <script setup>
 import { ref, computed, h, onMounted, onUnmounted } from 'vue'
 import { Link, usePage, router } from '@inertiajs/vue3'
-import TableSkeleton from '@/Components/TableSkeleton.vue'
 import DashboardSkeleton from '@/Components/DashboardSkeleton.vue'
 
 const props = defineProps({ title: { type: String, default: 'Dashboard' } })
