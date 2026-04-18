@@ -22,8 +22,8 @@ class BahanKeluarController extends Controller
 
         $rows = BahanKeluar::latest()
             ->when($search, fn($q) => $q->where(fn($q) => $q
-                ->where('kode_bahan',     'ilike', "%{$search}%")
-                ->orWhere('no_surat_jalan', 'ilike', "%{$search}%")
+                ->where('kode_bahan',     'like', "%{$search}%")
+                ->orWhere('no_surat_jalan', 'like', "%{$search}%")
             ))
             ->get();
 

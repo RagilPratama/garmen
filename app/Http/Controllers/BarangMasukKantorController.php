@@ -15,8 +15,8 @@ class BarangMasukKantorController extends Controller
         $search = request('search');
         $allRows = BarangMasukKantor::latest()
             ->when($search, fn($q) => $q->where(fn($q) => $q
-                ->orWhere('model', 'ilike', "%{$search}%")
-                ->orWhere('no_surat_jalan', 'ilike', "%{$search}%")
+                ->orWhere('model', 'like', "%{$search}%")
+                ->orWhere('no_surat_jalan', 'like', "%{$search}%")
             ))->get();
 
         $grouped = $allRows->groupBy('no_surat_jalan')->map(function ($rows, $noSuratJalan) {

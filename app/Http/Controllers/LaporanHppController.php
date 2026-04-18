@@ -25,8 +25,8 @@ class LaporanHppController extends Controller
             )
             ->leftJoin('proses_finishing', 'bahan_proses_potong.po', '=', 'proses_finishing.po')
             ->when($search, function($q) use ($search) {
-                $q->where('bahan_proses_potong.po', 'ilike', "%$search%")
-                  ->orWhere('bahan_proses_potong.model', 'ilike', "%$search%");
+                $q->where('bahan_proses_potong.po', 'like', "%$search%")
+                  ->orWhere('bahan_proses_potong.model', 'like', "%$search%");
             });
 
         $results = $query->get()->map(function($item) {

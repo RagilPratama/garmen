@@ -19,10 +19,10 @@ class JualGudangController extends Controller
         $search  = request('search');
         $allRows = JualGudang::latest()
             ->when($search, fn($q) => $q->where(fn($q) => $q
-                ->where('buyer', 'ilike', "%{$search}%")
-                ->orWhere('model', 'ilike', "%{$search}%")
-                ->orWhere('no_nota', 'ilike', "%{$search}%")
-                ->orWhere('status', 'ilike', "%{$search}%")
+                ->where('buyer', 'like', "%{$search}%")
+                ->orWhere('model', 'like', "%{$search}%")
+                ->orWhere('no_nota', 'like', "%{$search}%")
+                ->orWhere('status', 'like', "%{$search}%")
             ))->get();
 
         // Load pembayaran per no_nota

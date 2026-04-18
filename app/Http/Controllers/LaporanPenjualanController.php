@@ -17,13 +17,13 @@ class LaporanPenjualanController extends Controller
     private function buildReport(?string $search = null, ?string $startDate = null, ?string $endDate = null)
     {
         $gudang = JualGudang::select('no_nota', 'tanggal_nota', 'buyer', 'status', 'total_harga', 'model', 'pcs', 'harga_satuan', 'diskon', DB::raw("'gudang' as tipe"))
-            ->when($search, fn($q) => $q->where('no_nota', 'ilike', "%$search%")->orWhere('buyer', 'ilike', "%$search%"))
+            ->when($search, fn($q) => $q->where('no_nota', 'like', "%$search%")->orWhere('buyer', 'like', "%$search%"))
             ->when($startDate, fn($q) => $q->whereDate('tanggal_nota', '>=', $startDate))
             ->when($endDate,   fn($q) => $q->whereDate('tanggal_nota', '<=', $endDate))
             ->get();
 
         $toko = ProsesJual::select('no_nota', 'tanggal_nota', 'buyer', 'status', 'total_harga', 'model', 'pcs', 'harga_satuan', 'diskon', DB::raw("'toko' as tipe"))
-            ->when($search, fn($q) => $q->where('no_nota', 'ilike', "%$search%")->orWhere('buyer', 'ilike', "%$search%"))
+            ->when($search, fn($q) => $q->where('no_nota', 'like', "%$search%")->orWhere('buyer', 'like', "%$search%"))
             ->when($startDate, fn($q) => $q->whereDate('tanggal_nota', '>=', $startDate))
             ->when($endDate,   fn($q) => $q->whereDate('tanggal_nota', '<=', $endDate))
             ->get();

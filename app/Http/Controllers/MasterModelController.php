@@ -14,8 +14,8 @@ class MasterModelController extends Controller
         $search = request('search');
         $data = MasterModel::latest()
             ->when($search, fn($q) => $q->where(fn($q) => $q
-                ->where('nama_model', 'ilike', "%{$search}%")
-                ->orWhere('keterangan', 'ilike', "%{$search}%")
+                ->where('nama_model', 'like', "%{$search}%")
+                ->orWhere('keterangan', 'like', "%{$search}%")
             ))->paginate(15)->withQueryString();
         return Inertia::render('MasterModel/Index', ['data' => $data]);
     }

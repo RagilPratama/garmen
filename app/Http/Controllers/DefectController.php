@@ -16,8 +16,8 @@ class DefectController extends Controller
         $rows = DB::table('defects')
             ->select('id', 'sumber', 'po', 'model', 'pcs_defect', 'keterangan', 'referensi_id', 'created_at')
             ->when($search, fn($q) => $q->where(fn($q) => $q
-                ->where('po',    'ilike', "%{$search}%")
-                ->orWhere('model', 'ilike', "%{$search}%")
+                ->where('po',    'like', "%{$search}%")
+                ->orWhere('model', 'like', "%{$search}%")
             ))
             ->when($sumber, fn($q) => $q->where('sumber', $sumber))
             ->orderByDesc('created_at')

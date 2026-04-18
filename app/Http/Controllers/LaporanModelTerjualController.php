@@ -17,7 +17,7 @@ class LaporanModelTerjualController extends Controller
 
         // Penjualan dari Gudang per model
         $gudang = JualGudang::selectRaw('model, SUM(pcs) as pcs_gudang, SUM(total_harga) as omset_gudang')
-            ->when($search,    fn($q) => $q->where('model', 'ilike', "%$search%"))
+            ->when($search,    fn($q) => $q->where('model', 'like', "%$search%"))
             ->when($startDate, fn($q) => $q->whereDate('tanggal_nota', '>=', $startDate))
             ->when($endDate,   fn($q) => $q->whereDate('tanggal_nota', '<=', $endDate))
             ->groupBy('model')
@@ -26,7 +26,7 @@ class LaporanModelTerjualController extends Controller
 
         // Penjualan dari Toko per model
         $toko = ProsesJual::selectRaw('model, SUM(pcs) as pcs_toko, SUM(total_harga) as omset_toko')
-            ->when($search,    fn($q) => $q->where('model', 'ilike', "%$search%"))
+            ->when($search,    fn($q) => $q->where('model', 'like', "%$search%"))
             ->when($startDate, fn($q) => $q->whereDate('tanggal_nota', '>=', $startDate))
             ->when($endDate,   fn($q) => $q->whereDate('tanggal_nota', '<=', $endDate))
             ->groupBy('model')

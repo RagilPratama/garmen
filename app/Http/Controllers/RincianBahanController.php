@@ -16,8 +16,8 @@ class RincianBahanController extends Controller
             $rowsQuery = DB::table('bahan_keluar')
                 ->select('id', 'tanggal', 'no_surat_jalan', 'kode_bahan', 'yard', 'rp_per_yard', 'total')
                 ->when($search, fn($q) => $q->where(fn($q) => $q
-                    ->where('kode_bahan',       'ilike', "%{$search}%")
-                    ->orWhere('no_surat_jalan', 'ilike', "%{$search}%")
+                    ->where('kode_bahan',       'like', "%{$search}%")
+                    ->orWhere('no_surat_jalan', 'like', "%{$search}%")
                 ))
                 ->orderByDesc('created_at');
 
@@ -30,10 +30,10 @@ class RincianBahanController extends Controller
             $rowsQuery = DB::table('bahan_masuk')
                 ->select('id', 'tanggal', 'no_nota', 'no_surat_jalan', 'supplier', 'kode_bahan', 'nama_bahan', 'yard', 'rp_per_yard', 'total')
                 ->when($search, fn($q) => $q->where(fn($q) => $q
-                    ->where('kode_bahan',       'ilike', "%{$search}%")
-                    ->orWhere('no_nota',         'ilike', "%{$search}%")
-                    ->orWhere('no_surat_jalan',  'ilike', "%{$search}%")
-                    ->orWhere('supplier',        'ilike', "%{$search}%")
+                    ->where('kode_bahan',       'like', "%{$search}%")
+                    ->orWhere('no_nota',         'like', "%{$search}%")
+                    ->orWhere('no_surat_jalan',  'like', "%{$search}%")
+                    ->orWhere('supplier',        'like', "%{$search}%")
                 ))
                 ->orderByDesc('created_at');
 

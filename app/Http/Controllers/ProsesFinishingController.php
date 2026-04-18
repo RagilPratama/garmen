@@ -13,8 +13,8 @@ class ProsesFinishingController extends Controller
         $search = request('search');
         $allRows = ProsesFinishing::latest()
             ->when($search, fn($q) => $q->where(fn($q) => $q
-                ->where('po', 'ilike', "%{$search}%")
-                ->orWhere('model', 'ilike', "%{$search}%")
+                ->where('po', 'like', "%{$search}%")
+                ->orWhere('model', 'like', "%{$search}%")
             ))->get();
 
         $grouped = $allRows->groupBy('po')->map(function ($rows, $po) {

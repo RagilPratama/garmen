@@ -14,9 +14,9 @@ class SupplierController extends Controller
         $search = request('search');
         $data = Supplier::latest()
             ->when($search, fn($q) => $q->where(fn($q) => $q
-                ->where('nama', 'ilike', "%{$search}%")
-                ->orWhere('telepon', 'ilike', "%{$search}%")
-                ->orWhere('alamat', 'ilike', "%{$search}%")
+                ->where('nama', 'like', "%{$search}%")
+                ->orWhere('telepon', 'like', "%{$search}%")
+                ->orWhere('alamat', 'like', "%{$search}%")
             ))->paginate(15)->withQueryString();
         return Inertia::render('Supplier/Index', ['data' => $data]);
     }

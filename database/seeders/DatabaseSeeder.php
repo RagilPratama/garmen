@@ -122,7 +122,6 @@ class DatabaseSeeder extends Seeder
                 'yard'           => $yard,
                 'rp_per_yard'    => $rp,
                 'total'          => $total,
-                'status'         => 'diterima',
             ]);
             $bahanMasukNota[$nota] = $total;
         }
@@ -262,13 +261,13 @@ class DatabaseSeeder extends Seeder
         // ════════════════════════════════════════════════════════════════════════
         $extraToko = [
             // [buyer, model, pcs, harga, diskon%, tanggal, no_nota, status, lunas%]
-            ['Toko Makmur',    'Polo Shirt Casual',    30,  95000, null, '2025-11-10', 'NT-010', 'lunas',   100],
-            ['Grosir Mandiri', 'Kaos Oblong Basic',    50,  55000, null, '2026-01-20', 'NT-011', 'piutang',  50],
-            ['Toko Indah',     'Kemeja Batik Premium', 15, 185000, 5,    '2026-02-14', 'NT-012', 'lunas',   100],
-            ['Toko Sejahtera', 'Polo Shirt Casual',    40,  95000, null, '2026-04-02', 'NT-013', 'lunas',   100],
-            ['Retail Mode',    'Kemeja Batik Premium', 20, 185000, null, '2026-04-05', 'NT-014', 'lunas',   100],
-            ['Toko Makmur',    'Kaos Oblong Basic',    60,  55000, 10,   '2026-04-08', 'NT-015', 'piutang',  30],
-            ['Online Store',   'Polo Shirt Premium',   25, 115000, null, '2026-04-10', 'NT-016', 'lunas',   100],
+            ['Toko Makmur',    'Polo Shirt Casual',    30,  95000, 0, '2025-11-10', 'NT-010', 'lunas',   100],
+            ['Grosir Mandiri', 'Kaos Oblong Basic',    50,  55000, 0, '2026-01-20', 'NT-011', 'piutang',  50],
+            ['Toko Indah',     'Kemeja Batik Premium', 15, 185000, 5, '2026-02-14', 'NT-012', 'lunas',   100],
+            ['Toko Sejahtera', 'Polo Shirt Casual',    40,  95000, 0, '2026-04-02', 'NT-013', 'lunas',   100],
+            ['Retail Mode',    'Kemeja Batik Premium', 20, 185000, 0, '2026-04-05', 'NT-014', 'lunas',   100],
+            ['Toko Makmur',    'Kaos Oblong Basic',    60,  55000, 10, '2026-04-08', 'NT-015', 'piutang',  30],
+            ['Online Store',   'Polo Shirt Premium',   25, 115000, 0, '2026-04-10', 'NT-016', 'lunas',   100],
         ];
 
         foreach ($extraToko as [$buyer, $model, $pcs, $harga, $diskon, $tgl, $nota, $status, $lunasPct]) {
@@ -305,10 +304,10 @@ class DatabaseSeeder extends Seeder
 
         $extraGudang = [
             // [buyer, po, model, pcs, harga, diskon%, tanggal, no_nota, status, lunas%]
-            ['Distributor Bali',  'PO-2025-003', 'Jaket Bomber Fleece', 20, 250000, null, '2026-04-03', 'NG-010', 'lunas',   100],
-            ['Grosir Besar',      'PO-2026-001', 'Kaos Oblong Basic',   35,  55000, 5,    '2026-04-09', 'NG-011', 'piutang',  40],
-            ['Fashion House',     'PO-2025-001', 'Kemeja Batik Premium',10, 185000, null, '2026-04-12', 'NG-012', 'lunas',   100],
-            ['Distro Nusantara',  'PO-2025-002', 'Polo Shirt Casual',   25,  95000, null, '2026-04-15', 'NG-013', 'piutang',   0],
+            ['Distributor Bali',  'PO-2025-003', 'Jaket Bomber Fleece', 20, 250000, 0, '2026-04-03', 'NG-010', 'lunas',   100],
+            ['Grosir Besar',      'PO-2026-001', 'Kaos Oblong Basic',   35,  55000, 5, '2026-04-09', 'NG-011', 'piutang',  40],
+            ['Fashion House',     'PO-2025-001', 'Kemeja Batik Premium',10, 185000, 0, '2026-04-12', 'NG-012', 'lunas',   100],
+            ['Distro Nusantara',  'PO-2025-002', 'Polo Shirt Casual',   25,  95000, 0, '2026-04-15', 'NG-013', 'piutang',   0],
         ];
 
         foreach ($extraGudang as [$buyer, $po, $model, $pcs, $harga, $diskon, $tgl, $nota, $status, $lunasPct]) {
@@ -460,7 +459,7 @@ class DatabaseSeeder extends Seeder
                 'model'        => $model,
                 'pcs'          => $pcsJual,
                 'harga_satuan' => $hargaJual,
-                'diskon'       => null,
+                'diskon'       => 0,
                 'total_harga'  => $total,
                 'status'       => 'lunas',
             ]);
@@ -491,7 +490,7 @@ class DatabaseSeeder extends Seeder
                 'model'        => $model,
                 'pcs'          => $pcsGudang,
                 'harga_satuan' => $hargaJual,
-                'diskon'       => null,
+                'diskon'       => 0,
                 'total_harga'  => $total,
                 'status'       => 'lunas',
             ]);

@@ -22,8 +22,8 @@ class BahanProsesPotongController extends Controller
             ->select('id', 'po', 'tanggal_potong', 'model', 'kode_bahan', 'yard', 'hasil_potongan')
             ->with('bahanMasuk:kode_bahan,nama_bahan')
             ->when($search, fn($q) => $q->where(fn($q) => $q
-                ->where('po', 'ilike', "%{$search}%")
-                ->orWhere('model', 'ilike', "%{$search}%")
+                ->where('po', 'like', "%{$search}%")
+                ->orWhere('model', 'like', "%{$search}%")
             ))
             ->orderByDesc('created_at')
             ->get();

@@ -13,9 +13,9 @@ class RekeningController extends Controller
         $search = request('search');
         $data = Rekening::latest()
             ->when($search, fn($q) => $q->where(fn($q) => $q
-                ->where('bank',             'ilike', "%{$search}%")
-                ->orWhere('nama',           'ilike', "%{$search}%")
-                ->orWhere('nomor_rekening', 'ilike', "%{$search}%")
+                ->where('bank',             'like', "%{$search}%")
+                ->orWhere('nama',           'like', "%{$search}%")
+                ->orWhere('nomor_rekening', 'like', "%{$search}%")
             ))->paginate(15)->withQueryString();
 
         return Inertia::render('Rekening/Index', ['data' => $data]);

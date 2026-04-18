@@ -21,10 +21,10 @@ class BahanMasukController extends Controller
 
         $rows = BahanMasuk::latest()
             ->when($search, fn($q) => $q->where(fn($q) => $q
-                ->where('supplier',        'ilike', "%{$search}%")
-                ->orWhere('kode_bahan',    'ilike', "%{$search}%")
-                ->orWhere('no_nota',       'ilike', "%{$search}%")
-                ->orWhere('no_surat_jalan','ilike', "%{$search}%")
+                ->where('supplier',        'like', "%{$search}%")
+                ->orWhere('kode_bahan',    'like', "%{$search}%")
+                ->orWhere('no_nota',       'like', "%{$search}%")
+                ->orWhere('no_surat_jalan','like', "%{$search}%")
             ))
             ->get();
 
@@ -235,17 +235,15 @@ class BahanMasukController extends Controller
             return;
         }
 
-        // Build a single INSERT ... ON CONFLICT DO UPDATE query (1 query total).
-        // For each kode_bahan: insert with delta as total_masuk, or atomically
-        // increment existing total_masuk and recalculate sisa_stok.
+        // MySQL: INSERT ... ON DUPLICATE KEY UPDATE
         $placeholders = [];
         $bindings     = [];
 
         foreach ($deltas as $kode => $delta) {
-            $placeholders[] = '(?, ?::numeric, 0::numeric, GREATEST(0::numeric, ?::numeric))';
+            $placeholders[] = '(?, ?, 0, GREATEST(0, ?))';
             $bindings[]     = $kode;
-            $bindings[]     = (float) max(0, $delta); // initial insert value
-            $bindings[]     = (float) max(0, $delta); // initial sisa_stok
+            $bindings[]     = (float) max(0, $delta);
+            $bindings[]     = (float) max(0, $delta);
         }
 
         $values = implode(', ', $placeholders);
@@ -253,9 +251,9 @@ class BahanMasukController extends Controller
         \DB::statement("
             INSERT INTO stok_bahan (kode_bahan, total_masuk, total_keluar, sisa_stok)
             VALUES {$values}
-            ON CONFLICT (kode_bahan) DO UPDATE SET
-                total_masuk = GREATEST(0::numeric, stok_bahan.total_masuk + EXCLUDED.total_masuk),
-                sisa_stok   = GREATEST(0::numeric, GREATEST(0::numeric, stok_bahan.total_masuk + EXCLUDED.total_masuk) - stok_bahan.total_keluar),
+            ON DUPLICATE KEY UPDATE
+                total_masuk = GREATEST(0, total_masuk + VALUES(total_masuk)),
+                sisa_stok   = GREATEST(0, GREATEST(0, total_masuk + VALUES(total_masuk)) - total_keluar),
                 updated_at  = NOW()
         ", $bindings);
     }
