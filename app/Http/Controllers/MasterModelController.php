@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\MasterModel;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -13,22 +12,17 @@ class MasterModelController extends Controller
     public function index()
     {
         $search = request('search');
-        
-        // Cache key berdasarkan search query dan page
         $page = request('page', 1);
-        $cacheKey = "master_models_list_{$page}_" . md5($search ?? '');
         
-        // Cache selama 5 menit (300 detik)
-        $data = Cache::remember($cacheKey, 300, function () use ($search) {
-            return MasterModel::select('id', 'nama_model', 'keterangan', 'created_at')
-                ->latest()
-                ->when($search, fn($q) => $q->where(fn($q) => $q
-                    ->where('nama_model', 'like', "%{$search}%")
-                    ->orWhere('keterangan', 'like', "%{$search}%")
-                ))
-                ->paginate(15)
-                ->withQueryString();
-        });
+        // Jangan cache pagination object, langsung query saja
+        $data = MasterModel::select('id', 'nama_model', 'keterangan', 'created_at')
+            ->latest()
+            ->when($search, fn($q) => $q->where(fn($q) => $q
+                ->where('nama_model', 'like', "%{$search}%")
+                ->orWhere('keterangan', 'like', "%{$search}%")
+            ))
+            ->paginate(15)
+            ->withQueryString();
         
         return Inertia::render('MasterModel/Index', ['data' => $data]);
     }
@@ -40,9 +34,6 @@ class MasterModelController extends Controller
             'keterangan'  => 'nullable|string|max:500',
         ]);
         MasterModel::create($validated);
-        
-        // Clear cache setelah create
-        Cache::flush();
         
         return redirect()->route('master-model.index')->with('message', 'Model berhasil ditambahkan.');
     }
@@ -76,9 +67,6 @@ class MasterModelController extends Controller
             }
         }
 
-        // Clear cache setelah update
-        Cache::flush();
-
         return redirect()->route('master-model.index')->with('message', 'Model berhasil diperbarui.');
     }
 
@@ -103,9 +91,6 @@ class MasterModelController extends Controller
         }
 
         $masterModel->delete();
-        
-        // Clear cache setelah delete
-        Cache::flush();
         
         return redirect()->route('master-model.index')->with('message', 'Model berhasil dihapus.');
     }
