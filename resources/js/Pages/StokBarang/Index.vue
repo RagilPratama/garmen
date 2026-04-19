@@ -57,7 +57,7 @@
 
         <!-- Search -->
         <div class="px-6 py-3 border-b border-gray-50 bg-gray-50/50">
-          <input v-model="search" type="text" placeholder="Cari PO / Model..."
+          <input v-model="search" type="text" placeholder="Cari Model..."
             class="w-full max-w-xs px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent bg-white"/>
         </div>
 
@@ -66,7 +66,6 @@
           <table class="w-full text-sm">
             <thead>
               <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
-                <th class="px-6 py-3 text-left font-medium">PO</th>
                 <th class="px-6 py-3 text-left font-medium">Model</th>
                 <th class="px-6 py-3 text-right font-medium">Masuk Kantor</th>
                 <th class="px-6 py-3 text-right font-medium">Kirim Toko</th>
@@ -77,10 +76,9 @@
             </thead>
             <tbody class="divide-y divide-gray-50">
               <tr v-if="filteredKantor.length === 0">
-                <td colspan="7" class="px-6 py-10 text-center text-gray-400">Belum ada data stok kantor.</td>
+                <td colspan="6" class="px-6 py-10 text-center text-gray-400">Belum ada data stok kantor.</td>
               </tr>
-              <tr v-for="row in filteredKantor" :key="row.po+'||'+row.model" class="hover:bg-gray-50/60 transition-colors">
-                <td class="px-6 py-3.5 font-medium text-gray-800">{{ row.po }}</td>
+              <tr v-for="row in filteredKantor" :key="row.model" class="hover:bg-gray-50/60 transition-colors">
                 <td class="px-6 py-3.5 text-gray-600">{{ row.model }}</td>
                 <td class="px-6 py-3.5 text-right text-gray-700">{{ row.masuk_kantor }}</td>
                 <td class="px-6 py-3.5 text-right text-gray-500">{{ row.kirim_toko }}</td>
@@ -160,7 +158,7 @@ const formatRupiah = (val) => new Intl.NumberFormat('id-ID', { style: 'currency'
 
 const filteredKantor = computed(() => {
   const q = search.value.toLowerCase()
-  return q ? props.stokKantor.filter(r => r.po?.toLowerCase().includes(q) || r.model?.toLowerCase().includes(q)) : props.stokKantor
+  return q ? props.stokKantor.filter(r => r.model?.toLowerCase().includes(q)) : props.stokKantor
 })
 
 const filteredToko = computed(() => {

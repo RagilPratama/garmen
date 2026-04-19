@@ -12,33 +12,30 @@ class StokBarangController extends Controller
 {
     public function index()
     {
-        // Stok Kantor: masuk kantor - kirim ke toko - jual dari gudang, per po+model
-        $masukKantor = BarangMasukKantor::selectRaw('po, model, SUM(pcs_barang_jadi) as total')
-            ->groupBy('po', 'model')->get()
-            ->keyBy(fn($r) => $r->po . '||' . $r->model);
+        // Stok Kantor: masuk kantor - kirim ke toko - jual dari gudang, per model saja
+        $masukKantor = BarangMasukKantor::selectRaw('model, SUM(pcs_barang_jadi) as total')
+            ->groupBy('model')->get()->keyBy('model');
 
-        $kirimToko = BarangKirimToko::selectRaw('po, model, SUM(pcs_barang_jadi) as total')
-            ->groupBy('po', 'model')->get()
-            ->keyBy(fn($r) => $r->po . '||' . $r->model);
+        $kirimToko = BarangKirimToko::selectRaw('model, SUM(pcs_barang_jadi) as total')
+            ->groupBy('model')->get()->keyBy('model');
 
-        $jualGudangStok = JualGudang::selectRaw('po, model, SUM(pcs) as total')
+        $jualGudangStok = JualGudang::selectRaw('model, SUM(pcs) as total')
             ->whereIn('status', ['lunas', 'pending'])
-            ->groupBy('po', 'model')->get()
-            ->keyBy(fn($r) => $r->po . '||' . $r->model);
+            ->groupBy('model')->get()->keyBy('model');
 
-        $allKeys = $masukKantor->keys()->merge($kirimToko->keys())->unique();
-        $stokKantor = $allKeys->map(function ($key) use ($masukKantor, $kirimToko, $jualGudangStok) {
-            [$po, $model] = explode('||', $key);
-            $masuk   = (int) ($masukKantor->get($key)?->total ?? 0);
-            $kirim   = (int) ($kirimToko->get($key)?->total ?? 0);
-            $terjual = (int) ($jualGudangStok->get($key)?->total ?? 0);
+        $allModelsKantor = $masukKantor->keys()->merge($kirimToko->keys())->merge($jualGudangStok->keys())->unique();
+        $stokKantor = $allModelsKantor->map(function ($model) use ($masukKantor, $kirimToko, $jualGudangStok) {
+            $masuk   = (int) ($masukKantor->get($model)?->total ?? 0);
+            $kirim   = (int) ($kirimToko->get($model)?->total ?? 0);
+            $terjual = (int) ($jualGudangStok->get($model)?->total ?? 0);
             return [
-                'po' => $po, 'model' => $model,
-                'masuk_kantor' => $masuk, 'kirim_toko' => $kirim,
+                'model' => $model,
+                'masuk_kantor' => $masuk,
+                'kirim_toko' => $kirim,
                 'jual_gudang' => $terjual,
                 'sisa_kantor' => $masuk - $kirim - $terjual,
             ];
-        })->values()->sortBy('po')->values();
+        })->values()->sortBy('model')->values();
 
         // Stok Toko: kirim ke toko - jual dari toko (proses_jual), per model
         $kirimTokoModel = BarangKirimToko::selectRaw('model, SUM(pcs_barang_jadi) as total')
