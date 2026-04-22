@@ -16,6 +16,7 @@ use App\Models\BarangKirimToko;
 use App\Models\ProsesJual;
 use App\Models\JualGudang;
 use App\Models\PenjualanPembayaran;
+use App\Models\PengeluaranToko;
 
 class DashboardController extends Controller
 {
@@ -231,6 +232,15 @@ class DashboardController extends Controller
                 ->values();
         }
 
+        // Pengeluaran toko (untuk user toko)
+        $pengeluaranTokoBulanIni = 0;
+        if (!$isAdmin && $tokoId) {
+            $pengeluaranTokoBulanIni = PengeluaranToko::where('toko_id', $tokoId)
+                ->whereMonth('tanggal', now()->month)
+                ->whereYear('tanggal', now()->year)
+                ->sum('jumlah');
+        }
+
         return Inertia::render('Dashboard', [
             'sisaHutang'           => (float) $sisaHutang,
             'jumlahNotaBelumLunas' => (int) $jumlahNotaBelumLunas,
@@ -252,6 +262,7 @@ class DashboardController extends Controller
             'topModels'            => $topModels,
             'isAdmin'              => $isAdmin,
             'userToko'             => $user->toko?->nama_toko,
+            'pengeluaranTokoBulanIni' => (float) $pengeluaranTokoBulanIni,
         ]);
     }
 }

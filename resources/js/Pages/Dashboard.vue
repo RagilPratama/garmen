@@ -32,16 +32,23 @@
       </div>
 
       <!-- Omset Cards - Toko -->
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-gradient-to-br from-violet-400 to-violet-500 rounded-xl p-5 text-white shadow-md overflow-hidden">
           <p class="text-xs font-medium uppercase tracking-wide opacity-80 truncate">Omset Bulan Ini</p>
           <p class="text-2xl font-bold mt-1 leading-tight truncate" :title="formatRupiah(omsetTokoBulanIni)">{{ formatRupiah(omsetTokoBulanIni) }}</p>
           <p class="text-xs opacity-70 mt-1 truncate">{{ userToko }}</p>
         </div>
+        <div class="bg-gradient-to-br from-red-400 to-red-500 rounded-xl p-5 text-white shadow-md overflow-hidden">
+          <p class="text-xs font-medium uppercase tracking-wide opacity-80 truncate">Pengeluaran Bulan Ini</p>
+          <p class="text-2xl font-bold mt-1 leading-tight truncate" :title="formatRupiah(pengeluaranTokoBulanIni)">{{ formatRupiah(pengeluaranTokoBulanIni) }}</p>
+          <p class="text-xs opacity-70 mt-1 truncate">
+            <a href="/pengeluaran-toko" class="underline hover:text-white/80">Lihat detail →</a>
+          </p>
+        </div>
         <div class="bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-xl p-5 text-white shadow-md overflow-hidden">
-          <p class="text-xs font-medium uppercase tracking-wide opacity-80 truncate">Total Omset (Lunas)</p>
-          <p class="text-2xl font-bold mt-1 leading-tight truncate" :title="formatRupiah(omsetTokoTotal)">{{ formatRupiah(omsetTokoTotal) }}</p>
-          <p class="text-xs opacity-70 mt-1 truncate">All time</p>
+          <p class="text-xs font-medium uppercase tracking-wide opacity-80 truncate">Laba Bersih Bulan Ini</p>
+          <p class="text-2xl font-bold mt-1 leading-tight truncate" :title="formatRupiah(omsetTokoBulanIni - pengeluaranTokoBulanIni)">{{ formatRupiah(omsetTokoBulanIni - pengeluaranTokoBulanIni) }}</p>
+          <p class="text-xs opacity-70 mt-1 truncate">Omset - Pengeluaran</p>
         </div>
       </div>
 
@@ -360,6 +367,7 @@ const props = defineProps({
   topModels:           { type: Array,  default: () => [] },
   isAdmin:             { type: Boolean, default: false },
   userToko:            { type: String, default: null },
+  pengeluaranTokoBulanIni: { type: Number, default: 0 },
 })
 
 const hours = new Date().getHours()

@@ -27,6 +27,7 @@ use App\Http\Controllers\PenjualanPembayaranController;
 use App\Http\Controllers\LaporanPenjualanController;
 use App\Http\Controllers\LaporanModelTerjualController;
 use App\Http\Controllers\LaporanHppController;
+use App\Http\Controllers\PengeluaranTokoController;
 use Illuminate\Support\Facades\Route;
 
 // Auth routes
@@ -72,6 +73,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/laporan-penjualan/export-data', [LaporanPenjualanController::class, 'exportData'])->name('laporan-penjualan.export-data');
     Route::get('/laporan-model-terjual', [LaporanModelTerjualController::class, 'index'])->name('laporan-model-terjual.index');
     Route::get('/laporan-hpp', [LaporanHppController::class, 'index'])->name('laporan-hpp.index');
+    
+    // Pengeluaran Toko
+    Route::resource('pengeluaran-toko', PengeluaranTokoController::class)->except(['show', 'create', 'edit']);
     
     // API endpoint untuk get stok toko
     Route::get('/api/stok-toko/{tokoId}', [ProsesJualController::class, 'getStokToko']);

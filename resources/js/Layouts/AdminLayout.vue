@@ -160,12 +160,12 @@ const filteredNavItems = computed(() => {
     // Admin bisa akses semua menu
     return navItems
   } else if (isToko.value) {
-    // User toko hanya bisa akses Dashboard dan Penjualan
+    // User toko hanya bisa akses Dashboard dan Penjualan (Jual Toko & Pengeluaran Toko)
     return navItems.filter(item => {
       if (item.type === 'header') {
         return item.label === 'Penjualan'
       }
-      return item.name === 'dashboard' || item.name === 'proses-jual'
+      return item.name === 'dashboard' || item.name === 'proses-jual' || item.name === 'pengeluaran-toko'
     })
   }
   return navItems
@@ -203,6 +203,7 @@ const IconCalculator = { render: () => h('svg', { fill: 'none', stroke: 'current
 
 const IconUsers = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' })]) }
 const IconBank = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M3 10h18M3 14h18M7 6l5-3 5 3M4 10v8a1 1 0 001 1h14a1 1 0 001-1v-8' })]) }
+const IconExpense = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', class: 'w-5 h-5' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' })]) }
 
 const navItems = [
   { type: 'link', name: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: IconDashboard },
@@ -231,6 +232,7 @@ const navItems = [
   { type: 'link', name: 'barang-kirim-toko', label: 'Kirim Ke Toko', href: '/barang-kirim-toko', icon: IconShop },
   { type: 'header', label: 'Penjualan' },
   { type: 'link', name: 'proses-jual', label: 'Jual Toko', href: '/proses-jual', icon: IconCash },
+  { type: 'link', name: 'pengeluaran-toko', label: 'Pengeluaran Toko', href: '/pengeluaran-toko', icon: IconExpense },
   { type: 'link', name: 'jual-gudang', label: 'Jual Gudang', href: '/jual-gudang', icon: IconCash },
   { type: 'link', name: 'laporan-penjualan',      label: 'Laporan Penjualan',    href: '/laporan-penjualan',      icon: IconReport },
   { type: 'link', name: 'laporan-model-terjual',  label: 'Model Terjual',        href: '/laporan-model-terjual',  icon: IconChart  },
