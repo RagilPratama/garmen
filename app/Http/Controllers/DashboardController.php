@@ -17,6 +17,8 @@ use App\Models\ProsesJual;
 use App\Models\JualGudang;
 use App\Models\PenjualanPembayaran;
 use App\Models\PengeluaranToko;
+use App\Models\Toko;
+use App\Models\KasToko;
 
 class DashboardController extends Controller
 {
@@ -241,6 +243,65 @@ class DashboardController extends Controller
                 ->sum('jumlah');
         }
 
+        // Saldo kas toko
+        $saldoKasToko = [];
+        if ($isAdmin) {
+            $tokos = Toko::where('is_active', true)->get();
+            foreach ($tokos as $toko) {
+                $saldoKasToko[] = [
+                    'nama_toko' => $toko->nama_toko,
+                    'kode_toko' => $toko->kode_toko,
+                    'saldo' => $toko->saldo_kas,
+                    'saldo_cash' => $toko->saldo_cash,
+                    'saldo_transfer' => $toko->saldo_transfer,
+                    'saldo_debit' => $toko->saldo_debit,
+                ];
+            }
+        } else {
+            $toko = $user->toko;
+            $saldoKasToko[] = [
+                'nama_toko' => $toko->nama_toko,
+                'kode_toko' => $toko->kode_toko,
+                'saldo' => $toko->saldo_kas,
+                'saldo_cash' => $toko->saldo_cash,
+                'saldo_transfer' => $toko->saldo_transfer,
+                'saldo_debit' => $toko->saldo_debit,
+            ];
+        }
+
+        // Transaksi kas terbaru
+        $recentKasToko = [];
+        if ($isAdmin) {
+            $recentKasToko = KasToko::with('toko')
+                ->latest('tanggal')
+                ->latest('created_at')
+                ->take(5)
+                ->get()
+                ->map(fn($r) => [
+                    'id' => $r->id,
+                    'tanggal' => $r->tanggal,
+                    'toko' => $r->toko->nama_toko,
+                    'jenis' => $r->jenis,
+                    'kategori' => $r->kategori,
+                    'jumlah' => $r->jumlah,
+                    'saldo_sesudah' => $r->saldo_sesudah,
+                ]);
+        } else if ($tokoId) {
+            $recentKasToko = KasToko::where('toko_id', $tokoId)
+                ->latest('tanggal')
+                ->latest('created_at')
+                ->take(5)
+                ->get()
+                ->map(fn($r) => [
+                    'id' => $r->id,
+                    'tanggal' => $r->tanggal,
+                    'jenis' => $r->jenis,
+                    'kategori' => $r->kategori,
+                    'jumlah' => $r->jumlah,
+                    'saldo_sesudah' => $r->saldo_sesudah,
+                ]);
+        }
+
         return Inertia::render('Dashboard', [
             'sisaHutang'           => (float) $sisaHutang,
             'jumlahNotaBelumLunas' => (int) $jumlahNotaBelumLunas,
@@ -263,6 +324,8 @@ class DashboardController extends Controller
             'isAdmin'              => $isAdmin,
             'userToko'             => $user->toko?->nama_toko,
             'pengeluaranTokoBulanIni' => (float) $pengeluaranTokoBulanIni,
+            'saldoKasToko'         => $saldoKasToko,
+            'recentKasToko'        => $recentKasToko,
         ]);
     }
 }

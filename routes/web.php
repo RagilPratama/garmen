@@ -28,6 +28,7 @@ use App\Http\Controllers\LaporanPenjualanController;
 use App\Http\Controllers\LaporanModelTerjualController;
 use App\Http\Controllers\LaporanHppController;
 use App\Http\Controllers\PengeluaranTokoController;
+use App\Http\Controllers\KasTokoController;
 use Illuminate\Support\Facades\Route;
 
 // Auth routes
@@ -76,6 +77,12 @@ Route::middleware('auth')->group(function () {
     
     // Pengeluaran Toko
     Route::resource('pengeluaran-toko', PengeluaranTokoController::class)->except(['show', 'create', 'edit']);
+    
+    // Kas Toko
+    Route::get('/kas-toko', [KasTokoController::class, 'index'])->name('kas-toko.index');
+    Route::post('/kas-toko', [KasTokoController::class, 'store'])->name('kas-toko.store');
+    Route::delete('/kas-toko/{kasToko}', [KasTokoController::class, 'destroy'])->name('kas-toko.destroy');
+    Route::get('/kas-toko/laporan', [KasTokoController::class, 'laporan'])->name('kas-toko.laporan');
     
     // API endpoint untuk get stok toko
     Route::get('/api/stok-toko/{tokoId}', [ProsesJualController::class, 'getStokToko']);

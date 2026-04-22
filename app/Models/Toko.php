@@ -13,10 +13,18 @@ class Toko extends Model
         'alamat',
         'telepon',
         'is_active',
+        'saldo_kas',
+        'saldo_cash',
+        'saldo_transfer',
+        'saldo_debit',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'saldo_kas' => 'decimal:2',
+        'saldo_cash' => 'decimal:2',
+        'saldo_transfer' => 'decimal:2',
+        'saldo_debit' => 'decimal:2',
     ];
 
     public function users(): HasMany
@@ -32,5 +40,10 @@ class Toko extends Model
     public function prosesJual(): HasMany
     {
         return $this->hasMany(ProsesJual::class);
+    }
+
+    public function kasToko(): HasMany
+    {
+        return $this->hasMany(KasToko::class);
     }
 }

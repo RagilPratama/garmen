@@ -4,6 +4,8 @@ use App\Models\ProsesJual;
 use App\Models\BarangKirimToko;
 use App\Models\PenjualanPembayaran;
 use App\Models\Rekening;
+use App\Models\KasToko;
+use App\Models\Toko;
 use App\Traits\GeneratesSuratJalan;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -173,20 +175,50 @@ class ProsesJualController extends Controller
             'created_at'   => $now,
             'updated_at'   => $now,
         ])->toArray();
-        ProsesJual::insert($rows);
+        
+        DB::transaction(function () use ($rows, $request, $tokoId, $user) {
+            ProsesJual::insert($rows);
 
-        // Record payment in PenjualanPembayaran
-        if ($request->bayar > 0) {
-            PenjualanPembayaran::create([
-                'no_nota'       => $request->no_nota,
-                'channel'       => 'toko',
-                'tanggal_bayar' => $request->tanggal_nota,
-                'jumlah'        => $request->bayar,
-                'metode'        => $request->metode ?? 'cash',
-                'rekening_id'   => $request->rekening_id,
-                'keterangan'    => $request->keterangan_pembayaran ?? 'Pembayaran awal saat buat nota',
-            ]);
-        }
+            // Record payment in PenjualanPembayaran
+            if ($request->bayar > 0) {
+                PenjualanPembayaran::create([
+                    'no_nota'       => $request->no_nota,
+                    'channel'       => 'toko',
+                    'tanggal_bayar' => $request->tanggal_nota,
+                    'jumlah'        => $request->bayar,
+                    'metode'        => $request->metode ?? 'cash',
+                    'rekening_id'   => $request->rekening_id,
+                    'keterangan'    => $request->keterangan_pembayaran ?? 'Pembayaran awal saat buat nota',
+                ]);
+                
+                // Tambahkan ke kas toko untuk semua metode pembayaran
+                $toko = Toko::lockForUpdate()->findOrFail($tokoId);
+                $metode = $request->metode ?? 'cash';
+                $saldoField = 'saldo_' . $metode;
+                
+                $saldoSebelum = $toko->$saldoField;
+                $saldoSesudah = $saldoSebelum + $request->bayar;
+                
+                KasToko::create([
+                    'toko_id' => $tokoId,
+                    'tanggal' => $request->tanggal_nota,
+                    'jenis' => 'masuk',
+                    'metode_bayar' => $metode,
+                    'kategori' => 'Penjualan',
+                    'jumlah' => $request->bayar,
+                    'keterangan' => 'Penjualan ' . $request->no_nota . ' - ' . $request->buyer,
+                    'referensi' => $request->no_nota,
+                    'saldo_sebelum' => $saldoSebelum,
+                    'saldo_sesudah' => $saldoSesudah,
+                    'user_id' => $user->id,
+                ]);
+                
+                $toko->update([
+                    $saldoField => $saldoSesudah,
+                    'saldo_kas' => $toko->saldo_cash + $toko->saldo_transfer + $toko->saldo_debit + $request->bayar
+                ]);
+            }
+        });
 
         return redirect()->route('proses-jual.index')->with('message', 'Data berhasil ditambahkan.');
     }

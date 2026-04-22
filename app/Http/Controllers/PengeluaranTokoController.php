@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\PengeluaranToko;
+use App\Models\KasToko;
+use App\Models\Toko;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class PengeluaranTokoController extends Controller
@@ -69,7 +72,43 @@ class PengeluaranTokoController extends Controller
             $validated['toko_id'] = $user->toko_id;
         }
 
-        PengeluaranToko::create($validated);
+        DB::transaction(function () use ($validated, $user) {
+            $pengeluaran = PengeluaranToko::create($validated);
+
+            // Kurangi saldo kas toko
+            $toko = Toko::lockForUpdate()->findOrFail($validated['toko_id']);
+            $metode = $validated['metode_bayar'];
+            $saldoField = 'saldo_' . $metode;
+            
+            $saldoSebelum = $toko->$saldoField;
+            $saldoSesudah = $saldoSebelum - $validated['jumlah'];
+            
+            // Validasi saldo tidak boleh negatif
+            if ($saldoSesudah < 0) {
+                throw new \Exception('Saldo ' . $metode . ' tidak mencukupi');
+            }
+            
+            // Buat transaksi kas keluar
+            KasToko::create([
+                'toko_id' => $validated['toko_id'],
+                'tanggal' => $validated['tanggal'],
+                'jenis' => 'keluar',
+                'metode_bayar' => $metode,
+                'kategori' => $validated['kategori'],
+                'jumlah' => $validated['jumlah'],
+                'keterangan' => $validated['keterangan'],
+                'referensi' => 'PENGELUARAN-' . $pengeluaran->id,
+                'saldo_sebelum' => $saldoSebelum,
+                'saldo_sesudah' => $saldoSesudah,
+                'user_id' => $user->id,
+            ]);
+            
+            // Update saldo toko
+            $toko->update([
+                $saldoField => $saldoSesudah,
+                'saldo_kas' => $toko->saldo_cash + $toko->saldo_transfer + $toko->saldo_debit - $validated['jumlah']
+            ]);
+        });
 
         return redirect()->back()->with('success', 'Pengeluaran berhasil ditambahkan');
     }
@@ -91,7 +130,45 @@ class PengeluaranTokoController extends Controller
             'metode_bayar' => 'required|in:cash,transfer,debit',
         ]);
 
-        $pengeluaranToko->update($validated);
+        DB::transaction(function () use ($pengeluaranToko, $validated) {
+            $oldJumlah = $pengeluaranToko->jumlah;
+            $oldMetode = $pengeluaranToko->metode_bayar;
+            
+            // Kembalikan saldo lama
+            $toko = Toko::lockForUpdate()->findOrFail($pengeluaranToko->toko_id);
+            $oldSaldoField = 'saldo_' . $oldMetode;
+            $toko->$oldSaldoField += $oldJumlah;
+            $toko->saldo_kas += $oldJumlah;
+            
+            // Kurangi saldo baru
+            $newMetode = $validated['metode_bayar'];
+            $newSaldoField = 'saldo_' . $newMetode;
+            
+            if ($toko->$newSaldoField < $validated['jumlah']) {
+                throw new \Exception('Saldo ' . $newMetode . ' tidak mencukupi');
+            }
+            
+            $toko->$newSaldoField -= $validated['jumlah'];
+            $toko->saldo_kas -= $validated['jumlah'];
+            $toko->save();
+            
+            // Update pengeluaran
+            $pengeluaranToko->update($validated);
+            
+            // Update transaksi kas
+            $kasToko = KasToko::where('referensi', 'PENGELUARAN-' . $pengeluaranToko->id)->first();
+            if ($kasToko) {
+                $kasToko->update([
+                    'tanggal' => $validated['tanggal'],
+                    'metode_bayar' => $newMetode,
+                    'kategori' => $validated['kategori'],
+                    'jumlah' => $validated['jumlah'],
+                    'keterangan' => $validated['keterangan'],
+                    'saldo_sebelum' => $toko->$newSaldoField + $validated['jumlah'],
+                    'saldo_sesudah' => $toko->$newSaldoField,
+                ]);
+            }
+        });
 
         return redirect()->back()->with('success', 'Pengeluaran berhasil diupdate');
     }
@@ -105,7 +182,21 @@ class PengeluaranTokoController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $pengeluaranToko->delete();
+        DB::transaction(function () use ($pengeluaranToko) {
+            // Kembalikan saldo kas
+            $toko = Toko::lockForUpdate()->findOrFail($pengeluaranToko->toko_id);
+            $metode = $pengeluaranToko->metode_bayar;
+            $saldoField = 'saldo_' . $metode;
+            
+            $toko->$saldoField += $pengeluaranToko->jumlah;
+            $toko->saldo_kas += $pengeluaranToko->jumlah;
+            $toko->save();
+            
+            // Hapus transaksi kas terkait
+            KasToko::where('referensi', 'PENGELUARAN-' . $pengeluaranToko->id)->delete();
+            
+            $pengeluaranToko->delete();
+        });
 
         return redirect()->back()->with('success', 'Pengeluaran berhasil dihapus');
     }
