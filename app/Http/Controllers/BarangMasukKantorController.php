@@ -47,10 +47,14 @@ class BarangMasukKantorController extends Controller
         $kantorSums = $allRows->groupBy('model')
             ->map(fn($rows) => $rows->sum(fn($r) => (int) $r->pcs_barang_jadi));
 
+        // Stok yang tersedia untuk masuk kantor = finishing - yang sudah masuk kantor
+        // TIDAK dikurangi kirim toko karena kirim toko itu dari stok kantor
         $modelOptions = ProsesFinishing::selectRaw("model, SUM(pcs_barang_jadi) as max_pcs, MAX(harga_satuan) as harga_satuan")
             ->whereNotNull('pcs_barang_jadi')->where('pcs_barang_jadi', '>', 0)
+            ->whereNotNull('tanggal_selesai') // Hanya yang sudah selesai
             ->groupBy('model')->orderBy('model')->get()
             ->map(function ($r) use ($kantorSums) {
+                // Kurangi hanya dengan yang sudah masuk kantor
                 $r->max_pcs = (int) $r->max_pcs - ($kantorSums[$r->model] ?? 0);
                 return $r;
             })

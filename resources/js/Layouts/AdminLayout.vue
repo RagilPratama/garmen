@@ -24,7 +24,7 @@
 
       <!-- Nav -->
       <nav class="flex-1 overflow-y-auto sidebar-scroll py-4 space-y-1 px-2">
-        <template v-for="item in navItems" :key="item.name">
+        <template v-for="item in filteredNavItems" :key="item.name">
           <!-- Group Header -->
           <div v-if="item.type === 'header'" class="px-2 pt-4 pb-1">
             <span v-if="sidebarOpen" class="text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ item.label }}</span>
@@ -149,6 +149,26 @@ onUnmounted(() => {
 const userInitial = computed(() => {
   const name = page.props.auth?.user?.name || 'A'
   return name.charAt(0).toUpperCase()
+})
+
+const isAdmin = computed(() => page.props.auth?.user?.is_admin ?? false)
+const isToko = computed(() => page.props.auth?.user?.is_toko ?? false)
+
+// Filter menu berdasarkan role
+const filteredNavItems = computed(() => {
+  if (isAdmin.value) {
+    // Admin bisa akses semua menu
+    return navItems
+  } else if (isToko.value) {
+    // User toko hanya bisa akses Dashboard dan Penjualan
+    return navItems.filter(item => {
+      if (item.type === 'header') {
+        return item.label === 'Penjualan'
+      }
+      return item.name === 'dashboard' || item.name === 'proses-jual'
+    })
+  }
+  return navItems
 })
 
 const isActive = (href) => {

@@ -32,10 +32,12 @@ class ImportModelsFromExcelSeeder extends Seeder
             $worksheet = $spreadsheet->getActiveSheet();
             $rows = $worksheet->toArray();
 
+            $dataToInsert = [];
             $imported = 0;
             $skipped = 0;
+            $existingModels = DB::table('master_models')->pluck('nama_model')->map(fn($name) => strtolower($name))->toArray();
+            $existingModelsMap = array_flip($existingModels);
 
-            // Skip header row (row 1)
             foreach ($rows as $index => $row) {
                 if ($index === 0) continue; // Skip header
                 
@@ -47,32 +49,39 @@ class ImportModelsFromExcelSeeder extends Seeder
                     continue;
                 }
 
-                // Check if model already exists
-                $exists = DB::table('master_models')
-                    ->where('nama_model', $namaModel)
-                    ->exists();
-
-                if ($exists) {
-                    echo "⊘ Model '$namaModel' sudah ada, skip\n";
+                // Check if model already exists using the map (case-insensitive)
+                $nameKey = strtolower($namaModel);
+                if (isset($existingModelsMap[$nameKey])) {
                     $skipped++;
                     continue;
                 }
 
-                // Insert model
-                DB::table('master_models')->insert([
+                // Add to bulk insert array
+                $dataToInsert[] = [
                     'nama_model' => $namaModel,
                     'keterangan' => $keterangan ?: null,
                     'created_at' => now(),
                     'updated_at' => now(),
-                ]);
-
-                echo "✓ Model '$namaModel' berhasil diimport\n";
+                ];
+                
+                // Track as imported
                 $imported++;
+                
+                // Add to map to prevent duplicates within the Excel file itself
+                $existingModelsMap[$nameKey] = true;
+            }
+
+            // Perform bulk insert in chunks of 500
+            if (!empty($dataToInsert)) {
+                $chunks = array_chunk($dataToInsert, 500);
+                foreach ($chunks as $chunk) {
+                    DB::table('master_models')->insertOrIgnore($chunk);
+                }
             }
 
             echo "\n✅ Import selesai!\n";
             echo "   Berhasil: $imported\n";
-            echo "   Skipped: $skipped\n";
+            echo "   Skipped: $skipped (Sudah ada di database)\n";
 
         } catch (\Exception $e) {
             echo "❌ Error: " . $e->getMessage() . "\n";

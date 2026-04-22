@@ -7,8 +7,8 @@
         <p class="text-sm text-gray-500 mt-0.5">{{ greeting }}, selamat datang kembali.</p>
       </div>
 
-      <!-- Omset Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:grid-cols-4">
+      <!-- Omset Cards - Admin -->
+      <div v-if="isAdmin" class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:grid-cols-4">
         <div class="bg-gradient-to-br from-amber-400 to-amber-500 rounded-xl p-5 text-white shadow-md overflow-hidden">
           <p class="text-xs font-medium uppercase tracking-wide opacity-80 truncate">Omset Toko — Bulan Ini</p>
           <p class="text-xl font-bold mt-1 leading-tight truncate" :title="formatRupiah(omsetTokoBulanIni)">{{ formatRupiah(omsetTokoBulanIni) }}</p>
@@ -30,9 +30,37 @@
           <p class="text-xs opacity-70 mt-1 truncate">Status lunas</p>
         </div>
       </div>
+
+      <!-- Omset Cards - Toko -->
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="bg-gradient-to-br from-violet-400 to-violet-500 rounded-xl p-5 text-white shadow-md overflow-hidden">
+          <p class="text-xs font-medium uppercase tracking-wide opacity-80 truncate">Omset Bulan Ini</p>
+          <p class="text-2xl font-bold mt-1 leading-tight truncate" :title="formatRupiah(omsetTokoBulanIni)">{{ formatRupiah(omsetTokoBulanIni) }}</p>
+          <p class="text-xs opacity-70 mt-1 truncate">{{ userToko }}</p>
+        </div>
+        <div class="bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-xl p-5 text-white shadow-md overflow-hidden">
+          <p class="text-xs font-medium uppercase tracking-wide opacity-80 truncate">Total Omset (Lunas)</p>
+          <p class="text-2xl font-bold mt-1 leading-tight truncate" :title="formatRupiah(omsetTokoTotal)">{{ formatRupiah(omsetTokoTotal) }}</p>
+          <p class="text-xs opacity-70 mt-1 truncate">All time</p>
+        </div>
+      </div>
+
+      <!-- Omset Per Toko (Admin Only) -->
+      <div v-if="isAdmin && (omsetJomei > 0 || omsetKamiko > 0)" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="bg-gradient-to-br from-pink-400 to-pink-500 rounded-xl p-5 text-white shadow-md overflow-hidden">
+          <p class="text-xs font-medium uppercase tracking-wide opacity-80 truncate">Omset Jomei — Bulan Ini</p>
+          <p class="text-xl font-bold mt-1 leading-tight truncate" :title="formatRupiah(omsetJomei)">{{ formatRupiah(omsetJomei) }}</p>
+          <p class="text-xs opacity-70 mt-1 truncate">Toko Jomei</p>
+        </div>
+        <div class="bg-gradient-to-br from-purple-400 to-purple-500 rounded-xl p-5 text-white shadow-md overflow-hidden">
+          <p class="text-xs font-medium uppercase tracking-wide opacity-80 truncate">Omset Kamiko — Bulan Ini</p>
+          <p class="text-xl font-bold mt-1 leading-tight truncate" :title="formatRupiah(omsetKamiko)">{{ formatRupiah(omsetKamiko) }}</p>
+          <p class="text-xs opacity-70 mt-1 truncate">Toko Kamiko</p>
+        </div>
+      </div>
   
-      <!-- Hutang & Piutang Row -->
-      <div v-if="sisaHutang > 0 || sisaPiutang > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Hutang & Piutang Row - Admin -->
+      <div v-if="isAdmin && (sisaHutang > 0 || sisaPiutang > 0)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Hutang Bahan -->
         <div v-if="sisaHutang > 0" class="bg-red-50 border border-red-200 rounded-xl px-5 py-4 flex items-center gap-4">
           <div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
@@ -61,8 +89,24 @@
         </div>
       </div>
 
+      <!-- Piutang Toko Only -->
+      <div v-if="!isAdmin && sisaPiutang > 0" class="grid grid-cols-1 gap-4">
+        <div class="bg-orange-50 border border-orange-200 rounded-xl px-5 py-4 flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
+            <svg class="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-xs text-orange-600 font-semibold tracking-wide truncate">Piutang Penjualan</p>
+            <p class="text-xl font-bold text-orange-700 mt-0.5 truncate">{{ formatRupiah(sisaPiutang) }}</p>
+            <p class="text-xs text-orange-500 mt-0.5 truncate">{{ jumlahNotaPiutang }} nota belum lunas &mdash;
+              <a href="/proses-jual" class="underline hover:text-orange-700">Lihat detail →</a>
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- Stok Cards -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div v-if="isAdmin" class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 flex items-center gap-4">
           <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
             <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
@@ -104,8 +148,25 @@
         </div>
       </div>
 
-      <!-- Pipeline Produksi -->
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+      <!-- Stok Toko Only (untuk user toko) -->
+      <div v-else class="grid grid-cols-1 gap-4">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+            <svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-xs text-gray-500 font-medium">Stok Toko {{ userToko }}</p>
+             <div class="flex items-baseline gap-1 mt-0.5">
+              <p class="text-xl font-bold text-gray-800 truncate" :title="stokToko.toLocaleString('id-ID')">{{ stokToko.toLocaleString('id-ID') }}</p>
+              <span class="text-sm font-normal text-gray-400 shrink-0">pcs</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-0.5">Siap jual dari toko</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pipeline Produksi (Admin Only) -->
+      <div v-if="isAdmin" class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <h3 class="font-semibold text-gray-800 mb-4">Pipeline Produksi <span class="text-xs font-normal text-gray-400 ml-1">(total PO per stage)</span></h3>
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div v-for="stage in pipelineStages" :key="stage.key" class="rounded-xl border p-4 flex flex-col items-center gap-2" :class="stage.border">
@@ -160,8 +221,8 @@
         </div>
       </div>
 
-      <!-- Recent Tables -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <!-- Recent Tables - Admin -->
+      <div v-if="isAdmin" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <!-- Recent Bahan Masuk -->
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
           <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
@@ -232,6 +293,43 @@
           </div>
         </div>
       </div>
+
+      <!-- Recent Penjualan - Toko Only -->
+      <div v-else class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h3 class="font-semibold text-gray-800">Penjualan Terbaru</h3>
+          <Link href="/proses-jual" class="text-violet-500 hover:text-violet-600 text-xs font-medium">Lihat semua →</Link>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="text-left px-4 py-2.5 text-xs text-gray-400 font-medium whitespace-nowrap">Tanggal</th>
+                <th class="text-left px-4 py-2.5 text-xs text-gray-400 font-medium whitespace-nowrap">Buyer</th>
+                <th class="text-left px-4 py-2.5 text-xs text-gray-400 font-medium whitespace-nowrap">Model</th>
+                <th class="text-center px-4 py-2.5 text-xs text-gray-400 font-medium whitespace-nowrap">Pcs</th>
+                <th class="text-right px-4 py-2.5 text-xs text-gray-400 font-medium whitespace-nowrap">Total</th>
+                <th class="text-center px-4 py-2.5 text-xs text-gray-400 font-medium whitespace-nowrap">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+              <tr v-for="item in recentPenjualan" :key="item.id" class="hover:bg-violet-50/40">
+                <td class="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">{{ formatDate(item.tanggal_nota) }}</td>
+                <td class="px-4 py-3 text-gray-800 font-medium max-w-[120px] truncate">{{ item.buyer }}</td>
+                <td class="px-4 py-3 text-gray-600 max-w-[120px] truncate">{{ item.model }}</td>
+                <td class="px-4 py-3 text-center font-semibold text-violet-600">{{ item.pcs }}</td>
+                <td class="px-4 py-3 text-right text-gray-700 font-semibold whitespace-nowrap">{{ formatRupiah(item.total_harga) }}</td>
+                <td class="px-4 py-3 text-center">
+                  <span class="px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap" :class="statusClass(item.status)">{{ item.status }}</span>
+                </td>
+              </tr>
+              <tr v-if="!recentPenjualan?.length">
+                <td colspan="6" class="px-4 py-12 text-center text-gray-300 text-sm">Belum ada data penjualan</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </AdminLayout>
 </template>
@@ -250,6 +348,8 @@ const props = defineProps({
   omsetGudangTotal:    { type: Number, default: 0 },
   omsetTokoBulanIni:   { type: Number, default: 0 },
   omsetGudangBulanIni: { type: Number, default: 0 },
+  omsetJomei:          { type: Number, default: 0 },
+  omsetKamiko:         { type: Number, default: 0 },
   stokBahan:           { type: Number, default: 0 },
   totalSisaBahan:      { type: Number, default: 0 },
   stokKantor:          { type: Number, default: 0 },
@@ -258,12 +358,15 @@ const props = defineProps({
   recentBahanMasuk:    { type: Array,  default: () => [] },
   recentPenjualan:     { type: Array,  default: () => [] },
   topModels:           { type: Array,  default: () => [] },
+  isAdmin:             { type: Boolean, default: false },
+  userToko:            { type: String, default: null },
 })
 
 const hours = new Date().getHours()
 const greeting = computed(() => hours < 12 ? 'Selamat pagi' : hours < 15 ? 'Selamat siang' : hours < 18 ? 'Selamat sore' : 'Selamat malam')
 
 const formatRupiah = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0)
+const formatDate = (d) => d ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
 
 const statusClass = (status) => ({
   'bg-green-100 text-green-700':  status === 'diterima' || status === 'lunas',

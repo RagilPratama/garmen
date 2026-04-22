@@ -72,4 +72,51 @@ Route::middleware('auth')->group(function () {
     Route::get('/laporan-penjualan/export-data', [LaporanPenjualanController::class, 'exportData'])->name('laporan-penjualan.export-data');
     Route::get('/laporan-model-terjual', [LaporanModelTerjualController::class, 'index'])->name('laporan-model-terjual.index');
     Route::get('/laporan-hpp', [LaporanHppController::class, 'index'])->name('laporan-hpp.index');
+    
+    // API endpoint untuk get stok toko
+    Route::get('/api/stok-toko/{tokoId}', [ProsesJualController::class, 'getStokToko']);
+    
+    // Debug route - hapus setelah selesai debug
+    Route::get('/debug-stok/{model}', function($model) {
+        $finishing = \DB::table('proses_finishing')
+            ->where('model', $model)
+            ->select('id', 'po', 'model', 'pcs_barang_jadi', 'tanggal_selesai')
+            ->get();
+            
+        $masukKantor = \DB::table('barang_masuk_kantor')
+            ->where('model', $model)
+            ->select('id', 'no_surat_jalan', 'model', 'pcs_barang_jadi', 'tanggal_kirim')
+            ->get();
+            
+        $kirimToko = \DB::table('barang_kirim_toko')
+            ->where('model', $model)
+            ->select('id', 'no_surat_jalan', 'model', 'pcs_barang_jadi', 'tanggal_kirim', 'toko_id')
+            ->get();
+            
+        return response()->json([
+            'model' => $model,
+            'finishing' => [
+                'records' => $finishing,
+                'total' => $finishing->sum('pcs_barang_jadi'),
+                'count' => $finishing->count(),
+            ],
+            'masuk_kantor' => [
+                'records' => $masukKantor,
+                'total' => $masukKantor->sum('pcs_barang_jadi'),
+                'count' => $masukKantor->count(),
+            ],
+            'kirim_toko' => [
+                'records' => $kirimToko,
+                'total' => $kirimToko->sum('pcs_barang_jadi'),
+                'count' => $kirimToko->count(),
+            ],
+            'summary' => [
+                'total_jadi' => $finishing->sum('pcs_barang_jadi'),
+                'total_ke_kantor' => $masukKantor->sum('pcs_barang_jadi'),
+                'total_ke_toko' => $kirimToko->sum('pcs_barang_jadi'),
+                'total_dikirim' => $masukKantor->sum('pcs_barang_jadi') + $kirimToko->sum('pcs_barang_jadi'),
+                'sisa' => $finishing->sum('pcs_barang_jadi') - ($masukKantor->sum('pcs_barang_jadi') + $kirimToko->sum('pcs_barang_jadi')),
+            ],
+        ]);
+    });
 });

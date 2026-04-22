@@ -11,23 +11,23 @@
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div class="bg-white rounded-xl border border-emerald-100 shadow-sm px-5 py-4">
           <p class="text-xs text-emerald-600 uppercase tracking-wide font-semibold">Siap Kirim</p>
-          <p class="text-2xl font-bold text-emerald-600 mt-1">{{ summary.total_siap_kirim }}</p>
+          <p class="text-2xl font-bold text-emerald-600 mt-1">{{ summary.total_siap_kirim || 0 }}</p>
           <p class="text-xs text-gray-400 mt-0.5">pcs ready</p>
         </div>
         <div class="bg-white rounded-xl border border-blue-100 shadow-sm px-5 py-4">
-          <p class="text-xs text-blue-600 uppercase tracking-wide font-semibold">Sudah Dikirim</p>
-          <p class="text-2xl font-bold text-blue-600 mt-1">{{ summary.total_sudah_kirim }}</p>
-          <p class="text-xs text-gray-400 mt-0.5">pcs ke kantor</p>
+          <p class="text-xs text-blue-600 uppercase tracking-wide font-semibold">Stok di Kantor</p>
+          <p class="text-2xl font-bold text-blue-600 mt-1">{{ summary.total_ke_kantor || 0 }}</p>
+          <p class="text-xs text-gray-400 mt-0.5">pcs tersedia</p>
+        </div>
+        <div class="bg-white rounded-xl border border-purple-100 shadow-sm px-5 py-4">
+          <p class="text-xs text-purple-600 uppercase tracking-wide font-semibold">Kirim ke Toko</p>
+          <p class="text-2xl font-bold text-purple-600 mt-1">{{ summary.total_ke_toko || 0 }}</p>
+          <p class="text-xs text-gray-400 mt-0.5">pcs ke toko</p>
         </div>
         <div class="bg-white rounded-xl border border-amber-100 shadow-sm px-5 py-4">
           <p class="text-xs text-amber-600 uppercase tracking-wide font-semibold">Total Jadi</p>
-          <p class="text-2xl font-bold text-amber-600 mt-1">{{ summary.total_jadi }}</p>
+          <p class="text-2xl font-bold text-amber-600 mt-1">{{ summary.total_jadi || 0 }}</p>
           <p class="text-xs text-gray-400 mt-0.5">total barang jadi</p>
-        </div>
-        <div class="bg-white rounded-xl border border-purple-100 shadow-sm px-5 py-4">
-          <p class="text-xs text-purple-600 uppercase tracking-wide font-semibold">Jenis Model</p>
-          <p class="text-2xl font-bold text-purple-600 mt-1">{{ summary.total_model }}</p>
-          <p class="text-xs text-gray-400 mt-0.5">model aktif</p>
         </div>
       </div>
 
@@ -55,15 +55,16 @@
               <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
                 <th class="px-6 py-3 text-left font-medium">No</th>
                 <th class="px-6 py-3 text-left font-medium">Model</th>
-                <th class="px-6 py-3 text-right font-medium">Total Barang Jadi</th>
-                <th class="px-6 py-3 text-right font-medium">Sudah Dikirim</th>
+                <th class="px-6 py-3 text-right font-medium">Pcs Barang Jadi</th>
+                <th class="px-6 py-3 text-right font-medium">Kirim ke Toko</th>
+                <th class="px-6 py-3 text-right font-medium">Stok di Kantor</th>
                 <th class="px-6 py-3 text-right font-medium">Siap Kirim (pcs)</th>
                 <th class="px-6 py-3 text-center font-medium">Status</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
               <tr v-if="filtered.length === 0">
-                <td colspan="6" class="px-6 py-12 text-center">
+                <td colspan="7" class="px-6 py-12 text-center">
                   <div class="flex flex-col items-center gap-2">
                     <svg class="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
@@ -79,30 +80,31 @@
               >
                 <td class="px-6 py-3.5 text-gray-400 text-xs">{{ idx + 1 }}</td>
                 <td class="px-6 py-3.5 font-semibold text-gray-800">{{ row.model }}</td>
-                <td class="px-6 py-3.5 text-right text-gray-600">{{ row.total_jadi }}</td>
-                <td class="px-6 py-3.5 text-right text-blue-500 font-medium">{{ row.sudah_kirim }}</td>
+                <td class="px-6 py-3.5 text-right text-gray-600">{{ row.total_jadi || 0 }}</td>
+                <td class="px-6 py-3.5 text-right text-purple-500 font-medium">{{ row.ke_toko || 0 }}</td>
+                <td class="px-6 py-3.5 text-right text-blue-500 font-medium">{{ row.ke_kantor || 0 }}</td>
                 <td class="px-6 py-3.5 text-right">
                   <span
                     class="inline-flex items-center justify-center min-w-[48px] font-bold text-base"
-                    :class="row.siap_kirim > 0 ? 'text-emerald-600' : 'text-gray-400'"
+                    :class="(row.siap_kirim || 0) > 0 ? 'text-emerald-600' : 'text-gray-400'"
                   >
-                    {{ row.siap_kirim }}
+                    {{ row.siap_kirim || 0 }}
                   </span>
                 </td>
                 <td class="px-6 py-3.5 text-center">
                   <span
                     :class="[
                       'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium',
-                      row.siap_kirim > 0
+                      (row.siap_kirim || 0) > 0
                         ? 'bg-emerald-50 text-emerald-700'
                         : 'bg-gray-100 text-gray-500'
                     ]"
                   >
                     <span
                       class="w-1.5 h-1.5 rounded-full"
-                      :class="row.siap_kirim > 0 ? 'bg-emerald-500' : 'bg-gray-400'"
+                      :class="(row.siap_kirim || 0) > 0 ? 'bg-emerald-500' : 'bg-gray-400'"
                     ></span>
-                    {{ row.siap_kirim > 0 ? 'Siap Kirim' : 'Sudah Dikirim' }}
+                    {{ (row.siap_kirim || 0) > 0 ? 'Siap Kirim' : 'Sudah Dikirim' }}
                   </span>
                 </td>
               </tr>
@@ -111,9 +113,10 @@
             <tfoot v-if="filtered.length > 0">
               <tr class="bg-gray-50 font-semibold text-gray-700 text-sm border-t border-gray-100">
                 <td class="px-6 py-3" colspan="2">Total</td>
-                <td class="px-6 py-3 text-right">{{ filtered.reduce((s, r) => s + r.total_jadi, 0) }}</td>
-                <td class="px-6 py-3 text-right text-blue-600">{{ filtered.reduce((s, r) => s + r.sudah_kirim, 0) }}</td>
-                <td class="px-6 py-3 text-right text-emerald-600">{{ filtered.reduce((s, r) => s + r.siap_kirim, 0) }}</td>
+                <td class="px-6 py-3 text-right">{{ filtered.reduce((s, r) => s + (r.total_jadi || 0), 0) }}</td>
+                <td class="px-6 py-3 text-right text-purple-600">{{ filtered.reduce((s, r) => s + (r.ke_toko || 0), 0) }}</td>
+                <td class="px-6 py-3 text-right text-blue-600">{{ filtered.reduce((s, r) => s + (r.ke_kantor || 0), 0) }}</td>
+                <td class="px-6 py-3 text-right text-emerald-600">{{ filtered.reduce((s, r) => s + (r.siap_kirim || 0), 0) }}</td>
                 <td></td>
               </tr>
             </tfoot>
@@ -130,8 +133,10 @@
           <div>
             <p class="text-sm font-semibold text-amber-800">Keterangan</p>
             <p class="text-xs text-amber-700 mt-1 leading-relaxed">
-              <strong>Siap Kirim</strong> = Total Barang Jadi (dari Proses Finishing) &minus; Sudah Dikirim ke Kantor.<br>
-              Data ini diperbarui secara otomatis setiap kali ada penambahan data Finishing atau Barang Masuk Kantor.
+              <strong>Siap Kirim</strong> = Total Barang Jadi (dari Proses Finishing) &minus; yang sudah masuk ke Kantor.<br>
+              <strong>Stok di Kantor</strong> = Barang Masuk Kantor &minus; Kirim ke Toko &minus; Jual Gudang.<br>
+              <strong>Kirim ke Toko</strong> adalah barang yang dikirim dari Kantor ke Toko (Jomei/Kamiko).<br>
+              Data ini diperbarui secara otomatis setiap kali ada perubahan data.
             </p>
           </div>
         </div>
@@ -151,7 +156,8 @@ const props = defineProps({
     default: () => ({
       total_model: 0,
       total_siap_kirim: 0,
-      total_sudah_kirim: 0,
+      total_ke_kantor: 0,
+      total_ke_toko: 0,
       total_jadi: 0,
     }),
   },

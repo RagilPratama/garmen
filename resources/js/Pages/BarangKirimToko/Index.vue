@@ -38,16 +38,16 @@
           <thead>
             <tr class="bg-gray-50 border-b border-gray-100">
               <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide w-12">No</th>
-              <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">No. PO</th>
-              <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tgl Kirim</th>
               <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">No. Surat Jalan</th>
+              <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Toko</th>
+              <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tgl Kirim</th>
               <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Jumlah Model</th>
               <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Pcs</th>
               <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide w-24">Aksi</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(group, index) in data?.data" :key="group.po"
+            <tr v-for="(group, index) in data?.data" :key="group.no_surat_jalan"
               class="border-b border-gray-50 hover:bg-indigo-50/40 transition-colors group cursor-pointer"
               :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'"
               @click="openDetail(group)">
@@ -57,19 +57,26 @@
                 </span>
               </td>
               <td class="px-5 py-3.5">
-                <span class="font-semibold text-indigo-600">{{ group.po }}</span>
+                <span v-if="group.no_surat_jalan" class="inline-flex items-center gap-1 text-xs font-mono bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded font-semibold">
+                  {{ group.no_surat_jalan }}
+                </span>
+                <span v-else class="text-gray-400 text-xs">—</span>
+              </td>
+              <td class="px-5 py-3.5">
+                <span v-if="group.toko" class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-700 text-xs font-semibold rounded-full border border-amber-200">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                  {{ group.toko }}
+                </span>
+                <span v-else class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full border border-blue-200">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                  Kantor
+                </span>
               </td>
               <td class="px-5 py-3.5 text-gray-600">
                 <span class="inline-flex items-center gap-1.5">
                   <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                   {{ formatDate(group.tanggal_kirim) }}
                 </span>
-              </td>
-              <td class="px-5 py-3.5">
-                <span v-if="group.no_surat_jalan" class="inline-flex items-center gap-1 text-xs font-mono bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded">
-                  {{ group.no_surat_jalan }}
-                </span>
-                <span v-else class="text-gray-400 text-xs">—</span>
               </td>
               <td class="px-5 py-3.5 text-center">
                 <span class="inline-flex items-center justify-center px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full">{{ group.jumlah_model }} model</span>
@@ -113,12 +120,12 @@
     </div>
 
     <!-- DETAIL MODAL -->
-    <Modal v-model="showDetail" :title="'Detail PO: ' + (detailGroup?.po ?? '')" size="xl">
+    <Modal v-model="showDetail" :title="'Detail Pengiriman: ' + (detailGroup?.no_surat_jalan ?? '')" size="xl">
       <div v-if="detailGroup" class="space-y-4">
         <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600 bg-gray-50 rounded-lg px-4 py-3">
           <span><span class="font-medium text-gray-700">Tgl Kirim:</span> {{ formatDate(detailGroup.tanggal_kirim) }}</span>
-          <span><span class="font-medium text-gray-700">No. SJ:</span>
-            <span class="ml-1 font-mono text-indigo-600">{{ detailGroup.no_surat_jalan || '—' }}</span>
+          <span><span class="font-medium text-gray-700">Toko:</span>
+            <span class="ml-1 font-semibold text-indigo-600">{{ detailGroup.toko }}</span>
           </span>
           <span><span class="font-medium text-gray-700">Jumlah Model:</span> {{ detailGroup.jumlah_model }}</span>
           <span><span class="font-medium text-gray-700">Total Pcs:</span> {{ detailGroup.total_pcs }} pcs</span>
@@ -153,13 +160,21 @@
 
     <!-- CREATE MODAL -->
     <Modal v-model="showModal" title="Tambah Barang Kirim Toko" size="xl">
-      <div v-if="!poOptions.length" class="mb-4 flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+      <div v-if="!stokOptions.length" class="mb-4 flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        Belum ada data dari <strong class="ml-1">Barang Masuk Kantor</strong>. Catat barang masuk kantor terlebih dahulu.
+        Belum ada barang siap kirim dari <strong class="ml-1">Proses Finishing</strong>.
       </div>
       <form @submit.prevent="submit" class="space-y-4">
-        <!-- SJ + Date -->
-        <div class="grid grid-cols-2 gap-4">
+        <!-- Toko + SJ + Date -->
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Toko Tujuan <span class="text-red-500">*</span></label>
+            <select v-model="tokoId" required
+              class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition bg-white">
+              <option :value="null" disabled>Pilih Toko</option>
+              <option v-for="toko in tokos" :key="toko.id" :value="toko.id">{{ toko.nama_toko }}</option>
+            </select>
+          </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">No. Surat Jalan</label>
             <div class="relative">
@@ -179,34 +194,33 @@
         <!-- Stock list -->
         <div>
           <div class="flex items-center justify-between mb-2">
-            <label class="text-sm font-medium text-gray-700">Pilih Stok Barang Masuk Kantor <span class="text-red-500">*</span></label>
+            <label class="text-sm font-medium text-gray-700">Pilih Stok Barang Siap Kirim <span class="text-red-500">*</span></label>
             <span v-if="checkedItems.size > 0" class="text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
               {{ checkedItems.size }} item · {{ totalPcs }} pcs
             </span>
           </div>
           <div class="relative mb-2">
             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
-            <input v-model="modalSearch" type="text" placeholder="Filter PO / model..."
+            <input v-model="modalSearch" type="text" placeholder="Filter model..."
               class="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"/>
           </div>
           <div class="max-h-72 overflow-y-auto border border-gray-200 rounded-xl divide-y divide-gray-100">
-            <label v-for="item in filteredOptions" :key="itemKey(item)"
+            <label v-for="item in filteredOptions" :key="item.model"
               class="flex items-center gap-3 px-3 py-2.5 hover:bg-indigo-50/50 cursor-pointer transition-colors"
-              :class="checkedItems.has(itemKey(item)) ? 'bg-indigo-50/60' : ''">
-              <input type="checkbox" :checked="checkedItems.has(itemKey(item))" @change="toggleItem(item, $event)"
+              :class="checkedItems.has(item.model) ? 'bg-indigo-50/60' : ''">
+              <input type="checkbox" :checked="checkedItems.has(item.model)" @change="toggleItem(item, $event)"
                 class="w-4 h-4 rounded border-gray-300 text-indigo-500 focus:ring-indigo-400 shrink-0"/>
-              <span class="text-xs font-mono bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded shrink-0">{{ item.po }}</span>
               <span class="text-sm font-medium text-gray-700 flex-1 min-w-0 truncate">{{ item.model }}</span>
               <span class="text-xs text-gray-400 shrink-0">sisa: {{ item.max_pcs }} pcs</span>
-              <template v-if="checkedItems.has(itemKey(item))">
-                <input v-model="pcsPerItem[itemKey(item)]" type="number" min="1"
+              <template v-if="checkedItems.has(item.model)">
+                <input v-model="pcsPerItem[item.model]" type="number" min="1" :max="item.max_pcs"
                   class="w-20 px-2 py-1.5 border border-indigo-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white text-right shrink-0"
                   placeholder="pcs" @click.stop/>
                 <span class="text-xs text-gray-400 shrink-0">pcs</span>
               </template>
             </label>
             <div v-if="!filteredOptions.length" class="px-4 py-8 text-center text-sm text-gray-400">
-              Tidak ada stok barang masuk kantor yang tersedia
+              Tidak ada stok barang siap kirim
             </div>
           </div>
         </div>
@@ -263,7 +277,8 @@ import ConfirmDialog from '@/Components/ConfirmDialog.vue'
 
 const props = defineProps({
   data:           Object,
-  poOptions:      { type: Array, default: () => [] },
+  stokOptions:    { type: Array, default: () => [] },
+  tokos:          { type: Array, default: () => [] },
   nextSuratJalan: { type: String, default: '' },
 })
 
@@ -292,6 +307,7 @@ const openDetail  = (group) => { detailGroup.value = group; showDetail.value = t
 
 // Create modal
 const showModal    = ref(false)
+const tokoId       = ref(null)
 const noSuratJalan = ref('')
 const tanggalKirim = ref('')
 const checkedItems = ref(new Set())
@@ -299,12 +315,12 @@ const pcsPerItem   = ref({})
 const processing   = ref(false)
 const modalSearch  = ref('')
 
-const itemKey = (item) => `${item.po}|||${item.model}`
+const itemKey = (item) => item.model
 const filteredOptions = computed(() => {
-  if (!modalSearch.value) return props.poOptions
+  if (!modalSearch.value) return props.stokOptions
   const q = modalSearch.value.toLowerCase()
-  return props.poOptions.filter(o =>
-    o.po.toLowerCase().includes(q) || o.model.toLowerCase().includes(q)
+  return props.stokOptions.filter(o =>
+    o.model.toLowerCase().includes(q)
   )
 })
 const toggleItem = (item, e) => {
@@ -322,6 +338,7 @@ const totalPcs = computed(() =>
   [...checkedItems.value].reduce((sum, key) => sum + (parseInt(pcsPerItem.value[key]) || 0), 0)
 )
 const openCreate = () => {
+  tokoId.value       = null
   noSuratJalan.value = props.nextSuratJalan
   tanggalKirim.value = new Date().toISOString().substring(0, 10)
   checkedItems.value = new Set()
@@ -331,11 +348,11 @@ const openCreate = () => {
 }
 const submit = () => {
   processing.value = true
-  const models = [...checkedItems.value].map(key => {
-    const [po, model] = key.split('|||')
-    return { po, model, pcs_barang_jadi: parseInt(pcsPerItem.value[key]) || 0 }
+  const models = [...checkedItems.value].map(model => {
+    return { model, pcs_barang_jadi: parseInt(pcsPerItem.value[model]) || 0 }
   })
   router.post('/barang-kirim-toko', {
+    toko_id:        tokoId.value,
     no_surat_jalan: noSuratJalan.value || null,
     tanggal_kirim:  tanggalKirim.value,
     models,

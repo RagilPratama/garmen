@@ -15,9 +15,18 @@ class ProsesJualController extends Controller
 
     public function index()
     {
+        $user = auth()->user();
         $search  = request('search');
-        $allRows = ProsesJual::latest()
-            ->when($search, fn($q) => $q->where(fn($q) => $q
+        
+        // Filter berdasarkan role user
+        $query = ProsesJual::with('toko')->latest();
+        
+        if ($user->isTokoJomei() || $user->isTokoKamiko()) {
+            // User toko hanya lihat data toko mereka
+            $query->where('toko_id', $user->toko_id);
+        }
+        
+        $allRows = $query->when($search, fn($q) => $q->where(fn($q) => $q
                 ->where('buyer', 'like', "%{$search}%")
                 ->orWhere('model', 'like', "%{$search}%")
                 ->orWhere('no_nota', 'like', "%{$search}%")
@@ -46,6 +55,7 @@ class ProsesJualController extends Controller
                 'no_nota'      => $nota,
                 'tanggal_nota' => $rows->min('tanggal_nota'),
                 'buyer'        => $rows->first()->buyer,
+                'toko'         => $rows->first()->toko?->nama_toko ?? '-',
                 'status'       => $rows->first()->status,
                 'jumlah_model' => $rows->count(),
                 'total_pcs'    => $rows->sum(fn($r) => (int) $r->pcs),
@@ -66,14 +76,27 @@ class ProsesJualController extends Controller
             ['path' => request()->url(), 'query' => request()->query()]
         );
 
-        // Stok toko = total dikirim ke toko - total terjual (lunas + pending), per model
-
-        // Stok toko = total dikirim ke toko - total terjual (lunas + pending), per model
-        $dikirim = BarangKirimToko::selectRaw('model, SUM(pcs_barang_jadi) as total')
-            ->groupBy('model')->get()->keyBy('model');
-        $terjual = ProsesJual::selectRaw('model, SUM(pcs) as total')
-            ->whereIn('status', ['lunas', 'pending'])
-            ->groupBy('model')->get()->keyBy('model');
+        // Stok toko berdasarkan toko_id user
+        $tokoId = $user->isToko() ? $user->toko_id : null;
+        
+        $dikirimQuery = BarangKirimToko::selectRaw('model, SUM(pcs_barang_jadi) as total')
+            ->groupBy('model');
+        
+        if ($tokoId) {
+            $dikirimQuery->where('toko_id', $tokoId);
+        }
+        
+        $dikirim = $dikirimQuery->get()->keyBy('model');
+        
+        $terjualQuery = ProsesJual::selectRaw('model, SUM(pcs) as total')
+            ->whereIn('status', ['lunas', 'piutang'])
+            ->groupBy('model');
+            
+        if ($tokoId) {
+            $terjualQuery->where('toko_id', $tokoId);
+        }
+        
+        $terjual = $terjualQuery->get()->keyBy('model');
 
         // Ambil harga_satuan terakhir dari proses_finishing untuk setiap model
         $hargaFinishing = DB::table('proses_finishing')
@@ -101,12 +124,18 @@ class ProsesJualController extends Controller
             'stokOptions'     => $stokOptions,
             'nextNota'        => $this->nextCode(ProsesJual::class, 'no_nota', 'NT-TOKO-'),
             'rekeningOptions' => Rekening::orderBy('bank')->get(['id', 'bank', 'nama', 'nomor_rekening']),
+            'tokos'           => \App\Models\Toko::orderBy('nama_toko')->get(['id', 'nama_toko']),
+            'isAdmin'         => $user->isAdmin(),
+            'userTokoId'      => $user->toko_id,
         ]);
     }
 
     public function store(Request $request)
     {
+        $user = auth()->user();
+        
         $request->validate([
+            'toko_id'               => $user->isAdmin() ? 'required|exists:tokos,id' : 'nullable',
             'no_nota'               => 'nullable|string|max:100',
             'tanggal_nota'          => 'required|date',
             'buyer'                 => 'required|string|max:200',
@@ -122,9 +151,15 @@ class ProsesJualController extends Controller
             'rekening_id'           => 'nullable|exists:rekening,id',
             'keterangan_pembayaran' => 'nullable|string|max:255',
         ]);
+        
         $now  = now();
         $diskonPersen = $request->discount ?? 0;
+        
+        // Admin bisa pilih toko, user toko otomatis pakai toko mereka
+        $tokoId = $user->isAdmin() ? $request->toko_id : $user->toko_id;
+        
         $rows = collect($request->models)->map(fn($m) => [
+            'toko_id'      => $tokoId,
             'no_nota'      => $request->no_nota,
             'tanggal_nota' => $request->tanggal_nota,
             'buyer'        => $request->buyer,
@@ -134,7 +169,7 @@ class ProsesJualController extends Controller
             'harga_satuan' => $m['harga_satuan'],
             'diskon'       => $diskonPersen,
             'total_harga'  => ($m['pcs'] * $m['harga_satuan']) * (1 - $diskonPersen / 100),
-            'bayar'        => $request->bayar ?? 0, // Even though we use PenjualanPembayaran, we can store it here too as requested
+            'bayar'        => $request->bayar ?? 0,
             'created_at'   => $now,
             'updated_at'   => $now,
         ])->toArray();
@@ -181,5 +216,45 @@ class ProsesJualController extends Controller
     {
         $prosesJual->delete();
         return redirect()->route('proses-jual.index')->with('message', 'Data berhasil dihapus.');
+    }
+
+    public function getStokToko($tokoId)
+    {
+        // Stok toko berdasarkan toko_id
+        $dikirim = BarangKirimToko::selectRaw('model, SUM(pcs_barang_jadi) as total')
+            ->where('toko_id', $tokoId)
+            ->groupBy('model')
+            ->get()
+            ->keyBy('model');
+        
+        $terjual = ProsesJual::selectRaw('model, SUM(pcs) as total')
+            ->where('toko_id', $tokoId)
+            ->whereIn('status', ['lunas', 'piutang'])
+            ->groupBy('model')
+            ->get()
+            ->keyBy('model');
+
+        // Ambil harga_satuan terakhir dari proses_finishing untuk setiap model
+        $hargaFinishing = DB::table('proses_finishing')
+            ->select('model', DB::raw('MAX(id) as max_id'))
+            ->groupBy('model')->pluck('max_id', 'model');
+        $hargaPerModel = [];
+        if ($hargaFinishing->count()) {
+            $hargaRows = DB::table('proses_finishing')
+                ->whereIn('id', $hargaFinishing->values())
+                ->pluck('harga_satuan', 'model');
+            $hargaPerModel = $hargaRows;
+        }
+
+        $stokOptions = $dikirim->map(function ($row) use ($terjual, $hargaPerModel) {
+            $sisa = (int) $row->total - (int) ($terjual->get($row->model)?->total ?? 0);
+            return [
+                'model'        => $row->model,
+                'sisa_stok'    => $sisa,
+                'harga_satuan' => isset($hargaPerModel[$row->model]) ? (int) $hargaPerModel[$row->model] : 0,
+            ];
+        })->filter(fn($r) => $r['sisa_stok'] > 0)->values();
+
+        return response()->json($stokOptions);
     }
 }

@@ -106,11 +106,15 @@
       <div v-if="data?.last_page > 1" class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
         <p class="text-xs text-gray-500">Menampilkan <span class="font-semibold text-gray-700">{{ data.from }}–{{ data.to }}</span> dari <span class="font-semibold text-gray-700">{{ data.total }}</span> Nota</p>
         <div class="flex items-center gap-1 flex-wrap justify-center">
-          <Link v-for="link in data.links" :key="link.label"
-            :href="link.url ? appendSearch(link.url) : '#'"
+          <a 
+            v-for="link in data.links" 
+            :key="link.label"
+            :href="link.url ? appendSearch(link.url) : undefined"
+            @click.prevent="link.url && router.visit(appendSearch(link.url), { preserveScroll: true })"
             class="min-w-[32px] h-8 px-2.5 flex items-center justify-center text-xs rounded-lg transition-all"
-            :class="link.active ? 'bg-violet-500 text-white font-semibold shadow-sm' : link.url ? 'text-gray-600 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200' : 'text-gray-300 cursor-default pointer-events-none'"
-            :preserve-scroll="true" v-html="link.label"/>
+            :class="link.active ? 'bg-violet-500 text-white font-semibold shadow-sm' : link.url ? 'text-gray-600 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 cursor-pointer' : 'text-gray-300 cursor-default pointer-events-none'"
+            v-html="link.label"
+          />
         </div>
       </div>
     </div>
@@ -316,6 +320,14 @@
       <form @submit.prevent="submit" class="space-y-4">
         <!-- Header fields -->
         <div class="grid grid-cols-2 gap-4">
+          <div v-if="isAdmin">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Toko <span class="text-red-500">*</span></label>
+            <select v-model="tokoId" required
+              class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition bg-white">
+              <option :value="null" disabled>Pilih Toko</option>
+              <option v-for="toko in tokos" :key="toko.id" :value="toko.id">{{ toko.nama_toko }}</option>
+            </select>
+          </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">No. Nota</label>
             <div class="relative">
@@ -388,18 +400,28 @@
               {{ checkedItems.size }} model · {{ totalPcsSelected }} pcs
             </span>
           </div>
+          
+          <!-- Warning jika admin belum pilih toko -->
+          <div v-if="isAdmin && !tokoId" class="mb-3 flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Pilih toko terlebih dahulu untuk melihat stok yang tersedia
+          </div>
+          
           <div class="relative mb-2">
             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
             <input v-model="modalSearch" type="text" placeholder="Filter model..."
-              class="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition"/>
+              :disabled="isAdmin && !tokoId"
+              class="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition disabled:opacity-50 disabled:cursor-not-allowed"/>
           </div>
-          <div class="max-h-64 overflow-y-auto border border-gray-200 rounded-xl divide-y divide-gray-100">
+          <div class="max-h-64 overflow-y-auto border border-gray-200 rounded-xl divide-y divide-gray-100"
+            :class="isAdmin && !tokoId ? 'opacity-50 pointer-events-none' : ''">
             <label v-for="item in filteredOptions" :key="item.model"
               class="flex items-center gap-3 px-3 py-2.5 hover:bg-violet-50/50 cursor-pointer transition-colors"
               :class="checkedItems.has(item.model) ? 'bg-violet-50/60' : ''">
               <input type="checkbox" 
                 :checked="checkedItems.has(item.model)" 
                 @change="(e) => toggleItem(item, e)"
+                :disabled="isAdmin && !tokoId"
                 class="w-4 h-4 rounded border-gray-300 text-violet-500 focus:ring-violet-400 shrink-0"/>
               <span class="text-sm font-medium text-gray-700 flex-1 min-w-0 truncate">{{ item.model }}</span>
               <span class="text-xs text-gray-400 shrink-0">stok: {{ item.sisa_stok }} pcs</span>
@@ -501,6 +523,9 @@ const props = defineProps({
   stokOptions:     { type: Array, default: () => [] },
   nextNota:        { type: String, default: '' },
   rekeningOptions: { type: Array, default: () => [] },
+  tokos:           { type: Array, default: () => [] },
+  isAdmin:         { type: Boolean, default: false },
+  userTokoId:      { type: Number, default: null },
 })
 
 const formatDate   = (d) => d ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
@@ -568,6 +593,7 @@ const deletePembayaran = (id) => {
 
 // Create modal
 const showModal   = ref(false)
+const tokoId      = ref(null)
 const noNota      = ref('')
 const tanggalNota = ref('')
 const buyer       = ref('')
@@ -582,6 +608,30 @@ const nominalBayar = ref(0)
 const metodeBayar  = ref('cash')
 const rekeningId   = ref('')
 const keteranganBayar = ref('')
+
+// Watch toko selection untuk update stok (admin only)
+const loadingStok = ref(false)
+watch(tokoId, async (newTokoId) => {
+  if (!props.isAdmin || !newTokoId) return
+  
+  loadingStok.value = true
+  try {
+    const response = await fetch(`/api/stok-toko/${newTokoId}`)
+    const data = await response.json()
+    
+    // Update stokOptions dengan data dari API
+    props.stokOptions.splice(0, props.stokOptions.length, ...data)
+    
+    // Reset checked items karena stok berubah
+    checkedItems.value = new Set()
+    pcsPerItem.value = {}
+    hargaPerItem.value = {}
+  } catch (error) {
+    console.error('Error loading stok:', error)
+  } finally {
+    loadingStok.value = false
+  }
+})
 
 
 const filteredOptions = computed(() => {
@@ -630,6 +680,7 @@ watch(totalNilai, (newTotal) => {
 })
 
 const openCreate = () => {
+  tokoId.value      = props.isAdmin ? null : props.userTokoId
   noNota.value      = props.nextNota
   tanggalNota.value = new Date().toISOString().substring(0, 10)
   buyer.value       = ''
@@ -654,6 +705,7 @@ const submit = () => {
     harga_satuan: parseFloat(hargaPerItem.value[model]) || 0,
   }))
   router.post('/proses-jual', {
+    toko_id:      tokoId.value,
     no_nota:      noNota.value || null,
     tanggal_nota: tanggalNota.value,
     buyer:        buyer.value,

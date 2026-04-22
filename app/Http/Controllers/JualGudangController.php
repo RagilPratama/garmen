@@ -67,15 +67,19 @@ class JualGudangController extends Controller
             ['path' => request()->url(), 'query' => request()->query()]
         );
 
-        // Stok gudang = total masuk kantor - sudah terjual (lunas + pending), per model
+        // Stok gudang = total masuk kantor - sudah terjual (lunas + pending) - sudah kirim ke toko, per model
         $masuk = BarangMasukKantor::selectRaw('model, SUM(pcs_barang_jadi) as total, MAX(id) as last_id')
             ->groupBy('model')->get()->keyBy('model');
         $terjual = JualGudang::selectRaw('model, SUM(pcs) as total')
-            ->whereIn('status', ['lunas', 'pending'])
+            ->whereIn('status', ['lunas', 'piutang'])
+            ->groupBy('model')->get()->keyBy('model');
+        $kirimToko = \App\Models\BarangKirimToko::selectRaw('model, SUM(pcs_barang_jadi) as total')
             ->groupBy('model')->get()->keyBy('model');
 
-        $stokOptions = $masuk->map(function ($row) use ($terjual) {
-            $sisa = (int) $row->total - (int) ($terjual->get($row->model)?->total ?? 0);
+        $stokOptions = $masuk->map(function ($row) use ($terjual, $kirimToko) {
+            $sisa = (int) $row->total 
+                - (int) ($terjual->get($row->model)?->total ?? 0)
+                - (int) ($kirimToko->get($row->model)?->total ?? 0);
             // Ambil harga dari record terakhir barang masuk kantor
             $lastRecord = BarangMasukKantor::find($row->last_id);
             $harga = (float) ($lastRecord->harga_satuan ?? 0);
