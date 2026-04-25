@@ -82,6 +82,7 @@ Route::middleware('auth')->group(function () {
     // Kas Toko
     Route::get('/kas-toko', [KasTokoController::class, 'index'])->name('kas-toko.index');
     Route::post('/kas-toko', [KasTokoController::class, 'store'])->name('kas-toko.store');
+    Route::post('/kas-toko/transfer', [KasTokoController::class, 'transfer'])->name('kas-toko.transfer');
     Route::delete('/kas-toko/{kasToko}', [KasTokoController::class, 'destroy'])->name('kas-toko.destroy');
     Route::get('/kas-toko/laporan', [KasTokoController::class, 'laporan'])->name('kas-toko.laporan');
     

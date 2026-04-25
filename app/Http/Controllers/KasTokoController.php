@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\KasToko;
+use App\Models\KasTransfer;
 use App\Models\Toko;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -72,6 +73,7 @@ class KasTokoController extends Controller
             'kasData' => $kasData,
             'saldoKas' => $saldoKas,
             'tokos' => $isAdmin ? Toko::where('is_active', true)->get() : collect([$user->toko]),
+            'semuaTokos' => Toko::where('is_active', true)->get(),
             'filters' => $request->only(['toko_id', 'tanggal_dari', 'tanggal_sampai', 'jenis']),
             'isAdmin' => $isAdmin,
         ]);
@@ -178,7 +180,7 @@ class KasTokoController extends Controller
     {
         $user = auth()->user();
         $isAdmin = $user->isAdmin();
-        
+
         $bulan = $request->bulan ?? now()->month;
         $tahun = $request->tahun ?? now()->year;
         $tokoId = $request->toko_id;
@@ -226,5 +228,101 @@ class KasTokoController extends Controller
             ],
             'isAdmin' => $isAdmin,
         ]);
+    }
+
+    public function transfer(Request $request)
+    {
+        $user = auth()->user();
+        $isAdmin = $user->isAdmin();
+
+        $validated = $request->validate([
+            'toko_pengirim_id' => 'required|exists:tokos,id',
+            'toko_penerima_id' => 'required|exists:tokos,id|different:toko_pengirim_id',
+            'tanggal' => 'required|date',
+            'metode_bayar' => 'required|in:cash,transfer,debit',
+            'jumlah' => 'required|numeric|min:0',
+            'keterangan' => 'nullable|string',
+        ]);
+
+        // Validasi akses
+        if (!$isAdmin) {
+            if ($validated['toko_pengirim_id'] != $user->toko_id) {
+                return back()->withErrors(['toko_pengirim_id' => 'Anda hanya bisa transfer dari toko Anda sendiri']);
+            }
+            if ($validated['toko_penerima_id'] == $user->toko_id) {
+                return back()->withErrors(['toko_penerima_id' => 'Toko penerima tidak boleh sama dengan toko Anda']);
+            }
+        }
+
+        DB::transaction(function () use ($validated, $user) {
+            $tokoPengirim = Toko::lockForUpdate()->findOrFail($validated['toko_pengirim_id']);
+            $tokoPenerima = Toko::lockForUpdate()->findOrFail($validated['toko_penerima_id']);
+
+            $metode = $validated['metode_bayar'];
+            $saldoField = 'saldo_' . $metode;
+            $jumlah = $validated['jumlah'];
+
+            // Cek saldo pengirim
+            $saldoSebelumPengirim = $tokoPengirim->$saldoField;
+            if ($saldoSebelumPengirim < $jumlah) {
+                throw new \Exception('Saldo ' . $metode . ' toko pengirim tidak mencukupi');
+            }
+
+            // Update saldo pengirim
+            $saldoSesudahPengirim = $saldoSebelumPengirim - $jumlah;
+            $tokoPengirim->$saldoField = $saldoSesudahPengirim;
+            $tokoPengirim->saldo_kas = $tokoPengirim->saldo_cash + $tokoPengirim->saldo_transfer + $tokoPengirim->saldo_debit;
+
+            // Update saldo penerima
+            $saldoSebelumPenerima = $tokoPenerima->$saldoField;
+            $saldoSesudahPenerima = $saldoSebelumPenerima + $jumlah;
+            $tokoPenerima->$saldoField = $saldoSesudahPenerima;
+            $tokoPenerima->saldo_kas = $tokoPenerima->saldo_cash + $tokoPenerima->saldo_transfer + $tokoPenerima->saldo_debit;
+
+            // Save perubahan saldo toko
+            $tokoPengirim->save();
+            $tokoPenerima->save();
+
+            // Record di kas_toko untuk pengirim (keluar)
+            KasToko::create([
+                'toko_id' => $validated['toko_pengirim_id'],
+                'tanggal' => $validated['tanggal'],
+                'jenis' => 'keluar',
+                'metode_bayar' => $metode,
+                'kategori' => 'Transfer ke ' . $tokoPenerima->nama_toko,
+                'jumlah' => $jumlah,
+                'keterangan' => $validated['keterangan'] ?? 'Transfer ke ' . $tokoPenerima->nama_toko,
+                'saldo_sebelum' => $saldoSebelumPengirim,
+                'saldo_sesudah' => $saldoSesudahPengirim,
+                'user_id' => $user->id,
+            ]);
+
+            // Record di kas_toko untuk penerima (masuk)
+            KasToko::create([
+                'toko_id' => $validated['toko_penerima_id'],
+                'tanggal' => $validated['tanggal'],
+                'jenis' => 'masuk',
+                'metode_bayar' => $metode,
+                'kategori' => 'Transfer dari ' . $tokoPengirim->nama_toko,
+                'jumlah' => $jumlah,
+                'keterangan' => 'Transfer dari ' . $tokoPengirim->nama_toko,
+                'saldo_sebelum' => $saldoSebelumPenerima,
+                'saldo_sesudah' => $saldoSesudahPenerima,
+                'user_id' => $user->id,
+            ]);
+
+            // Record di kas_transfer
+            KasTransfer::create([
+                'toko_pengirim_id' => $validated['toko_pengirim_id'],
+                'toko_penerima_id' => $validated['toko_penerima_id'],
+                'tanggal' => $validated['tanggal'],
+                'metode_bayar' => $metode,
+                'jumlah' => $jumlah,
+                'keterangan' => $validated['keterangan'] ?? null,
+                'user_id' => $user->id,
+            ]);
+        });
+
+        return redirect()->route('kas-toko.index')->with('success', 'Transfer kas berhasil');
     }
 }

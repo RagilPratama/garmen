@@ -51,15 +51,26 @@
               <p class="text-xs text-gray-400 mt-0.5">{{ kasData?.total ?? 0 }} Transaksi</p>
             </div>
           </div>
-          <button
-            @click="openCreate"
-            class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white text-sm font-medium rounded-xl transition-all shadow-sm hover:shadow-md whitespace-nowrap"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
-            </svg>
-            Tambah Transaksi
-          </button>
+          <div class="flex gap-2">
+            <button
+              @click="openTransfer"
+              class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white text-sm font-medium rounded-xl transition-all shadow-sm hover:shadow-md whitespace-nowrap"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+              Transfer
+            </button>
+            <button
+              @click="openCreate"
+              class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white text-sm font-medium rounded-xl transition-all shadow-sm hover:shadow-md whitespace-nowrap"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+              </svg>
+              Tambah Transaksi
+            </button>
+          </div>
         </div>
 
         <!-- Filters -->
@@ -359,6 +370,113 @@
       </form>
     </Modal>
 
+    <!-- TRANSFER MODAL -->
+    <Modal v-model="showTransferModal" title="Transfer Kas Antar Toko">
+      <form @submit.prevent="submitTransfer" class="space-y-4">
+        <div v-if="isAdmin">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Toko Pengirim <span class="text-red-500">*</span></label>
+          <select
+            v-model="transferForm.toko_pengirim_id"
+            required
+            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white"
+          >
+            <option value="">Pilih Toko Pengirim</option>
+            <option v-for="toko in tokos" :key="toko.id" :value="toko.id">
+              {{ toko.nama_toko }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Toko Penerima <span class="text-red-500">*</span></label>
+          <select
+            v-model="transferForm.toko_penerima_id"
+            required
+            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white"
+          >
+            <option value="">Pilih Toko Penerima</option>
+            <option v-for="toko in semuaTokos.filter(t => t.id !== transferForm.toko_pengirim_id)" :key="toko.id" :value="toko.id">
+              {{ toko.nama_toko }}
+            </option>
+          </select>
+          <p v-if="page.props.errors?.toko_penerima_id" class="text-red-500 text-xs mt-1">{{ page.props.errors.toko_penerima_id }}</p>
+          <p v-if="page.props.errors?.toko_pengirim_id" class="text-red-500 text-xs mt-1">{{ page.props.errors.toko_pengirim_id }}</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal <span class="text-red-500">*</span></label>
+          <input
+            type="date"
+            v-model="transferForm.tanggal"
+            required
+            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Metode Bayar <span class="text-red-500">*</span></label>
+          <div class="flex gap-4 mt-2">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input v-model="transferForm.metode_bayar" type="radio" value="cash" class="text-blue-500" />
+              <span class="text-sm text-gray-700">Cash</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input v-model="transferForm.metode_bayar" type="radio" value="transfer" class="text-blue-500" />
+              <span class="text-sm text-gray-700">Transfer</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input v-model="transferForm.metode_bayar" type="radio" value="debit" class="text-blue-500" />
+              <span class="text-sm text-gray-700">Debit</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah <span class="text-red-500">*</span></label>
+          <input
+            type="number"
+            v-model.number="transferForm.jumlah"
+            required
+            min="0"
+            step="0.01"
+            placeholder="0"
+            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Keterangan</label>
+          <textarea
+            v-model="transferForm.keterangan"
+            rows="3"
+            placeholder="Catatan transfer (opsional)..."
+            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white resize-none"
+          ></textarea>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-2 border-t border-gray-100">
+          <button
+            type="button"
+            @click="showTransferModal = false"
+            class="px-5 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Batal
+          </button>
+          <button
+            type="submit"
+            :disabled="processing"
+            class="px-5 py-2.5 text-sm text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors disabled:opacity-60 flex items-center gap-2"
+          >
+            <svg v-if="processing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Transfer
+          </button>
+        </div>
+      </form>
+    </Modal>
+
     <ConfirmDialog
       v-model="showConfirm"
       title="Hapus Transaksi?"
@@ -370,8 +488,8 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { router, Link } from '@inertiajs/vue3'
+import { ref, reactive, computed } from 'vue'
+import { router, Link, usePage } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Modal from '@/Components/Modal.vue'
 import ConfirmDialog from '@/Components/ConfirmDialog.vue'
@@ -380,11 +498,15 @@ const props = defineProps({
   kasData: Object,
   saldoKas: Object,
   tokos: Array,
+  semuaTokos: Array,
   filters: Object,
   isAdmin: Boolean,
 })
 
+const page = usePage()
+
 const showModal = ref(false)
+const showTransferModal = ref(false)
 const processing = ref(false)
 const showConfirm = ref(false)
 const deleteLoading = ref(false)
@@ -396,6 +518,15 @@ const form = reactive({
   jenis: '',
   metode_bayar: 'cash',
   kategori: '',
+  jumlah: '',
+  keterangan: '',
+})
+
+const transferForm = reactive({
+  toko_pengirim_id: props.isAdmin ? '' : props.tokos[0]?.id,
+  toko_penerima_id: '',
+  tanggal: new Date().toISOString().split('T')[0],
+  metode_bayar: 'cash',
   jumlah: '',
   keterangan: '',
 })
@@ -442,6 +573,12 @@ const openCreate = () => {
   showModal.value = true
 }
 
+const openTransfer = () => {
+  resetTransferForm()
+  page.props.errors = {}
+  showTransferModal.value = true
+}
+
 const submit = () => {
   processing.value = true
   router.post(route('kas-toko.store'), form, {
@@ -453,6 +590,28 @@ const submit = () => {
       processing.value = false
     },
   })
+}
+
+const submitTransfer = () => {
+  processing.value = true
+  router.post(route('kas-toko.transfer'), transferForm, {
+    onSuccess: () => {
+      showTransferModal.value = false
+      resetTransferForm()
+    },
+    onFinish: () => {
+      processing.value = false
+    },
+  })
+}
+
+const resetTransferForm = () => {
+  transferForm.toko_pengirim_id = props.isAdmin ? '' : props.tokos[0]?.id
+  transferForm.toko_penerima_id = ''
+  transferForm.tanggal = new Date().toISOString().split('T')[0]
+  transferForm.metode_bayar = 'cash'
+  transferForm.jumlah = ''
+  transferForm.keterangan = ''
 }
 
 const confirmDelete = (id) => {
