@@ -6,7 +6,9 @@ use App\Models\BarangMasukKantor;
 use App\Models\BarangKirimToko;
 use App\Models\ProsesJual;
 use App\Models\JualGudang;
+use App\Models\BarangKirimToko as BarangKirimTokoModel;
 use Inertia\Inertia;
+use Illuminate\Http\Request;
 
 class StokBarangController extends Controller
 {
@@ -62,5 +64,40 @@ class StokBarangController extends Controller
             'omsetToko'   => (float) $omsetToko,
             'omsetGudang' => (float) $omsetGudang,
         ]);
+    }
+
+    public function update(Request $request)
+    {
+        $request->validate([
+            'model' => 'required|string',
+            'sisa_toko' => 'required|integer|min:0',
+        ]);
+
+        $model = $request->model;
+        $newSisaToko = $request->sisa_toko;
+
+        $kirimTokoData = BarangKirimToko::selectRaw('model, SUM(pcs_barang_jadi) as total')
+            ->groupBy('model')->get()->keyBy('model');
+        $dikirim = (int) ($kirimTokoData->get($model)?->total ?? 0);
+
+        $terjualTokoData = ProsesJual::selectRaw('model, SUM(pcs) as total')
+            ->whereIn('status', ['lunas', 'pending'])
+            ->groupBy('model')->get()->keyBy('model');
+        $terjual = (int) ($terjualTokoData->get($model)?->total ?? 0);
+
+        $selisih = $dikirim - $terjual;
+        $adjustment = $newSisaToko - $selisih;
+
+        if ($adjustment !== 0) {
+            BarangKirimTokoModel::create([
+                'po' => 'ADJ-' . now()->format('Ymd') . '-' . $model,
+                'model' => $model,
+                'pcs_barang_jadi' => abs($adjustment),
+                'tanggal_kirim' => now()->format('Y-m-d'),
+                'keterangan' => 'Adjustment stok toko: ' . ($adjustment > 0 ? '+' : '') . $adjustment,
+            ]);
+        }
+
+        return redirect()->route('stok-barang.index')->with('success', 'Stok berhasil diupdate');
     }
 }

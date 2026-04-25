@@ -15,8 +15,8 @@
       <!-- Logo -->
       <div class="flex items-center h-16 px-4 bg-amber-500 flex-shrink-0">
         <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 14a6 6 0 100-12 6 6 0 000 12zm-1-5a1 1 0 102 0V7a1 1 0 10-2 0v4zm1-6a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/>
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-19.5-3h19.5m-19.5-3h19.5M4.5 15l1.5-6h3l1.5 6m3-6h3l1.5 6m-13.5-6v-3a1.5 1.5 0 011.5-1.5h3a1.5 1.5 0 011.5 1.5v3m3-3v-3a1.5 1.5 0 011.5-1.5h3a1.5 1.5 0 011.5 1.5v3"/>
           </svg>
         </div>
         <span v-if="sidebarOpen" class="ml-3 text-white font-bold text-lg truncate">GarmenApp</span>

@@ -107,11 +107,12 @@
                 <th class="px-6 py-3 text-right font-medium">Terjual</th>
                 <th class="px-6 py-3 text-right font-medium">Sisa Toko</th>
                 <th class="px-6 py-3 text-center font-medium">Status</th>
+                <th class="px-6 py-3 text-center font-medium">Aksi</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
               <tr v-if="filteredToko.length === 0">
-                <td colspan="5" class="px-6 py-10 text-center text-gray-400">Belum ada data stok toko.</td>
+                <td colspan="6" class="px-6 py-10 text-center text-gray-400">Belum ada data stok toko.</td>
               </tr>
               <tr v-for="row in filteredToko" :key="row.model" class="hover:bg-gray-50/60 transition-colors">
                 <td class="px-6 py-3.5 font-medium text-gray-800">{{ row.model }}</td>
@@ -119,6 +120,11 @@
                 <td class="px-6 py-3.5 text-right text-amber-600 font-medium">{{ row.terjual }}</td>
                 <td class="px-6 py-3.5 text-right font-semibold" :class="row.sisa_toko > 0 ? 'text-emerald-600' : 'text-gray-400'">
                   {{ row.sisa_toko }}
+                </td>
+                <td class="px-6 py-3.5 text-center">
+                  <button @click="openEditModal(row)" class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-medium bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors">
+                    Edit
+                  </button>
                 </td>
                 <td class="px-6 py-3.5 text-center">
                   <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
@@ -131,13 +137,45 @@
           </table>
         </div>
       </div>
+
+      <!-- Edit Modal -->
+      <Modal v-model="editModalOpen" title="Edit Stok Toko" size="lg">
+        <form @submit.prevent="submitEdit" class="space-y-4">
+          <div>
+            <p class="text-sm text-gray-600">Model: <span class="font-semibold">{{ editModel }}</span></p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah Sisa Toko</label>
+            <input v-model.number="editForm.sisa_toko" type="number" min="0"
+              class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white"/>
+            <p v-if="editForm.errors.sisa_toko" class="mt-1 text-xs text-red-500">{{ editForm.errors.sisa_toko }}</p>
+          </div>
+          <div class="flex justify-end gap-3 pt-2 border-t border-gray-100">
+            <button type="button" @click="closeEditModal"
+              class="px-5 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              Batal
+            </button>
+            <button type="submit" :disabled="editForm.processing"
+              class="px-5 py-2.5 text-sm text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors disabled:opacity-60 flex items-center gap-2">
+              <svg v-if="editForm.processing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              </svg>
+              Simpan
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   </AdminLayout>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, defineAsyncComponent } from 'vue'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
+import { useForm } from '@inertiajs/vue3'
+
+const Modal = defineAsyncComponent(() => import('@/Components/Modal.vue'))
 
 const props = defineProps({
   stokKantor:  { type: Array, default: () => [] },
@@ -145,6 +183,34 @@ const props = defineProps({
   omsetToko:   { type: Number, default: 0 },
   omsetGudang: { type: Number, default: 0 },
 })
+
+const editModalOpen = ref(false)
+const editModel = ref('')
+const editSisaToko = ref(0)
+const editForm = useForm({
+  model: '',
+  sisa_toko: 0,
+})
+
+const openEditModal = (row) => {
+  editModel.value = row.model
+  editSisaToko.value = row.sisa_toko
+  editForm.model = row.model
+  editForm.sisa_toko = row.sisa_toko
+  editModalOpen.value = true
+}
+
+const closeEditModal = () => {
+  editModalOpen.value = false
+}
+
+const submitEdit = () => {
+  editForm.put(route('stok-barang.update'), {
+    onSuccess: () => {
+      closeEditModal()
+    },
+  })
+}
 
 const activeTab = ref('kantor')
 const search = ref('')

@@ -66,6 +66,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/stok-bahan-garmen', [StokBahanGarmenController::class, 'index'])->name('stok-bahan-garmen.index');
     Route::get('/stok-bahan-garmen/detail', [StokBahanGarmenController::class, 'detail'])->name('stok-bahan-garmen.detail');
     Route::get('/stok-barang', [StokBarangController::class, 'index'])->name('stok-barang.index');
+    Route::put('/stok-barang', [StokBarangController::class, 'update'])->name('stok-barang.update');
     Route::get('/rincian-bahan', [RincianBahanController::class, 'index'])->name('rincian-bahan.index');
     Route::get('/defect', [DefectController::class, 'index'])->name('defect.index');
     Route::get('/tracking-po', [TrackingPoController::class, 'index'])->name('tracking-po.index');
