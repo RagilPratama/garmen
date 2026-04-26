@@ -17,6 +17,7 @@ class KasTransfer extends Model
         'jumlah',
         'keterangan',
         'user_id',
+        'rekening_id',
     ];
 
     protected $casts = [

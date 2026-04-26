@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\KasToko;
 use App\Models\KasTransfer;
 use App\Models\Toko;
+use App\Models\Rekening;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -74,6 +75,7 @@ class KasTokoController extends Controller
             'saldoKas' => $saldoKas,
             'tokos' => $isAdmin ? Toko::where('is_active', true)->get() : collect([$user->toko]),
             'semuaTokos' => Toko::where('is_active', true)->get(),
+            'rekenings' => Rekening::all(),
             'filters' => $request->only(['toko_id', 'tanggal_dari', 'tanggal_sampai', 'jenis']),
             'isAdmin' => $isAdmin,
         ]);
@@ -89,6 +91,7 @@ class KasTokoController extends Controller
             'tanggal' => 'required|date',
             'jenis' => 'required|in:masuk,keluar',
             'metode_bayar' => 'required|in:cash,transfer,debit',
+            'rekening_id' => 'nullable|exists:rekening,id',
             'kategori' => 'required|string|max:255',
             'jumlah' => 'required|numeric|min:0',
             'keterangan' => 'nullable|string',
@@ -126,6 +129,7 @@ class KasTokoController extends Controller
                 'tanggal' => $validated['tanggal'],
                 'jenis' => $validated['jenis'],
                 'metode_bayar' => $metode,
+                'rekening_id' => $validated['rekening_id'] ?? null,
                 'kategori' => $validated['kategori'],
                 'jumlah' => $jumlah,
                 'keterangan' => $validated['keterangan'],
@@ -242,6 +246,7 @@ class KasTokoController extends Controller
             'metode_bayar' => 'required|in:cash,transfer,debit',
             'jumlah' => 'required|numeric|min:0',
             'keterangan' => 'nullable|string',
+            'rekening_id' => 'nullable|exists:rekenings,id',
         ]);
 
         // Validasi akses
@@ -324,5 +329,82 @@ class KasTokoController extends Controller
         });
 
         return redirect()->route('kas-toko.index')->with('success', 'Transfer kas berhasil');
+    }
+
+    public function transferToGudang(Request $request)
+    {
+        $user = auth()->user();
+
+        $validated = $request->validate([
+            'toko_id' => 'required|exists:tokos,id',
+            'tanggal' => 'required|date',
+            'metode_bayar' => 'required|in:cash,transfer,debit',
+            'rekening_id' => 'nullable|exists:rekening,id',
+            'jumlah' => 'required|numeric|min:0.01',
+            'keterangan' => 'nullable|string',
+        ]);
+
+        // Validasi akses - user toko hanya bisa transfer dari toko mereka sendiri
+        if (!$user->isAdmin() && $validated['toko_id'] != $user->toko_id) {
+            return back()->with('error', 'Anda hanya bisa transfer dari toko Anda sendiri');
+        }
+
+        try {
+            DB::transaction(function () use ($validated, $user) {
+                $toko = Toko::lockForUpdate()->findOrFail($validated['toko_id']);
+                $saldoGudang = \App\Models\SaldoKas::where('entitas', 'gudang')->lockForUpdate()->first();
+
+                $metode = $validated['metode_bayar'];
+                $saldoField = 'saldo_' . $metode;
+                $jumlah = $validated['jumlah'];
+
+                // Validasi saldo toko mencukupi
+                if ($toko->$saldoField < $jumlah) {
+                    throw new \Exception('Transfer gagal! Saldo ' . strtoupper($metode) . ' toko tidak mencukupi. Saldo tersedia: Rp ' . number_format($toko->$saldoField, 0, ',', '.'));
+                }
+
+                // Kurangi saldo toko
+                $saldoSebelumToko = $toko->$saldoField;
+                $toko->$saldoField -= $jumlah;
+                $toko->saldo_kas = $toko->saldo_cash + $toko->saldo_transfer + $toko->saldo_debit;
+                $toko->save();
+
+                // Tambah saldo gudang
+                $saldoGudang->$saldoField += $jumlah;
+                $saldoGudang->save();
+
+                // Catat transaksi keluar di kas toko
+                KasToko::create([
+                    'toko_id' => $validated['toko_id'],
+                    'tanggal' => $validated['tanggal'],
+                    'jenis' => 'keluar',
+                    'metode_bayar' => $metode,
+                    'rekening_id' => $validated['rekening_id'] ?? null,
+                    'kategori' => 'Transfer ke Gudang',
+                    'jumlah' => $jumlah,
+                    'keterangan' => $validated['keterangan'] ?? 'Transfer ke Gudang',
+                    'saldo_sebelum' => $saldoSebelumToko,
+                    'saldo_sesudah' => $toko->$saldoField,
+                    'user_id' => $user->id,
+                ]);
+
+                // Catat transaksi masuk di kas gudang
+                \App\Models\KasGudang::create([
+                    'tanggal' => $validated['tanggal'],
+                    'jenis' => 'masuk',
+                    'metode_bayar' => $metode,
+                    'rekening_id' => $validated['rekening_id'] ?? null,
+                    'kategori' => 'Transfer dari Toko ' . $toko->nama_toko,
+                    'jumlah' => $jumlah,
+                    'saldo_sesudah' => $saldoGudang->$saldoField,
+                    'keterangan' => $validated['keterangan'] ?? 'Transfer dari Toko ' . $toko->nama_toko,
+                    'user_id' => $user->id,
+                ]);
+            });
+
+            return redirect()->route('kas-toko.index')->with('success', 'Transfer ke gudang berhasil');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 }

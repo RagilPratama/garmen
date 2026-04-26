@@ -29,6 +29,8 @@ use App\Http\Controllers\LaporanModelTerjualController;
 use App\Http\Controllers\LaporanHppController;
 use App\Http\Controllers\PengeluaranTokoController;
 use App\Http\Controllers\KasTokoController;
+use App\Http\Controllers\KasGudangController;
+use App\Http\Controllers\KasGarmenController;
 use Illuminate\Support\Facades\Route;
 
 // Auth routes
@@ -83,8 +85,23 @@ Route::middleware('auth')->group(function () {
     Route::get('/kas-toko', [KasTokoController::class, 'index'])->name('kas-toko.index');
     Route::post('/kas-toko', [KasTokoController::class, 'store'])->name('kas-toko.store');
     Route::post('/kas-toko/transfer', [KasTokoController::class, 'transfer'])->name('kas-toko.transfer');
+    Route::post('/kas-toko/transfer-to-gudang', [KasTokoController::class, 'transferToGudang'])->name('kas-toko.transfer-to-gudang');
     Route::delete('/kas-toko/{kasToko}', [KasTokoController::class, 'destroy'])->name('kas-toko.destroy');
     Route::get('/kas-toko/laporan', [KasTokoController::class, 'laporan'])->name('kas-toko.laporan');
+    
+    // Kas Gudang
+    Route::get('/kas-gudang', [KasGudangController::class, 'index'])->name('kas-gudang.index');
+    Route::post('/kas-gudang', [KasGudangController::class, 'store'])->name('kas-gudang.store');
+    Route::post('/kas-gudang/transfer', [KasGudangController::class, 'transfer'])->name('kas-gudang.transfer');
+    Route::delete('/kas-gudang/{kasGudang}', [KasGudangController::class, 'destroy'])->name('kas-gudang.destroy');
+    
+    // Kas Garmen
+    Route::get('/kas-garmen', [KasGarmenController::class, 'index'])->name('kas-garmen.index');
+    Route::post('/kas-garmen', [KasGarmenController::class, 'store'])->name('kas-garmen.store');
+    Route::post('/kas-garmen/transfer', [KasGarmenController::class, 'transfer'])->name('kas-garmen.transfer');
+    Route::delete('/kas-garmen/{kasGarmen}', [KasGarmenController::class, 'destroy'])->name('kas-garmen.destroy');
+    // Cash account management (gudang & garmen)
+    Route::resource('cash-accounts', \App\Http\Controllers\CashAccountController::class)->except(['show', 'create', 'edit']);
     
     // API endpoint untuk get stok toko
     Route::get('/api/stok-toko/{tokoId}', [ProsesJualController::class, 'getStokToko']);

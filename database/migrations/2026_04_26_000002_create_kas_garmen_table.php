@@ -8,24 +8,25 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('kas_transfer', function (Blueprint $table) {
+        Schema::create('kas_garmen', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('toko_pengirim_id')->constrained('tokos')->onDelete('cascade');
-            $table->foreignId('toko_penerima_id')->constrained('tokos')->onDelete('cascade');
             $table->date('tanggal');
+            $table->enum('jenis', ['masuk', 'keluar']);
             $table->enum('metode_bayar', ['cash', 'transfer', 'debit']);
+            $table->string('kategori');
             $table->decimal('jumlah', 15, 2);
+            $table->decimal('saldo_sesudah', 15, 2);
             $table->text('keterangan')->nullable();
-            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->string('referensi')->nullable();
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->timestamps();
             
-            $table->index(['toko_pengirim_id', 'tanggal']);
-            $table->index(['toko_penerima_id', 'tanggal']);
+            $table->index(['tanggal', 'jenis']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('kas_transfer');
+        Schema::dropIfExists('kas_garmen');
     }
 };

@@ -54,12 +54,22 @@
           <div class="flex gap-2">
             <button
               @click="openTransfer"
+              v-if="isAdmin"
               class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white text-sm font-medium rounded-xl transition-all shadow-sm hover:shadow-md whitespace-nowrap"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
               </svg>
-              Transfer
+              Transfer Antar Toko
+            </button>
+            <button
+              @click="openTransferToGudang"
+              class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm font-medium rounded-xl transition-all shadow-sm hover:shadow-md whitespace-nowrap"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+              Transfer ke Gudang
             </button>
             <button
               @click="openCreate"
@@ -313,6 +323,23 @@
           </div>
         </div>
 
+        <!-- Rekening field - shown when transfer is selected -->
+        <div v-show="form.metode_bayar === 'transfer'" class="transition-all">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Rekening</label>
+          <select
+            v-model="form.rekening_id"
+            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent transition bg-white"
+          >
+            <option value="">Pilih Rekening (Opsional)</option>
+            <option v-for="rek in (rekenings || [])" :key="rek.id" :value="rek.id">
+              {{ rek.bank }} - {{ rek.nama }} {{ rek.nomor_rekening ? '(' + rek.nomor_rekening + ')' : '' }}
+            </option>
+          </select>
+          <p v-if="!rekenings || rekenings.length === 0" class="text-xs text-gray-400 mt-1">
+            Belum ada rekening. <a href="/rekening" class="text-blue-500 hover:underline">Tambah rekening</a>
+          </p>
+        </div>
+
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Kategori <span class="text-red-500">*</span></label>
           <input
@@ -431,6 +458,23 @@
           </div>
         </div>
 
+        <!-- Rekening field - shown when transfer is selected -->
+        <div v-show="transferForm.metode_bayar === 'transfer'" class="transition-all">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Rekening</label>
+          <select
+            v-model="transferForm.rekening_id"
+            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white"
+          >
+            <option value="">Pilih Rekening (Opsional)</option>
+            <option v-for="rek in (rekenings || [])" :key="rek.id" :value="rek.id">
+              {{ rek.bank }} - {{ rek.nama }} {{ rek.nomor_rekening ? '(' + rek.nomor_rekening + ')' : '' }}
+            </option>
+          </select>
+          <p v-if="!rekenings || rekenings.length === 0" class="text-xs text-gray-400 mt-1">
+            Belum ada rekening. <a href="/rekening" class="text-blue-500 hover:underline">Tambah rekening</a>
+          </p>
+        </div>
+
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah <span class="text-red-500">*</span></label>
           <input
@@ -477,6 +521,111 @@
       </form>
     </Modal>
 
+    <!-- TRANSFER TO GUDANG MODAL -->
+    <Modal v-model="showTransferToGudangModal" title="Transfer ke Gudang">
+      <form @submit.prevent="submitTransferToGudang" class="space-y-4">
+        <div v-if="isAdmin">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Toko Pengirim <span class="text-red-500">*</span></label>
+          <select
+            v-model="transferToGudangForm.toko_id"
+            required
+            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition bg-white"
+          >
+            <option value="">Pilih Toko</option>
+            <option v-for="toko in tokos" :key="toko.id" :value="toko.id">
+              {{ toko.nama_toko }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal <span class="text-red-500">*</span></label>
+          <input
+            type="date"
+            v-model="transferToGudangForm.tanggal"
+            required
+            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition bg-white"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Metode Bayar <span class="text-red-500">*</span></label>
+          <div class="flex gap-4 mt-2">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input v-model="transferToGudangForm.metode_bayar" type="radio" value="cash" class="text-purple-500" />
+              <span class="text-sm text-gray-700">Cash</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input v-model="transferToGudangForm.metode_bayar" type="radio" value="transfer" class="text-purple-500" />
+              <span class="text-sm text-gray-700">Transfer</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input v-model="transferToGudangForm.metode_bayar" type="radio" value="debit" class="text-purple-500" />
+              <span class="text-sm text-gray-700">Debit</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Rekening field - shown when transfer is selected -->
+        <div v-show="transferToGudangForm.metode_bayar === 'transfer'" class="transition-all">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Rekening</label>
+          <select
+            v-model="transferToGudangForm.rekening_id"
+            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition bg-white"
+          >
+            <option value="">Pilih Rekening (Opsional)</option>
+            <option v-for="rek in (rekenings || [])" :key="rek.id" :value="rek.id">
+              {{ rek.bank }} - {{ rek.nama }} {{ rek.nomor_rekening ? '(' + rek.nomor_rekening + ')' : '' }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah <span class="text-red-500">*</span></label>
+          <input
+            type="number"
+            v-model.number="transferToGudangForm.jumlah"
+            required
+            min="0"
+            step="0.01"
+            placeholder="0"
+            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition bg-white"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Keterangan</label>
+          <textarea
+            v-model="transferToGudangForm.keterangan"
+            rows="3"
+            placeholder="Keterangan transfer..."
+            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition bg-white resize-none"
+          ></textarea>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-2 border-t border-gray-100">
+          <button
+            type="button"
+            @click="showTransferToGudangModal = false"
+            class="px-5 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Batal
+          </button>
+          <button
+            type="submit"
+            :disabled="processing"
+            class="px-5 py-2.5 text-sm text-white bg-purple-500 hover:bg-purple-600 rounded-lg transition-colors disabled:opacity-60 flex items-center gap-2"
+          >
+            <svg v-if="processing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Transfer ke Gudang
+          </button>
+        </div>
+      </form>
+    </Modal>
+
     <ConfirmDialog
       v-model="showConfirm"
       title="Hapus Transaksi?"
@@ -499,6 +648,7 @@ const props = defineProps({
   saldoKas: Object,
   tokos: Array,
   semuaTokos: Array,
+  rekenings: Array,
   filters: Object,
   isAdmin: Boolean,
 })
@@ -507,6 +657,7 @@ const page = usePage()
 
 const showModal = ref(false)
 const showTransferModal = ref(false)
+const showTransferToGudangModal = ref(false)
 const processing = ref(false)
 const showConfirm = ref(false)
 const deleteLoading = ref(false)
@@ -517,6 +668,7 @@ const form = reactive({
   tanggal: new Date().toISOString().split('T')[0],
   jenis: '',
   metode_bayar: 'cash',
+  rekening_id: '',
   kategori: '',
   jumlah: '',
   keterangan: '',
@@ -527,6 +679,16 @@ const transferForm = reactive({
   toko_penerima_id: '',
   tanggal: new Date().toISOString().split('T')[0],
   metode_bayar: 'cash',
+  rekening_id: '',
+  jumlah: '',
+  keterangan: '',
+})
+
+const transferToGudangForm = reactive({
+  toko_id: props.isAdmin ? '' : props.tokos[0]?.id,
+  tanggal: new Date().toISOString().split('T')[0],
+  metode_bayar: 'cash',
+  rekening_id: '',
   jumlah: '',
   keterangan: '',
 })
@@ -579,6 +741,12 @@ const openTransfer = () => {
   showTransferModal.value = true
 }
 
+const openTransferToGudang = () => {
+  resetTransferToGudangForm()
+  page.props.errors = {}
+  showTransferToGudangModal.value = true
+}
+
 const submit = () => {
   processing.value = true
   router.post(route('kas-toko.store'), form, {
@@ -605,13 +773,36 @@ const submitTransfer = () => {
   })
 }
 
+const submitTransferToGudang = () => {
+  processing.value = true
+  router.post(route('kas-toko.transfer-to-gudang'), transferToGudangForm, {
+    onSuccess: () => {
+      showTransferToGudangModal.value = false
+      resetTransferToGudangForm()
+    },
+    onFinish: () => {
+      processing.value = false
+    },
+  })
+}
+
 const resetTransferForm = () => {
   transferForm.toko_pengirim_id = props.isAdmin ? '' : props.tokos[0]?.id
   transferForm.toko_penerima_id = ''
   transferForm.tanggal = new Date().toISOString().split('T')[0]
   transferForm.metode_bayar = 'cash'
+  transferForm.rekening_id = ''
   transferForm.jumlah = ''
   transferForm.keterangan = ''
+}
+
+const resetTransferToGudangForm = () => {
+  transferToGudangForm.toko_id = props.isAdmin ? '' : props.tokos[0]?.id
+  transferToGudangForm.tanggal = new Date().toISOString().split('T')[0]
+  transferToGudangForm.metode_bayar = 'cash'
+  transferToGudangForm.rekening_id = ''
+  transferToGudangForm.jumlah = ''
+  transferToGudangForm.keterangan = ''
 }
 
 const confirmDelete = (id) => {
@@ -634,6 +825,7 @@ const resetForm = () => {
   form.tanggal = new Date().toISOString().split('T')[0]
   form.jenis = ''
   form.metode_bayar = 'cash'
+  form.rekening_id = ''
   form.kategori = ''
   form.jumlah = ''
   form.keterangan = ''

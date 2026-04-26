@@ -19,6 +19,7 @@ use App\Models\PenjualanPembayaran;
 use App\Models\PengeluaranToko;
 use App\Models\Toko;
 use App\Models\KasToko;
+use App\Models\SaldoKas;
 
 class DashboardController extends Controller
 {
@@ -302,6 +303,26 @@ class DashboardController extends Controller
                 ]);
         }
 
+        // Saldo kas gudang dan garmen (hanya admin)
+        $saldoKasGudang = null;
+        $saldoKasGarmen = null;
+        if ($isAdmin) {
+            $gudang = SaldoKas::where('entitas', 'gudang')->first();
+            $garmen = SaldoKas::where('entitas', 'garmen')->first();
+            
+            $saldoKasGudang = $gudang ? [
+                'saldo_cash' => (float) $gudang->saldo_cash,
+                'saldo_transfer' => (float) $gudang->saldo_transfer,
+                'saldo_debit' => (float) $gudang->saldo_debit,
+            ] : null;
+            
+            $saldoKasGarmen = $garmen ? [
+                'saldo_cash' => (float) $garmen->saldo_cash,
+                'saldo_transfer' => (float) $garmen->saldo_transfer,
+                'saldo_debit' => (float) $garmen->saldo_debit,
+            ] : null;
+        }
+
         return Inertia::render('Dashboard', [
             'sisaHutang'           => (float) $sisaHutang,
             'jumlahNotaBelumLunas' => (int) $jumlahNotaBelumLunas,
@@ -326,6 +347,8 @@ class DashboardController extends Controller
             'pengeluaranTokoBulanIni' => (float) $pengeluaranTokoBulanIni,
             'saldoKasToko'         => $saldoKasToko,
             'recentKasToko'        => $recentKasToko,
+            'saldoKasGudang'       => $saldoKasGudang,
+            'saldoKasGarmen'       => $saldoKasGarmen,
         ]);
     }
 }

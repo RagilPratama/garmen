@@ -264,6 +264,111 @@
         </div>
       </div>
 
+      <!-- Kas Gudang & Garmen Section (Admin Only) -->
+      <div v-if="isAdmin && (saldoKasGudang || saldoKasGarmen)" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <!-- Kas Gudang -->
+        <div v-if="saldoKasGudang" class="bg-white rounded-xl border border-gray-100 shadow-sm">
+          <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="font-semibold text-gray-800">Kas Gudang (Kantor)</h3>
+            <Link href="/kas-gudang" class="text-blue-500 hover:text-blue-600 text-xs font-medium">Kelola Kas →</Link>
+          </div>
+          
+          <div class="p-5">
+            <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-4 border border-blue-100">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-medium text-blue-600 mb-1">Total Saldo Kas Gudang</p>
+                  <p class="text-2xl font-bold text-blue-700 truncate" :title="formatRupiah(Number(saldoKasGudang.saldo_cash || 0) + Number(saldoKasGudang.saldo_transfer || 0) + Number(saldoKasGudang.saldo_debit || 0))">
+                    {{ formatRupiah(Number(saldoKasGudang.saldo_cash || 0) + Number(saldoKasGudang.saldo_transfer || 0) + Number(saldoKasGudang.saldo_debit || 0)) }}
+                  </p>
+                </div>
+                <div class="p-3 bg-blue-100 rounded-full shrink-0">
+                  <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+              </div>
+              
+              <!-- Breakdown per metode -->
+              <div class="pt-3 border-t border-blue-200 space-y-2">
+                <div class="flex justify-between items-center">
+                  <span class="text-xs text-green-600 flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    Cash
+                  </span>
+                  <span class="text-xs font-semibold text-green-700">{{ formatRupiah(Number(saldoKasGudang.saldo_cash || 0)) }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-xs text-blue-600 flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                    Transfer
+                  </span>
+                  <span class="text-xs font-semibold text-blue-700">{{ formatRupiah(Number(saldoKasGudang.saldo_transfer || 0)) }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-xs text-purple-600 flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                    Debit
+                  </span>
+                  <span class="text-xs font-semibold text-purple-700">{{ formatRupiah(Number(saldoKasGudang.saldo_debit || 0)) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kas Garmen -->
+        <div v-if="saldoKasGarmen" class="bg-white rounded-xl border border-gray-100 shadow-sm">
+          <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="font-semibold text-gray-800">Kas Garmen</h3>
+            <Link href="/kas-garmen" class="text-orange-500 hover:text-orange-600 text-xs font-medium">Kelola Kas →</Link>
+          </div>
+          
+          <div class="p-5">
+            <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg p-4 border border-orange-100">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-medium text-orange-600 mb-1">Total Saldo Kas Garmen</p>
+                  <p class="text-2xl font-bold text-orange-700 truncate" :title="formatRupiah(Number(saldoKasGarmen.saldo_cash || 0) + Number(saldoKasGarmen.saldo_transfer || 0) + Number(saldoKasGarmen.saldo_debit || 0))">
+                    {{ formatRupiah(Number(saldoKasGarmen.saldo_cash || 0) + Number(saldoKasGarmen.saldo_transfer || 0) + Number(saldoKasGarmen.saldo_debit || 0)) }}
+                  </p>
+                </div>
+                <div class="p-3 bg-orange-100 rounded-full shrink-0">
+                  <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+              </div>
+              
+              <!-- Breakdown per metode -->
+              <div class="pt-3 border-t border-orange-200 space-y-2">
+                <div class="flex justify-between items-center">
+                  <span class="text-xs text-green-600 flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    Cash
+                  </span>
+                  <span class="text-xs font-semibold text-green-700">{{ formatRupiah(Number(saldoKasGarmen.saldo_cash || 0)) }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-xs text-blue-600 flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                    Transfer
+                  </span>
+                  <span class="text-xs font-semibold text-blue-700">{{ formatRupiah(Number(saldoKasGarmen.saldo_transfer || 0)) }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-xs text-purple-600 flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                    Debit
+                  </span>
+                  <span class="text-xs font-semibold text-purple-700">{{ formatRupiah(Number(saldoKasGarmen.saldo_debit || 0)) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Pipeline Produksi (Admin Only) -->
       <div v-if="isAdmin" class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <h3 class="font-semibold text-gray-800 mb-4">Pipeline Produksi <span class="text-xs font-normal text-gray-400 ml-1">(total PO per stage)</span></h3>
@@ -462,6 +567,8 @@ const props = defineProps({
   pengeluaranTokoBulanIni: { type: Number, default: 0 },
   saldoKasToko:        { type: Array, default: () => [] },
   recentKasToko:       { type: Array, default: () => [] },
+  saldoKasGudang:      { type: Object, default: null },
+  saldoKasGarmen:      { type: Object, default: null },
 })
 
 const hours = new Date().getHours()

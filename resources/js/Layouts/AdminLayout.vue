@@ -239,6 +239,9 @@ const navItems = [
   { type: 'link', name: 'laporan-penjualan',      label: 'Laporan Penjualan',    href: '/laporan-penjualan',      icon: IconReport },
   { type: 'link', name: 'laporan-model-terjual',  label: 'Model Terjual',        href: '/laporan-model-terjual',  icon: IconChart  },
   { type: 'link', name: 'laporan-hpp',            label: 'Laporan HPP',          href: '/laporan-hpp',            icon: IconCalculator },
+  { type: 'header', label: 'Kas' },
+  { type: 'link', name: 'kas-gudang', label: 'Kas Gudang', href: '/kas-gudang', icon: IconWallet },
+  { type: 'link', name: 'kas-garmen', label: 'Kas Garmen', href: '/kas-garmen', icon: IconWallet },
 ]
 </script>
 
