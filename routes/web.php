@@ -31,6 +31,7 @@ use App\Http\Controllers\PengeluaranTokoController;
 use App\Http\Controllers\KasTokoController;
 use App\Http\Controllers\KasGudangController;
 use App\Http\Controllers\KasGarmenController;
+use App\Http\Controllers\ImportProsesJualController;
 use Illuminate\Support\Facades\Route;
 
 // Auth routes
@@ -57,6 +58,13 @@ Route::middleware('auth')->group(function () {
     Route::resource('barang-masuk-kantor', BarangMasukKantorController::class)->except(['show']);
     Route::resource('barang-kirim-toko', BarangKirimTokoController::class)->except(['show']);
     Route::resource('proses-jual', ProsesJualController::class)->except(['show', 'create', 'edit']);
+    
+    // Import Proses Jual
+    Route::get('/import/proses-jual', [ImportProsesJualController::class, 'showForm'])->name('import.proses-jual.form');
+    Route::post('/import/proses-jual', [ImportProsesJualController::class, 'import'])->name('import.proses-jual.store');
+    Route::get('/import/proses-jual/template', [ImportProsesJualController::class, 'downloadTemplate'])->name('import.proses-jual.template');
+    Route::get('/import/proses-jual/export-models', [ImportProsesJualController::class, 'exportModels'])->name('import.proses-jual.export-models');
+    
     Route::resource('jual-gudang', JualGudangController::class)->except(['show', 'create', 'edit']);
     Route::put('/jual-gudang-nota-status', [JualGudangController::class, 'updateNotaStatus'])->name('jual-gudang.update-nota-status');
     Route::put('/proses-jual-nota-status', [ProsesJualController::class, 'updateNotaStatus'])->name('proses-jual.update-nota-status');
