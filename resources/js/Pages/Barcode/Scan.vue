@@ -1,0 +1,618 @@
+<template>
+  <AdminLayout title="Scan Barcode - Input Harga">
+    <div class="max-w-2xl mx-auto space-y-6">
+      <!-- Header -->
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+            <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-xl font-semibold text-gray-800">Scan Barcode</h1>
+            <p class="text-sm text-gray-500 mt-0.5">Scan barcode untuk input harga bahan</p>
+          </div>
+        </div>
+
+        <!-- Scan Method Tabs -->
+        <div class="flex gap-2 mb-4">
+          <button 
+            @click="scanMethod = 'manual'"
+            :class="[
+              'flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition',
+              scanMethod === 'manual' 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            ]"
+          >
+            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+            Input Manual (Recommended)
+          </button>
+          <button 
+            @click="scanMethod = 'camera'"
+            :class="[
+              'flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition',
+              scanMethod === 'camera' 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            ]"
+          >
+            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            Scan dengan Kamera (Beta)
+          </button>
+        </div>
+
+        <!-- Camera Scanner -->
+        <div v-if="scanMethod === 'camera'" class="space-y-4">
+          <!-- Requirements Info -->
+          <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <div class="flex items-start gap-2">
+              <svg class="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <div class="text-xs text-amber-800">
+                <p class="font-semibold mb-1">Persyaratan Camera Scanner:</p>
+                <ul class="list-disc pl-4 space-y-0.5">
+                  <li>Browser modern (Chrome, Firefox, Safari)</li>
+                  <li>Izinkan akses kamera saat diminta</li>
+                  <li>Jika gagal, gunakan mode "Input Manual"</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="!cameraStarted" class="text-center py-8">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-50 flex items-center justify-center">
+              <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">Klik tombol di bawah untuk mengaktifkan kamera</p>
+            <button 
+              @click="startCamera"
+              class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition flex items-center gap-2 mx-auto"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+              </svg>
+              Aktifkan Kamera
+            </button>
+          </div>
+
+          <div v-else>
+            <!-- Camera Preview -->
+            <div class="relative">
+              <div id="reader" class="rounded-lg overflow-hidden border-2 border-blue-200"></div>
+              <div class="absolute top-3 right-3 flex gap-2">
+                <button 
+                  @click="stopCamera"
+                  class="px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded-lg transition shadow-lg"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p class="text-xs text-blue-700 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Arahkan kamera ke barcode. Scanner akan otomatis membaca barcode.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Manual Input -->
+        <div v-if="scanMethod === 'manual'" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Scan atau Ketik Kode Barcode
+            </label>
+            <div class="flex gap-2">
+              <input 
+                v-model="scanInput" 
+                @keyup.enter="searchBarcode"
+                type="text" 
+                placeholder="BRC-1234567890123"
+                autofocus
+                class="flex-1 px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white font-mono"
+              />
+              <button 
+                @click="searchBarcode"
+                :disabled="loading || !scanInput"
+                class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                <svg v-if="loading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                <span v-else>Cari</span>
+              </button>
+            </div>
+            <p class="text-xs text-gray-500 mt-2">
+              💡 Tip: Gunakan barcode scanner untuk scan otomatis, atau ketik manual lalu tekan Enter
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result -->
+      <div v-if="barcodeData" class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+        <h2 class="text-base font-semibold text-gray-800 mb-4">Detail Bahan</h2>
+        
+        <div class="grid grid-cols-2 gap-4 mb-6">
+          <div class="bg-gray-50 rounded-lg p-3">
+            <p class="text-xs text-gray-500 mb-1">Barcode</p>
+            <p class="text-sm font-mono font-semibold text-gray-800">{{ barcodeData.barcode_code }}</p>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3">
+            <p class="text-xs text-gray-500 mb-1">Supplier</p>
+            <p class="text-sm font-semibold text-gray-800">{{ barcodeData.supplier }}</p>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3">
+            <p class="text-xs text-gray-500 mb-1">Kode Bahan</p>
+            <p class="text-sm font-semibold text-gray-800">{{ barcodeData.kode_bahan }}</p>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3">
+            <p class="text-xs text-gray-500 mb-1">Nama Bahan</p>
+            <p class="text-sm font-semibold text-gray-800">{{ barcodeData.nama_bahan }}</p>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3">
+            <p class="text-xs text-gray-500 mb-1">Quantity</p>
+            <p class="text-sm font-semibold text-gray-800">{{ barcodeData.quantity }} {{ barcodeData.satuan }}</p>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3">
+            <p class="text-xs text-gray-500 mb-1">Tanggal</p>
+            <p class="text-sm font-semibold text-gray-800">{{ formatDate(barcodeData.tanggal) }}</p>
+          </div>
+        </div>
+
+        <!-- Price Input Form -->
+        <div v-if="!barcodeData.harga_sudah_diisi" class="border-t border-gray-200 pt-6">
+          <h3 class="text-sm font-semibold text-gray-800 mb-4">Input Harga</h3>
+          <form @submit.prevent="submitPrice" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Harga per {{ barcodeData.satuan }} <span class="text-red-500">*</span>
+              </label>
+              <input 
+                :value="formatInputPrice(priceInput)" 
+                @input="handlePriceInput"
+                type="text" 
+                inputmode="numeric"
+                required
+                placeholder="50.000"
+                class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white"
+              />
+            </div>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div class="flex justify-between items-center">
+                <span class="text-sm font-medium text-blue-900">Total Harga:</span>
+                <span class="text-lg font-bold text-blue-900">{{ formatRupiah(totalHarga) }}</span>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <button 
+                type="submit"
+                :disabled="saving || !priceInput"
+                class="flex-1 px-6 py-3 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                <svg v-if="saving" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                <span>{{ saving ? 'Menyimpan...' : 'Simpan Harga' }}</span>
+              </button>
+              <button 
+                type="button"
+                @click="reset"
+                class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition">
+                Batal
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Already Has Price -->
+        <div v-else class="border-t border-gray-200 pt-6">
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <div class="flex-1">
+                <p class="text-sm font-semibold text-green-900 mb-1">Harga Sudah Diisi</p>
+                <div class="space-y-1 text-sm text-green-800">
+                  <p>Harga per {{ barcodeData.satuan }}: <span class="font-semibold">{{ formatRupiah(barcodeData.rp_per_yard) }}</span></p>
+                  <p>Total Harga: <span class="font-semibold">{{ formatRupiah(barcodeData.total_harga) }}</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button 
+            @click="reset"
+            class="mt-4 w-full px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition">
+            Scan Barcode Lain
+          </button>
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div v-if="errorMessage" class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="flex items-start gap-3">
+          <svg class="w-5 h-5 text-red-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <div>
+            <p class="text-sm font-semibold text-red-900">{{ errorMessage }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </AdminLayout>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import AdminLayout from '@/Layouts/AdminLayout.vue'
+import Swal from 'sweetalert2'
+
+// Dynamic import html5-qrcode
+let Html5Qrcode = null
+let html5QrcodeLoaded = false
+
+// Load library
+onMounted(async () => {
+  try {
+    const module = await import('html5-qrcode')
+    Html5Qrcode = module.Html5Qrcode
+    html5QrcodeLoaded = true
+    console.log('html5-qrcode loaded successfully')
+  } catch (err) {
+    console.error('Failed to load html5-qrcode:', err)
+    html5QrcodeLoaded = false
+  }
+  
+  // Check if code is passed via URL parameter
+  const urlParams = new URLSearchParams(window.location.search)
+  const code = urlParams.get('code')
+  if (code) {
+    scanMethod.value = 'manual'
+    scanInput.value = code
+    searchBarcode()
+  }
+})
+
+// Helper to get CSRF token safely
+const getCsrfToken = () => {
+  const meta = document.querySelector('meta[name="csrf-token"]')
+  if (meta) {
+    return meta.content
+  }
+  // Fallback: try to get from cookie
+  const cookies = document.cookie.split(';')
+  for (let cookie of cookies) {
+    const [name, value] = cookie.trim().split('=')
+    if (name === 'XSRF-TOKEN') {
+      return decodeURIComponent(value)
+    }
+  }
+  console.error('CSRF token not found')
+  return ''
+}
+
+const scanMethod = ref('manual') // Default to manual
+const scanInput = ref('')
+const barcodeData = ref(null)
+const priceInput = ref(0)
+const loading = ref(false)
+const saving = ref(false)
+const errorMessage = ref('')
+const cameraStarted = ref(false)
+
+let html5QrCode = null
+
+// Cleanup camera on unmount
+onUnmounted(() => {
+  if (html5QrCode && cameraStarted.value) {
+    stopCamera()
+  }
+})
+
+const startCamera = async () => {
+  try {
+    console.log('Starting camera...')
+    
+    // Check if library loaded
+    if (!html5QrcodeLoaded || !Html5Qrcode) {
+      throw new Error('Library barcode scanner belum ter-load. Silakan refresh halaman dan coba lagi.')
+    }
+    
+    // Check if getUserMedia is supported
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error('Browser Anda tidak support akses kamera. Gunakan browser modern seperti Chrome, Firefox, atau Safari.')
+    }
+
+    console.log('Browser supports camera API')
+
+    // Request camera permission first
+    try {
+      console.log('Requesting camera permission...')
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      })
+      console.log('Camera permission granted')
+      // Stop the test stream
+      stream.getTracks().forEach(track => track.stop())
+    } catch (permErr) {
+      console.error('Permission error:', permErr)
+      if (permErr.name === 'NotAllowedError' || permErr.name === 'PermissionDeniedError') {
+        throw new Error('Akses kamera ditolak. Silakan izinkan akses kamera di browser settings.')
+      } else if (permErr.name === 'NotFoundError') {
+        throw new Error('Kamera tidak ditemukan. Pastikan device Anda memiliki kamera.')
+      } else if (permErr.name === 'NotReadableError') {
+        throw new Error('Kamera sedang digunakan aplikasi lain. Tutup aplikasi tersebut dan coba lagi.')
+      } else {
+        throw new Error(`Error akses kamera: ${permErr.message || permErr.name}`)
+      }
+    }
+
+    console.log('Initializing Html5Qrcode...')
+    html5QrCode = new Html5Qrcode("reader")
+    
+    const config = {
+      fps: 10,
+      qrbox: { width: 250, height: 150 }
+    }
+    
+    console.log('Starting scanner with config:', config)
+    await html5QrCode.start(
+      { facingMode: "environment" }, // Use back camera
+      config,
+      onScanSuccess,
+      onScanError
+    )
+    
+    console.log('Camera started successfully')
+    cameraStarted.value = true
+    
+    await Swal.fire({
+      icon: 'success',
+      title: 'Kamera Aktif!',
+      text: 'Arahkan kamera ke barcode',
+      timer: 2000,
+      showConfirmButton: false
+    })
+  } catch (err) {
+    console.error('Error starting camera:', err)
+    
+    let errorMessage = err.message || 'Gagal mengakses kamera'
+    let errorHtml = `
+      <div class="text-left space-y-2">
+        <p class="font-semibold">${errorMessage}</p>
+        <div class="mt-3 p-3 bg-gray-100 rounded text-xs font-mono">
+          <p class="font-semibold mb-1">Debug Info:</p>
+          <p>Error: ${err.name || 'Unknown'}</p>
+          <p>Message: ${err.message || 'No message'}</p>
+          <p>Stack: ${err.stack ? err.stack.substring(0, 200) : 'No stack'}</p>
+        </div>
+        <div class="mt-3 p-3 bg-blue-50 rounded text-sm">
+          <p class="font-semibold mb-2">💡 Tips:</p>
+          <ul class="list-disc pl-5 space-y-1">
+            <li>Refresh halaman (Ctrl+Shift+R) dan coba lagi</li>
+            <li>Pastikan browser memiliki izin akses kamera</li>
+            <li>Gunakan browser Chrome atau Firefox</li>
+            <li>Tutup aplikasi lain yang gunakan kamera</li>
+            <li>Gunakan mode "Input Manual" sebagai alternatif</li>
+          </ul>
+        </div>
+      </div>
+    `
+    
+    await Swal.fire({
+      icon: 'error',
+      title: 'Gagal Mengakses Kamera',
+      html: errorHtml,
+      confirmButtonColor: '#ef4444',
+      confirmButtonText: 'OK',
+      width: '600px'
+    })
+    
+    // Auto switch to manual mode
+    scanMethod.value = 'manual'
+  }
+}
+
+const stopCamera = async () => {
+  if (html5QrCode && cameraStarted.value) {
+    try {
+      await html5QrCode.stop()
+      html5QrCode.clear()
+      cameraStarted.value = false
+      console.log('Camera stopped')
+    } catch (err) {
+      console.error('Error stopping camera:', err)
+    }
+  }
+}
+
+const onScanSuccess = (decodedText, decodedResult) => {
+  console.log('Barcode detected:', decodedText)
+  
+  // Stop camera after successful scan
+  stopCamera()
+  
+  // Set the scanned code and search
+  scanInput.value = decodedText
+  searchBarcode()
+  
+  // Show success feedback
+  Swal.fire({
+    icon: 'success',
+    title: 'Barcode Terdeteksi!',
+    text: `Code: ${decodedText}`,
+    timer: 1500,
+    showConfirmButton: false
+  })
+}
+
+const onScanError = (errorMessage) => {
+  // Ignore scan errors (happens when no barcode is in view)
+  // console.log('Scan error:', errorMessage)
+}
+
+const totalHarga = computed(() => {
+  if (!barcodeData.value) return 0
+  return barcodeData.value.quantity * (priceInput.value || 0)
+})
+
+const parseNumeric = (value) => {
+  if (typeof value === 'number') return value
+  if (!value) return 0
+  const cleaned = String(value).replace(/[^\d]/g, '')
+  return parseInt(cleaned) || 0
+}
+
+const formatInputPrice = (value) => {
+  if (!value && value !== 0) return ''
+  if (typeof value === 'number') {
+    return new Intl.NumberFormat('id-ID').format(value)
+  }
+  const num = parseNumeric(value)
+  if (!num) return ''
+  return new Intl.NumberFormat('id-ID').format(num)
+}
+
+const handlePriceInput = (e) => {
+  const input = e.target
+  const cursorPos = input.selectionStart
+  const oldValue = input.value
+  const oldLength = oldValue.length
+  
+  const numericValue = parseNumeric(input.value)
+  priceInput.value = numericValue
+  
+  const formattedValue = formatInputPrice(numericValue)
+  input.value = formattedValue
+  
+  const newLength = formattedValue.length
+  const diff = newLength - oldLength
+  const newCursorPos = Math.max(0, cursorPos + diff)
+  input.setSelectionRange(newCursorPos, newCursorPos)
+}
+
+const formatRupiah = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0)
+
+const formatDate = (date) => {
+  if (!date) return '-'
+  return new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+const searchBarcode = async () => {
+  if (!scanInput.value) return
+  
+  loading.value = true
+  errorMessage.value = ''
+  barcodeData.value = null
+  
+  try {
+    const response = await fetch('/barcode/find', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': getCsrfToken()
+      },
+      body: JSON.stringify({
+        barcode_code: scanInput.value
+      })
+    })
+    
+    const result = await response.json()
+    
+    if (result.success) {
+      barcodeData.value = result.data
+      priceInput.value = result.data.rp_per_yard || 0
+    } else {
+      errorMessage.value = result.message || 'Barcode tidak ditemukan'
+    }
+  } catch (error) {
+    console.error('Error searching barcode:', error)
+    errorMessage.value = 'Terjadi kesalahan saat mencari barcode'
+  } finally {
+    loading.value = false
+  }
+}
+
+const submitPrice = async () => {
+  if (!priceInput.value || !barcodeData.value) return
+  
+  saving.value = true
+  
+  try {
+    const response = await fetch(`/barcode/${barcodeData.value.id}/price`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': getCsrfToken()
+      },
+      body: JSON.stringify({
+        rp_per_yard: priceInput.value
+      })
+    })
+    
+    const result = await response.json()
+    
+    if (result.success) {
+      barcodeData.value = result.data
+      await Swal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: 'Harga berhasil disimpan!',
+        confirmButtonColor: '#10b981'
+      })
+    } else {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Gagal!',
+        text: 'Gagal menyimpan harga: ' + result.message,
+        confirmButtonColor: '#ef4444'
+      })
+    }
+  } catch (error) {
+    console.error('Error saving price:', error)
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error!',
+      text: 'Terjadi kesalahan saat menyimpan harga',
+      confirmButtonColor: '#ef4444'
+    })
+  } finally {
+    saving.value = false
+  }
+}
+
+const reset = () => {
+  scanInput.value = ''
+  barcodeData.value = null
+  priceInput.value = 0
+  errorMessage.value = ''
+  
+  // Stop camera if running
+  if (cameraStarted.value) {
+    stopCamera()
+  }
+}
+</script>
