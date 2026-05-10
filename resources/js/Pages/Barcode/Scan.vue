@@ -75,6 +75,7 @@
               </svg>
             </div>
             <p class="text-sm text-gray-600 mb-4">Klik tombol di bawah untuk mengaktifkan kamera</p>
+            
             <button 
               @click="startCamera"
               class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition flex items-center gap-2 mx-auto"
@@ -86,7 +87,8 @@
             </button>
           </div>
 
-          <div v-else>
+          <!-- Camera Preview Container (always rendered but hidden) -->
+          <div v-show="cameraStarted">
             <!-- Camera Preview -->
             <div class="relative">
               <div id="reader" class="rounded-lg overflow-hidden border-2 border-blue-200"></div>
@@ -102,7 +104,7 @@
               </div>
             </div>
             
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
               <p class="text-xs text-blue-700 flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -370,6 +372,12 @@ const startCamera = async () => {
       }
     }
 
+    // Show camera container first (so #reader element exists)
+    cameraStarted.value = true
+    
+    // Wait for DOM to update
+    await new Promise(resolve => setTimeout(resolve, 100))
+
     console.log('Initializing Html5Qrcode...')
     html5QrCode = new Html5Qrcode("reader")
     
@@ -387,7 +395,6 @@ const startCamera = async () => {
     )
     
     console.log('Camera started successfully')
-    cameraStarted.value = true
     
     await Swal.fire({
       icon: 'success',
@@ -398,6 +405,9 @@ const startCamera = async () => {
     })
   } catch (err) {
     console.error('Error starting camera:', err)
+    
+    // Reset camera state on error
+    cameraStarted.value = false
     
     let errorMessage = err.message || 'Gagal mengakses kamera'
     let errorHtml = `
