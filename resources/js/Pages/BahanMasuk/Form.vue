@@ -45,7 +45,7 @@
               <FieldError :error="form.errors.yard"/>
             </FormField>
             <FormField label="Rp/Yard" required>
-              <input v-model="form.rp_per_yard" type="number" min="0" placeholder="0.00" v-bind="inputProps" :class="errorClass('rp_per_yard')" @input="calcTotal"/>
+              <input v-model="form.rp_per_yard" type="text" inputmode="numeric" v-currency placeholder="0" v-bind="inputProps" :class="errorClass('rp_per_yard')" @input="calcTotal"/>
               <FieldError :error="form.errors.rp_per_yard"/>
             </FormField>
           </div>

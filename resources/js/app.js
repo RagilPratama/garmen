@@ -3,6 +3,7 @@ import { createApp, h } from 'vue';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
+import currencyDirective from './directives/currency';
 
 createInertiaApp({
     title: (title) => title ? `${title} - GarmenApp` : 'GarmenApp',
@@ -11,6 +12,7 @@ createInertiaApp({
         return createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(ZiggyVue)
+            .directive('currency', currencyDirective)
             .mount(el);
     },
     progress: {

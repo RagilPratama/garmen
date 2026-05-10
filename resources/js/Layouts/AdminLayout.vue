@@ -215,6 +215,7 @@ const navItems = [
   { type: 'header', label: 'Inventori' },
   { type: 'link', name: 'stok-bahan', label: 'Stok Bahan', href: '/stok-bahan', icon: IconStock },
   { type: 'link', name: 'stok-barang', label: 'Stok Barang', href: '/stok-barang', icon: IconWarehouse },
+  { type: 'link', name: 'barcode', label: 'Barcode Generator', href: '/barcode', icon: IconBox },
   { type: 'link', name: 'rincian-bahan', label: 'Rincian Bahan', href: '/rincian-bahan', icon: IconBox },
   { type: 'header', label: 'Bahan' },
   { type: 'link', name: 'bahan-masuk', label: 'Bahan Masuk', href: '/bahan-masuk', icon: IconBox },
