@@ -102,6 +102,15 @@
                   </svg>
                 </button>
               </div>
+              <!-- Scanning Indicator -->
+              <div class="absolute bottom-3 left-1/2 transform -translate-x-1/2">
+                <div class="bg-blue-500 text-white px-4 py-2 rounded-full text-xs font-medium shadow-lg flex items-center gap-2">
+                  <svg class="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                  </svg>
+                  Mencari barcode...
+                </div>
+              </div>
             </div>
             
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
@@ -109,8 +118,15 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
-                Arahkan kamera ke barcode. Scanner akan otomatis membaca barcode.
+                Arahkan kamera ke barcode. Scanner akan otomatis membaca barcode. Pastikan barcode dalam kotak scan area.
               </p>
+            </div>
+            
+            <!-- Debug Console -->
+            <div class="mt-4 p-3 bg-gray-50 rounded-lg text-xs">
+              <p class="font-semibold mb-2">Debug Console:</p>
+              <p class="text-gray-600">Buka browser console (F12) untuk melihat log scanning.</p>
+              <p class="text-gray-600 mt-1">Jika barcode terdeteksi, akan muncul log "=== BARCODE DETECTED ==="</p>
             </div>
           </div>
         </div>
@@ -383,7 +399,27 @@ const startCamera = async () => {
     
     const config = {
       fps: 10,
-      qrbox: { width: 250, height: 150 }
+      qrbox: { width: 250, height: 150 },
+      // Support all barcode formats
+      formatsToSupport: [
+        0,  // QR_CODE
+        1,  // AZTEC
+        2,  // CODABAR
+        3,  // CODE_39
+        4,  // CODE_93
+        5,  // CODE_128
+        6,  // DATA_MATRIX
+        7,  // MAXICODE
+        8,  // ITF
+        9,  // EAN_13
+        10, // EAN_8
+        11, // PDF_417
+        12, // RSS_14
+        13, // RSS_EXPANDED
+        14, // UPC_A
+        15, // UPC_E
+        16, // UPC_EAN_EXTENSION
+      ]
     }
     
     console.log('Starting scanner with config:', config)
@@ -460,28 +496,35 @@ const stopCamera = async () => {
 }
 
 const onScanSuccess = (decodedText, decodedResult) => {
-  console.log('Barcode detected:', decodedText)
+  console.log('=== BARCODE DETECTED ===')
+  console.log('Decoded text:', decodedText)
+  console.log('Decoded result:', decodedResult)
+  console.log('Format:', decodedResult?.result?.format)
   
   // Stop camera after successful scan
   stopCamera()
   
   // Set the scanned code and search
   scanInput.value = decodedText
-  searchBarcode()
   
-  // Show success feedback
+  // Show success feedback first
   Swal.fire({
     icon: 'success',
     title: 'Barcode Terdeteksi!',
     text: `Code: ${decodedText}`,
     timer: 1500,
     showConfirmButton: false
+  }).then(() => {
+    // Then search
+    searchBarcode()
   })
 }
 
 const onScanError = (errorMessage) => {
-  // Ignore scan errors (happens when no barcode is in view)
-  // console.log('Scan error:', errorMessage)
+  // Log errors for debugging (but don't show to user)
+  if (errorMessage && !errorMessage.includes('NotFoundException')) {
+    console.log('Scan error:', errorMessage)
+  }
 }
 
 const totalHarga = computed(() => {
