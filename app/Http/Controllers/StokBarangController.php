@@ -70,32 +70,67 @@ class StokBarangController extends Controller
     {
         $request->validate([
             'model' => 'required|string',
-            'sisa_toko' => 'required|integer|min:0',
+            'sisa_toko' => 'nullable|integer|min:0',
+            'sisa_kantor' => 'nullable|integer|min:0',
+            'type' => 'required|in:toko,kantor',
         ]);
 
         $model = $request->model;
-        $newSisaToko = $request->sisa_toko;
+        $type = $request->type;
 
-        $kirimTokoData = BarangKirimToko::selectRaw('model, SUM(pcs_barang_jadi) as total')
-            ->groupBy('model')->get()->keyBy('model');
-        $dikirim = (int) ($kirimTokoData->get($model)?->total ?? 0);
+        if ($type === 'toko') {
+            $newSisaToko = $request->sisa_toko;
 
-        $terjualTokoData = ProsesJual::selectRaw('model, SUM(pcs) as total')
-            ->whereIn('status', ['lunas', 'pending'])
-            ->groupBy('model')->get()->keyBy('model');
-        $terjual = (int) ($terjualTokoData->get($model)?->total ?? 0);
+            $kirimTokoData = BarangKirimToko::selectRaw('model, SUM(pcs_barang_jadi) as total')
+                ->groupBy('model')->get()->keyBy('model');
+            $dikirim = (int) ($kirimTokoData->get($model)?->total ?? 0);
 
-        $selisih = $dikirim - $terjual;
-        $adjustment = $newSisaToko - $selisih;
+            $terjualTokoData = ProsesJual::selectRaw('model, SUM(pcs) as total')
+                ->whereIn('status', ['lunas', 'pending'])
+                ->groupBy('model')->get()->keyBy('model');
+            $terjual = (int) ($terjualTokoData->get($model)?->total ?? 0);
 
-        if ($adjustment !== 0) {
-            BarangKirimTokoModel::create([
-                'po' => 'ADJ-' . now()->format('Ymd') . '-' . $model,
-                'model' => $model,
-                'pcs_barang_jadi' => abs($adjustment),
-                'tanggal_kirim' => now()->format('Y-m-d'),
-                'keterangan' => 'Adjustment stok toko: ' . ($adjustment > 0 ? '+' : '') . $adjustment,
-            ]);
+            $selisih = $dikirim - $terjual;
+            $adjustment = $newSisaToko - $selisih;
+
+            if ($adjustment !== 0) {
+                BarangKirimTokoModel::create([
+                    'po' => 'ADJ-TOKO-' . now()->format('Ymd') . '-' . $model,
+                    'model' => $model,
+                    'pcs_barang_jadi' => abs($adjustment),
+                    'tanggal_kirim' => now()->format('Y-m-d'),
+                    'keterangan' => 'Adjustment stok toko: ' . ($adjustment > 0 ? '+' : '') . $adjustment,
+                ]);
+            }
+        } else {
+            // Edit stok kantor
+            $newSisaKantor = $request->sisa_kantor;
+
+            $masukKantorData = BarangMasukKantor::selectRaw('model, SUM(pcs_barang_jadi) as total')
+                ->groupBy('model')->get()->keyBy('model');
+            $masuk = (int) ($masukKantorData->get($model)?->total ?? 0);
+
+            $kirimTokoData = BarangKirimToko::selectRaw('model, SUM(pcs_barang_jadi) as total')
+                ->groupBy('model')->get()->keyBy('model');
+            $kirim = (int) ($kirimTokoData->get($model)?->total ?? 0);
+
+            $jualGudangData = JualGudang::selectRaw('model, SUM(pcs) as total')
+                ->whereIn('status', ['lunas', 'pending'])
+                ->groupBy('model')->get()->keyBy('model');
+            $terjual = (int) ($jualGudangData->get($model)?->total ?? 0);
+
+            $selisih = $masuk - $kirim - $terjual;
+            $adjustment = $newSisaKantor - $selisih;
+
+            if ($adjustment !== 0) {
+                BarangMasukKantor::create([
+                    'po' => 'ADJ-KANTOR-' . now()->format('Ymd') . '-' . $model,
+                    'model' => $model,
+                    'pcs_barang_jadi' => abs($adjustment),
+                    'tanggal_kirim' => now()->format('Y-m-d'),
+                    'keterangan' => 'Adjustment stok kantor: ' . ($adjustment > 0 ? '+' : '') . $adjustment,
+                ]);
+            }
         }
 
         return redirect()->route('stok-barang.index')->with('success', 'Stok berhasil diupdate');

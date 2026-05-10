@@ -70,7 +70,7 @@
     </aside>
 
     <!-- Main Content -->
-    <div class="flex-1 flex flex-col transition-all duration-300 min-w-0" :class="sidebarOpen ? 'lg:ml-64' : 'lg:ml-16'">
+    <div class="flex-1 flex flex-col transition-all duration-300 min-w-0 min-h-screen" :class="sidebarOpen ? 'lg:ml-64' : 'lg:ml-16'">
       <!-- Top Bar -->
       <header class="bg-white shadow-sm border-b border-gray-200 h-16 flex items-center px-4 gap-4 sticky top-0 z-40">
         <button @click="sidebarOpen = !sidebarOpen"
@@ -102,7 +102,7 @@
       </header>
 
       <!-- Page Content -->
-      <main class="flex-1 p-6 overflow-auto">
+      <main class="flex-1 p-6 overflow-y-auto overflow-x-hidden focus:outline-none" style="max-height: calc(100vh - 4rem);" tabindex="0">
         <Transition
           enter-active-class="transition-opacity duration-150"
           leave-active-class="transition-opacity duration-100"
@@ -157,8 +157,8 @@ const isToko = computed(() => page.props.auth?.user?.is_toko ?? false)
 // Filter menu berdasarkan role
 const filteredNavItems = computed(() => {
   if (isAdmin.value) {
-    // Admin bisa akses semua menu
-    return navItems
+    // Admin bisa akses semua menu kecuali Pengeluaran Toko
+    return navItems.filter(item => item.name !== 'pengeluaran-toko')
   } else if (isToko.value) {
     // User toko hanya bisa akses Dashboard dan Penjualan (Jual Toko, Pengeluaran Toko & Kas Toko)
     return navItems.filter(item => {

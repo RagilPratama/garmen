@@ -72,11 +72,12 @@
                 <th class="px-6 py-3 text-right font-medium">Jual Gudang</th>
                 <th class="px-6 py-3 text-right font-medium">Sisa Kantor</th>
                 <th class="px-6 py-3 text-center font-medium">Status</th>
+                <th class="px-6 py-3 text-center font-medium">Aksi</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
               <tr v-if="filteredKantor.length === 0">
-                <td colspan="6" class="px-6 py-10 text-center text-gray-400">Belum ada data stok kantor.</td>
+                <td colspan="7" class="px-6 py-10 text-center text-gray-400">Belum ada data stok kantor.</td>
               </tr>
               <tr v-for="row in filteredKantor" :key="row.model" class="hover:bg-gray-50/60 transition-colors">
                 <td class="px-6 py-3.5 text-gray-600">{{ row.model }}</td>
@@ -91,6 +92,11 @@
                     row.sisa_kantor > 0 ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-500']">
                     {{ row.sisa_kantor > 0 ? 'Tersedia' : 'Kosong' }}
                   </span>
+                </td>
+                <td class="px-6 py-3.5 text-center">
+                  <button @click="openEditKantorModal(row)" class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors">
+                    Edit
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -138,7 +144,7 @@
         </div>
       </div>
 
-      <!-- Edit Modal -->
+      <!-- Edit Modal Toko -->
       <Modal v-model="editModalOpen" title="Edit Stok Toko" size="lg">
         <form @submit.prevent="submitEdit" class="space-y-4">
           <div>
@@ -158,6 +164,35 @@
             <button type="submit" :disabled="editForm.processing"
               class="px-5 py-2.5 text-sm text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors disabled:opacity-60 flex items-center gap-2">
               <svg v-if="editForm.processing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              </svg>
+              Simpan
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      <!-- Edit Modal Kantor -->
+      <Modal v-model="editKantorModalOpen" title="Edit Stok Kantor" size="lg">
+        <form @submit.prevent="submitEditKantor" class="space-y-4">
+          <div>
+            <p class="text-sm text-gray-600">Model: <span class="font-semibold">{{ editKantorModel }}</span></p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah Sisa Kantor</label>
+            <input v-model.number="editKantorForm.sisa_kantor" type="number" min="0"
+              class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white"/>
+            <p v-if="editKantorForm.errors.sisa_kantor" class="mt-1 text-xs text-red-500">{{ editKantorForm.errors.sisa_kantor }}</p>
+          </div>
+          <div class="flex justify-end gap-3 pt-2 border-t border-gray-100">
+            <button type="button" @click="closeEditKantorModal"
+              class="px-5 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              Batal
+            </button>
+            <button type="submit" :disabled="editKantorForm.processing"
+              class="px-5 py-2.5 text-sm text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors disabled:opacity-60 flex items-center gap-2">
+              <svg v-if="editKantorForm.processing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
               </svg>
@@ -190,6 +225,15 @@ const editSisaToko = ref(0)
 const editForm = useForm({
   model: '',
   sisa_toko: 0,
+  type: 'toko',
+})
+
+const editKantorModalOpen = ref(false)
+const editKantorModel = ref('')
+const editKantorForm = useForm({
+  model: '',
+  sisa_kantor: 0,
+  type: 'kantor',
 })
 
 const openEditModal = (row) => {
@@ -197,6 +241,7 @@ const openEditModal = (row) => {
   editSisaToko.value = row.sisa_toko
   editForm.model = row.model
   editForm.sisa_toko = row.sisa_toko
+  editForm.type = 'toko'
   editModalOpen.value = true
 }
 
@@ -208,6 +253,26 @@ const submitEdit = () => {
   editForm.put(route('stok-barang.update'), {
     onSuccess: () => {
       closeEditModal()
+    },
+  })
+}
+
+const openEditKantorModal = (row) => {
+  editKantorModel.value = row.model
+  editKantorForm.model = row.model
+  editKantorForm.sisa_kantor = row.sisa_kantor
+  editKantorForm.type = 'kantor'
+  editKantorModalOpen.value = true
+}
+
+const closeEditKantorModal = () => {
+  editKantorModalOpen.value = false
+}
+
+const submitEditKantor = () => {
+  editKantorForm.put(route('stok-barang.update'), {
+    onSuccess: () => {
+      closeEditKantorModal()
     },
   })
 }
