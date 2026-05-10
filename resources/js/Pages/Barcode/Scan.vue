@@ -256,11 +256,23 @@
               </div>
             </div>
           </div>
-          <button 
-            @click="reset"
-            class="mt-4 w-full px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition">
-            Scan Barcode Lain
-          </button>
+          <div class="flex gap-3 mt-4">
+            <button 
+              @click="reset"
+              class="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition">
+              Scan Barcode Lain
+            </button>
+            <button 
+              v-if="scanMethod === 'camera'"
+              @click="restartCamera"
+              class="flex-1 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              Scan Lagi
+            </button>
+          </div>
         </div>
       </div>
 
@@ -630,12 +642,22 @@ const submitPrice = async () => {
     
     if (result.success) {
       barcodeData.value = result.data
-      await Swal.fire({
+      
+      const swalResult = await Swal.fire({
         icon: 'success',
         title: 'Berhasil!',
         text: 'Harga berhasil disimpan!',
-        confirmButtonColor: '#10b981'
+        confirmButtonColor: '#10b981',
+        confirmButtonText: 'OK',
+        showCancelButton: scanMethod.value === 'camera',
+        cancelButtonText: 'Scan Lagi',
+        cancelButtonColor: '#3b82f6'
       })
+      
+      // If user clicks "Scan Lagi" (cancel button)
+      if (swalResult.isDismissed && scanMethod.value === 'camera') {
+        restartCamera()
+      }
     } else {
       await Swal.fire({
         icon: 'error',
@@ -655,6 +677,17 @@ const submitPrice = async () => {
   } finally {
     saving.value = false
   }
+}
+
+const restartCamera = async () => {
+  // Reset state
+  barcodeData.value = null
+  priceInput.value = 0
+  errorMessage.value = ''
+  scanInput.value = ''
+  
+  // Start camera again
+  await startCamera()
 }
 
 const reset = () => {
