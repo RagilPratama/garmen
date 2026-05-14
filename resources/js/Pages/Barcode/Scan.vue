@@ -174,61 +174,115 @@
             <p class="text-sm font-mono font-semibold text-gray-800">{{ barcodeData.barcode_code }}</p>
           </div>
           <div class="bg-gray-50 rounded-lg p-3">
-            <p class="text-xs text-gray-500 mb-1">Supplier</p>
-            <p class="text-sm font-semibold text-gray-800">{{ barcodeData.supplier }}</p>
-          </div>
-          <div class="bg-gray-50 rounded-lg p-3">
             <p class="text-xs text-gray-500 mb-1">Kode Bahan</p>
             <p class="text-sm font-semibold text-gray-800">{{ barcodeData.kode_bahan }}</p>
           </div>
           <div class="bg-gray-50 rounded-lg p-3">
-            <p class="text-xs text-gray-500 mb-1">Nama Bahan</p>
-            <p class="text-sm font-semibold text-gray-800">{{ barcodeData.nama_bahan }}</p>
-          </div>
-          <div class="bg-gray-50 rounded-lg p-3">
-            <p class="text-xs text-gray-500 mb-1">Quantity</p>
-            <p class="text-sm font-semibold text-gray-800">{{ barcodeData.quantity }} {{ barcodeData.satuan }}</p>
-          </div>
-          <div class="bg-gray-50 rounded-lg p-3">
-            <p class="text-xs text-gray-500 mb-1">Tanggal</p>
+            <p class="text-xs text-gray-500 mb-1">Tanggal Generate</p>
             <p class="text-sm font-semibold text-gray-800">{{ formatDate(barcodeData.tanggal) }}</p>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3">
+            <p class="text-xs text-gray-500 mb-1">Status</p>
+            <p class="text-sm font-semibold" :class="barcodeData.harga_sudah_diisi ? 'text-green-600' : 'text-amber-600'">
+              {{ barcodeData.harga_sudah_diisi ? 'Sudah Lengkap' : 'Belum Lengkap' }}
+            </p>
           </div>
         </div>
 
-        <!-- Price Input Form -->
+        <!-- Input Form for Complete Data -->
         <div v-if="!barcodeData.harga_sudah_diisi" class="border-t border-gray-200 pt-6">
-          <h3 class="text-sm font-semibold text-gray-800 mb-4">Input Harga</h3>
-          <form @submit.prevent="submitPrice" class="space-y-4">
+          <h3 class="text-sm font-semibold text-gray-800 mb-4">Lengkapi Data Bahan</h3>
+          <form @submit.prevent="submitCompleteData" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Supplier <span class="text-red-500">*</span>
+                </label>
+                <select 
+                  v-model="completeDataForm.supplier" 
+                  required
+                  class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white"
+                >
+                  <option value="" disabled>-- Pilih Supplier --</option>
+                  <option v-for="supplier in props.suppliers" :key="supplier.id" :value="supplier.nama">
+                    {{ supplier.nama }}
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Nama Bahan <span class="text-red-500">*</span>
+                </label>
+                <input 
+                  v-model="completeDataForm.nama_bahan" 
+                  type="text" 
+                  required
+                  placeholder="Contoh: Kain Katun Combed 30s"
+                  class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white"
+                />
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Quantity (Yard) <span class="text-red-500">*</span>
+                </label>
+                <input 
+                  v-model.number="completeDataForm.quantity" 
+                  type="number" 
+                  min="0" 
+                  step="0.01" 
+                  required
+                  placeholder="100.50"
+                  class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Harga per Yard <span class="text-red-500">*</span>
+                </label>
+                <input 
+                  :value="formatInputPrice(completeDataForm.rp_per_yard)" 
+                  @input="handlePriceInput"
+                  type="text" 
+                  inputmode="numeric"
+                  required
+                  placeholder="50.000"
+                  class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white"
+                />
+              </div>
+            </div>
+
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">
-                Harga per {{ barcodeData.satuan }} <span class="text-red-500">*</span>
+                No. Surat Jalan (Opsional)
               </label>
               <input 
-                :value="formatInputPrice(priceInput)" 
-                @input="handlePriceInput"
+                v-model="completeDataForm.no_surat_jalan" 
                 type="text" 
-                inputmode="numeric"
-                required
-                placeholder="50.000"
+                placeholder="Contoh: SJ-2024-001"
                 class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white"
               />
             </div>
+
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div class="flex justify-between items-center">
                 <span class="text-sm font-medium text-blue-900">Total Harga:</span>
-                <span class="text-lg font-bold text-blue-900">{{ formatRupiah(totalHarga) }}</span>
+                <span class="text-lg font-bold text-blue-900">{{ formatRupiah(totalHargaComplete) }}</span>
               </div>
             </div>
+            
             <div class="flex gap-3">
               <button 
                 type="submit"
-                :disabled="saving || !priceInput"
+                :disabled="saving"
                 class="flex-1 px-6 py-3 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                 <svg v-if="saving" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                 </svg>
-                <span>{{ saving ? 'Menyimpan...' : 'Simpan Harga' }}</span>
+                <span>{{ saving ? 'Menyimpan...' : 'Simpan Data Lengkap' }}</span>
               </button>
               <button 
                 type="button"
@@ -240,23 +294,41 @@
           </form>
         </div>
 
-        <!-- Already Has Price -->
+        <!-- Already Complete -->
         <div v-else class="border-t border-gray-200 pt-6">
-          <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
             <div class="flex items-start gap-3">
               <svg class="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
               <div class="flex-1">
-                <p class="text-sm font-semibold text-green-900 mb-1">Harga Sudah Diisi</p>
-                <div class="space-y-1 text-sm text-green-800">
-                  <p>Harga per {{ barcodeData.satuan }}: <span class="font-semibold">{{ formatRupiah(barcodeData.rp_per_yard) }}</span></p>
-                  <p>Total Harga: <span class="font-semibold">{{ formatRupiah(barcodeData.total_harga) }}</span></p>
+                <p class="text-sm font-semibold text-green-900 mb-2">Data Sudah Lengkap</p>
+                <div class="grid grid-cols-2 gap-3 text-sm text-green-800">
+                  <div>
+                    <p class="text-xs text-green-600">Supplier:</p>
+                    <p class="font-semibold">{{ barcodeData.supplier }}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-green-600">Nama Bahan:</p>
+                    <p class="font-semibold">{{ barcodeData.nama_bahan }}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-green-600">Quantity:</p>
+                    <p class="font-semibold">{{ barcodeData.quantity }} {{ barcodeData.satuan }}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-green-600">Harga per {{ barcodeData.satuan }}:</p>
+                    <p class="font-semibold">{{ formatRupiah(barcodeData.rp_per_yard) }}</p>
+                  </div>
+                  <div class="col-span-2">
+                    <p class="text-xs text-green-600">Total Harga:</p>
+                    <p class="font-semibold text-lg">{{ formatRupiah(barcodeData.total_harga) }}</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          <div class="flex gap-3 mt-4">
+          <div class="flex gap-3">
             <button 
               @click="reset"
               class="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition">
@@ -295,6 +367,11 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Swal from 'sweetalert2'
+
+// Props
+const props = defineProps({
+  suppliers: Array
+})
 
 // Dynamic import html5-qrcode
 let Html5Qrcode = null
@@ -344,6 +421,13 @@ const scanMethod = ref('manual') // Default to manual
 const scanInput = ref('')
 const barcodeData = ref(null)
 const priceInput = ref(0)
+const completeDataForm = ref({
+  supplier: '',
+  nama_bahan: '',
+  quantity: 0,
+  rp_per_yard: 0,
+  no_surat_jalan: ''
+})
 const loading = ref(false)
 const saving = ref(false)
 const errorMessage = ref('')
@@ -356,6 +440,15 @@ onUnmounted(() => {
   if (html5QrCode && cameraStarted.value) {
     stopCamera()
   }
+})
+
+const totalHarga = computed(() => {
+  if (!barcodeData.value) return 0
+  return barcodeData.value.quantity * (priceInput.value || 0)
+})
+
+const totalHargaComplete = computed(() => {
+  return (completeDataForm.value.quantity || 0) * (completeDataForm.value.rp_per_yard || 0)
 })
 
 const startCamera = async () => {
@@ -539,11 +632,6 @@ const onScanError = (errorMessage) => {
   }
 }
 
-const totalHarga = computed(() => {
-  if (!barcodeData.value) return 0
-  return barcodeData.value.quantity * (priceInput.value || 0)
-})
-
 const parseNumeric = (value) => {
   if (typeof value === 'number') return value
   if (!value) return 0
@@ -568,7 +656,7 @@ const handlePriceInput = (e) => {
   const oldLength = oldValue.length
   
   const numericValue = parseNumeric(input.value)
-  priceInput.value = numericValue
+  completeDataForm.value.rp_per_yard = numericValue
   
   const formattedValue = formatInputPrice(numericValue)
   input.value = formattedValue
@@ -621,20 +709,34 @@ const searchBarcode = async () => {
   }
 }
 
-const submitPrice = async () => {
-  if (!priceInput.value || !barcodeData.value) return
+const submitCompleteData = async () => {
+  if (!completeDataForm.value.supplier || !completeDataForm.value.nama_bahan || 
+      !completeDataForm.value.quantity || !completeDataForm.value.rp_per_yard || !barcodeData.value) {
+    await Swal.fire({
+      icon: 'warning',
+      title: 'Data Tidak Lengkap',
+      text: 'Supplier, Nama Bahan, Quantity, dan Harga harus diisi!',
+      confirmButtonColor: '#f59e0b'
+    })
+    return
+  }
   
   saving.value = true
   
   try {
-    const response = await fetch(`/barcode/${barcodeData.value.id}/price`, {
+    const response = await fetch(`/barcode/${barcodeData.value.id}/complete`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'X-CSRF-TOKEN': getCsrfToken()
       },
       body: JSON.stringify({
-        rp_per_yard: priceInput.value
+        supplier: completeDataForm.value.supplier,
+        nama_bahan: completeDataForm.value.nama_bahan,
+        quantity: completeDataForm.value.quantity,
+        satuan: 'yard',
+        rp_per_yard: completeDataForm.value.rp_per_yard,
+        no_surat_jalan: completeDataForm.value.no_surat_jalan || null
       })
     })
     
@@ -646,7 +748,7 @@ const submitPrice = async () => {
       const swalResult = await Swal.fire({
         icon: 'success',
         title: 'Berhasil!',
-        text: 'Harga berhasil disimpan!',
+        text: 'Data lengkap berhasil disimpan!',
         confirmButtonColor: '#10b981',
         confirmButtonText: 'OK',
         showCancelButton: scanMethod.value === 'camera',
@@ -662,16 +764,16 @@ const submitPrice = async () => {
       await Swal.fire({
         icon: 'error',
         title: 'Gagal!',
-        text: 'Gagal menyimpan harga: ' + result.message,
+        text: 'Gagal menyimpan data: ' + result.message,
         confirmButtonColor: '#ef4444'
       })
     }
   } catch (error) {
-    console.error('Error saving price:', error)
+    console.error('Error saving complete data:', error)
     await Swal.fire({
       icon: 'error',
       title: 'Error!',
-      text: 'Terjadi kesalahan saat menyimpan harga',
+      text: 'Terjadi kesalahan saat menyimpan data',
       confirmButtonColor: '#ef4444'
     })
   } finally {
@@ -683,6 +785,13 @@ const restartCamera = async () => {
   // Reset state
   barcodeData.value = null
   priceInput.value = 0
+  completeDataForm.value = {
+    supplier: '',
+    nama_bahan: '',
+    quantity: 0,
+    rp_per_yard: 0,
+    no_surat_jalan: ''
+  }
   errorMessage.value = ''
   scanInput.value = ''
   
@@ -694,6 +803,13 @@ const reset = () => {
   scanInput.value = ''
   barcodeData.value = null
   priceInput.value = 0
+  completeDataForm.value = {
+    supplier: '',
+    nama_bahan: '',
+    quantity: 0,
+    rp_per_yard: 0,
+    no_surat_jalan: ''
+  }
   errorMessage.value = ''
   
   // Stop camera if running

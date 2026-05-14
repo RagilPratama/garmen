@@ -15,11 +15,11 @@ return new class extends Migration
             $table->id();
             $table->string('barcode_code')->unique(); // BRC-xxx
             $table->string('no_surat_jalan')->nullable();
-            $table->string('supplier');
-            $table->string('kode_bahan');
-            $table->string('nama_bahan');
-            $table->decimal('quantity', 10, 2); // yard/kg
-            $table->string('satuan')->default('yard'); // yard or kg
+            $table->string('supplier')->nullable();
+            $table->string('kode_bahan')->nullable();
+            $table->string('nama_bahan')->nullable();
+            $table->decimal('quantity', 10, 2)->nullable(); // yard/kg
+            $table->string('satuan')->nullable()->default('yard'); // yard or kg
             $table->decimal('rp_per_yard', 15, 2)->nullable(); // harga bisa diisi nanti
             $table->decimal('total_harga', 15, 2)->nullable();
             $table->date('tanggal');

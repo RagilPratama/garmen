@@ -17,161 +17,71 @@
 
       <!-- Form Input -->
       <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-base font-semibold text-gray-800">Input Data Bahan Masuk</h2>
-          <button 
-            v-if="savedItems.length > 0"
-            @click="generateAllBarcodes" 
-            type="button"
-            class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        <div class="text-center py-8">
+          <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg">
+            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
             </svg>
-            Generate {{ savedItems.length }} Barcode
+          </div>
+          <h2 class="text-xl font-bold text-gray-800 mb-2">Generate Barcode Otomatis</h2>
+          <p class="text-sm text-gray-600 mb-6">Klik tombol di bawah untuk generate barcode dengan kode unik</p>
+
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 max-w-md mx-auto">
+            <div class="flex items-start gap-2 text-left">
+              <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <div class="text-xs text-blue-800">
+                <p class="font-semibold mb-1">Workflow Barcode:</p>
+                <ol class="list-decimal pl-4 space-y-0.5">
+                  <li>Klik "Generate Barcode" → kode otomatis dibuat (A0001, A0002, ...)</li>
+                  <li>Print sticker barcode</li>
+                  <li>Saat pengiriman ke garmen: <strong>scan barcode</strong> → input supplier, nama bahan, yard, harga</li>
+                </ol>
+                <div class="mt-2 p-2 bg-blue-100 rounded">
+                  <p class="font-semibold">Format Kode:</p>
+                  <p>A0001 → A9999 → B0001 → B9999 → ... → Z9999</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Batch Quantity Input -->
+          <div class="max-w-xs mx-auto mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Jumlah Barcode yang Akan Di-generate
+            </label>
+            <input 
+              v-model.number="batchQuantity" 
+              type="number" 
+              min="1" 
+              max="100"
+              class="w-full px-4 py-3 border border-gray-200 rounded-lg text-center text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white"
+              placeholder="1"
+            />
+            <p class="text-xs text-gray-500 mt-1">
+              Maksimal 100 barcode per generate
+            </p>
+          </div>
+
+          <button 
+            @click="generateBarcodes" 
+            type="button"
+            :disabled="generating"
+            class="px-8 py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-base font-semibold rounded-xl transition shadow-lg hover:shadow-xl flex items-center gap-3 mx-auto disabled:opacity-50 disabled:cursor-not-allowed">
+            <svg v-if="generating" class="animate-spin w-6 h-6" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+            <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            {{ generating ? 'Sedang Generate...' : `Generate ${batchQuantity} Barcode` }}
           </button>
-        </div>
-        
-        <form @submit.prevent="addToList" class="space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">No. Surat Jalan</label>
-              <input v-model="form.suratJalan" type="text"
-                class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white"
-                placeholder="Contoh: SJ-2024-001"/>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Supplier <span class="text-red-500">*</span></label>
-              <select v-model="form.supplier" @change="onSupplierChange" required
-                class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white">
-                <option value="" disabled>-- Pilih Supplier --</option>
-                <option v-for="opt in supplierOptions" :key="opt.value" :value="opt.value">
-                  {{ opt.label }}
-                </option>
-              </select>
-            </div>
-          </div>
 
-          <!-- Bahan History Chips -->
-          <div v-if="form.supplier && bahanOptions.length > 0 && !isManualInput" class="space-y-2">
-            <div class="flex items-center justify-between">
-              <p class="text-xs font-medium text-gray-500">
-                Bahan pernah dipesan dari <span class="text-amber-600 font-semibold">{{ form.supplier }}</span> — klik untuk pilih:
-              </p>
-              <button type="button" @click="enableManualInput"
-                class="text-xs text-blue-600 hover:text-blue-700 font-medium underline">
-                Input Manual
-              </button>
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <button
-                v-for="bahan in bahanOptions" :key="bahan.kode"
-                type="button"
-                @click="selectBahanFromHistory(bahan)"
-                :class="form.kodeBahan === bahan.kode ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-full transition-colors"
-              >
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
-                </svg>
-                {{ bahan.kode }}
-                <span v-if="bahan.nama" class="text-amber-600">— {{ bahan.nama }}</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Manual Input Notice -->
-          <div v-if="isManualInput" class="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
-            <p class="text-xs text-blue-700">
-              <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-              </svg>
-              Mode input manual aktif
-            </p>
-            <button type="button" @click="isManualInput = false"
-              class="text-xs text-blue-600 hover:text-blue-700 font-medium underline">
-              Kembali ke Pilihan
-            </button>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Kode Bahan <span class="text-red-500">*</span></label>
-              <input v-model="form.kodeBahan" type="text" required
-                :readonly="!isManualInput && bahanOptions.length > 0"
-                :class="!isManualInput && bahanOptions.length > 0 ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'"
-                class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition"
-                placeholder="Contoh: KB-001"/>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Nama Bahan <span class="text-red-500">*</span></label>
-              <input v-model="form.model" type="text" required
-                :readonly="!isManualInput && bahanOptions.length > 0 && form.kodeBahan"
-                :class="!isManualInput && bahanOptions.length > 0 && form.kodeBahan ? 'bg-gray-50' : 'bg-white'"
-                class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition"
-                placeholder="Contoh: Kain Katun Combed 30s"/>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Yard <span class="text-red-500">*</span></label>
-              <input v-model.number="form.quantity" type="number" min="0" step="0.01" required
-                class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white"
-                placeholder="100.50"/>
-            </div>
-          </div>
-          
-          <div class="flex gap-3 pt-2">
-            <button type="submit" class="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition flex items-center gap-2">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-              </svg>
-              Tambah ke List
-            </button>
-            <button type="button" @click="resetForm" class="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition">
-              Reset
-            </button>
-          </div>
-        </form>
-
-        <!-- Saved Items Table -->
-        <div v-if="savedItems.length > 0" class="mt-6 border-t border-gray-200 pt-6">
-          <h3 class="text-sm font-semibold text-gray-800 mb-3">Data yang Akan Di-generate ({{ savedItems.length }} item)</h3>
-          <div class="border border-gray-200 rounded-lg overflow-hidden">
-            <table class="w-full text-sm">
-              <thead class="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase">No</th>
-                  <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Supplier</th>
-                  <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Kode Bahan</th>
-                  <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Nama Bahan</th>
-                  <th class="px-3 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Qty</th>
-                  <th class="px-3 py-2 w-16"></th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100">
-                <tr v-for="(item, idx) in savedItems" :key="idx" class="hover:bg-gray-50">
-                  <td class="px-3 py-2 text-gray-600">{{ idx + 1 }}</td>
-                  <td class="px-3 py-2 text-gray-800 font-medium">{{ item.supplier }}</td>
-                  <td class="px-3 py-2 text-gray-800">{{ item.kodeBahan }}</td>
-                  <td class="px-3 py-2 text-gray-600">{{ item.model }}</td>
-                  <td class="px-3 py-2 text-right text-gray-800 font-medium">{{ item.quantity }} yard</td>
-                  <td class="px-3 py-2 text-center">
-                    <button @click="removeFromList(idx)" type="button" class="text-red-400 hover:text-red-600 transition">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                      </svg>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="mt-3 flex justify-between items-center">
-            <button @click="clearList" type="button" class="text-sm text-red-600 hover:text-red-700 font-medium">
-              Hapus Semua
-            </button>
-            <p class="text-sm text-gray-600">
-              Total: <span class="font-semibold text-gray-800">{{ savedItems.length }} item</span>
-            </p>
-          </div>
+          <p class="text-xs text-gray-500 mt-4">
+            💡 Kode bahan akan di-generate otomatis dengan format: <span class="font-mono font-semibold text-amber-600">A0001, A0002, A0003, ...</span>
+          </p>
         </div>
       </div>
 
@@ -189,7 +99,7 @@
           <div v-for="(item, idx) in barcodes" :key="idx" class="barcode-item border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition">
             <div class="flex justify-between items-start mb-3">
               <div class="flex-1">
-                <p class="text-sm font-semibold text-gray-800">{{ item.model }}</p>
+                <p class="text-sm font-semibold text-gray-800">Kode: {{ item.kodeBahan }}</p>
                 <p class="text-xs text-gray-500 mt-0.5 font-mono">{{ item.code }}</p>
               </div>
               <button @click="removeBarcode(idx)" class="text-gray-400 hover:text-red-500 transition">
@@ -207,36 +117,8 @@
             <!-- Info -->
             <div class="space-y-1 text-xs text-gray-600 border-t border-gray-100 pt-3">
               <div class="flex justify-between">
-                <span class="text-gray-500">Barcode:</span>
-                <span class="font-medium font-mono text-xs">{{ item.code }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-500">Supplier:</span>
-                <span class="font-medium">{{ item.supplier || '-' }}</span>
-              </div>
-              <div class="flex justify-between">
                 <span class="text-gray-500">Kode Bahan:</span>
-                <span class="font-medium">{{ item.kodeBahan || '-' }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-500">No. Surat Jalan:</span>
-                <span class="font-medium">{{ item.suratJalan || '-' }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-500">Qty:</span>
-                <span class="font-medium">{{ item.quantity }} yard</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-500">Harga/Yard:</span>
-                <span class="font-medium" :class="item.pricePerYard > 0 ? '' : 'text-amber-600'">
-                  {{ item.pricePerYard > 0 ? formatRupiah(item.pricePerYard) : 'Belum diisi' }}
-                </span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-500">Total:</span>
-                <span class="font-medium" :class="item.totalPrice > 0 ? '' : 'text-amber-600'">
-                  {{ item.totalPrice > 0 ? formatRupiah(item.totalPrice) : 'Belum diisi' }}
-                </span>
+                <span class="font-medium font-mono">{{ item.kodeBahan }}</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-gray-500">Tanggal:</span>
@@ -296,144 +178,37 @@ const props = defineProps({
   bahanHistory: Object
 })
 
-const supplierOptions = computed(() => {
-  return props.suppliers?.map(s => ({ value: s.nama, label: s.nama })) || []
-})
-
-// Get bahan options based on selected supplier
-const bahanOptions = computed(() => {
-  if (!form.value.supplier || !props.bahanHistory) return []
-  const history = props.bahanHistory[form.value.supplier]
-  if (!history) return []
-  return history.map(item => ({
-    kode: item.kode_bahan,
-    nama: item.nama_bahan,
-    harga: item.rp_per_yard
-  }))
-})
-
-const showBahanDropdown = ref(false)
-const isManualInput = ref(false)
-const savedItems = ref([]) // Array untuk menyimpan data sebelum generate
+const savedItems = ref([]) // Not used anymore but keep for compatibility
+const barcodes = ref([])
+const batchQuantity = ref(1)
+const generating = ref(false)
 
 const form = ref({
   code: '',
-  suratJalan: '',
-  supplier: '',
   kodeBahan: '',
-  model: '',
-  quantity: 0,
-  pricePerYard: 0,
   date: new Date().toISOString().split('T')[0]
 })
 
-const totalPrice = ref(0)
-
-const addToList = () => {
-  if (!form.value.supplier || !form.value.kodeBahan || !form.value.model || !form.value.quantity) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Data Tidak Lengkap',
-      text: 'Supplier, Kode Bahan, Nama Bahan, dan Yard harus diisi!',
-      confirmButtonColor: '#f59e0b'
-    })
-    return
-  }
-
-  savedItems.value.push({
-    suratJalan: form.value.suratJalan,
-    supplier: form.value.supplier,
-    kodeBahan: form.value.kodeBahan,
-    model: form.value.model,
-    quantity: parseFloat(form.value.quantity) || 0,
-    date: form.value.date
-  })
-
-  // Reset form kecuali supplier dan surat jalan
-  form.value.kodeBahan = ''
-  form.value.model = ''
-  form.value.quantity = 0
-  isManualInput.value = false
+const generateBarcodes = async () => {
+  const quantity = Math.min(Math.max(1, batchQuantity.value || 1), 100) // Between 1-100
   
-  Swal.fire({
-    icon: 'success',
-    title: 'Berhasil!',
-    text: 'Data berhasil ditambahkan ke list',
-    timer: 1500,
-    showConfirmButton: false
-  })
-}
-
-const removeFromList = (index) => {
-  savedItems.value.splice(index, 1)
-}
-
-const clearList = () => {
-  Swal.fire({
-    icon: 'warning',
-    title: 'Hapus Semua Data?',
-    text: 'Semua data dalam list akan dihapus',
-    showCancelButton: true,
-    confirmButtonColor: '#ef4444',
-    cancelButtonColor: '#6b7280',
-    confirmButtonText: 'Ya, Hapus!',
-    cancelButtonText: 'Batal'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      savedItems.value = []
-      Swal.fire({
-        icon: 'success',
-        title: 'Terhapus!',
-        text: 'Semua data berhasil dihapus',
-        timer: 1500,
-        showConfirmButton: false
-      })
-    }
-  })
-}
-
-const generateAllBarcodes = async () => {
-  if (savedItems.value.length === 0) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Tidak Ada Data',
-      text: 'Belum ada data untuk di-generate!',
-      confirmButtonColor: '#f59e0b'
-    })
-    return
-  }
-
-  const result = await Swal.fire({
-    icon: 'question',
-    title: 'Generate Barcode?',
-    text: `Generate ${savedItems.value.length} barcode?`,
-    showCancelButton: true,
-    confirmButtonColor: '#10b981',
-    cancelButtonColor: '#6b7280',
-    confirmButtonText: 'Ya, Generate!',
-    cancelButtonText: 'Batal'
-  })
-
-  if (!result.isConfirmed) return
-
   // Show loading
   Swal.fire({
     title: 'Sedang Generate...',
-    html: 'Mohon tunggu, sedang membuat barcode',
+    html: `Mohon tunggu, sedang membuat ${quantity} barcode`,
     allowOutsideClick: false,
     didOpen: () => {
       Swal.showLoading()
     }
   })
 
+  generating.value = true
   let successCount = 0
   let failCount = 0
   const errors = []
+  const generatedCodes = []
 
-  for (const item of savedItems.value) {
-    const timestamp = Date.now() + successCount // Ensure unique
-    const uniqueCode = `BRC-${timestamp}`
-
+  for (let i = 0; i < quantity; i++) {
     try {
       const response = await fetch('/barcode', {
         method: 'POST',
@@ -442,20 +217,21 @@ const generateAllBarcodes = async () => {
           'X-CSRF-TOKEN': getCsrfToken()
         },
         body: JSON.stringify({
-          barcode_code: uniqueCode,
-          no_surat_jalan: item.suratJalan,
-          supplier: item.supplier,
-          kode_bahan: item.kodeBahan,
-          nama_bahan: item.model,
-          quantity: item.quantity,
-          satuan: 'yard',
-          rp_per_yard: null,
-          tanggal: item.date
+          tanggal: form.value.date
         })
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Network error' }))
+        const contentType = response.headers.get('content-type')
+        let errorData
+        
+        if (contentType && contentType.includes('application/json')) {
+          errorData = await response.json()
+        } else {
+          const text = await response.text()
+          throw new Error(`HTTP ${response.status}`)
+        }
+        
         throw new Error(errorData.message || `HTTP ${response.status}`)
       }
 
@@ -463,53 +239,58 @@ const generateAllBarcodes = async () => {
       
       if (result.success) {
         barcodes.value.push({
-          code: uniqueCode,
-          suratJalan: item.suratJalan,
-          supplier: item.supplier,
-          kodeBahan: item.kodeBahan,
-          model: item.model,
-          quantity: item.quantity,
-          pricePerYard: 0,
-          totalPrice: 0,
-          date: item.date
+          code: result.data.kode_bahan,
+          kodeBahan: result.data.kode_bahan,
+          date: form.value.date
         })
+        generatedCodes.push(result.data.kode_bahan)
         successCount++
       } else {
         failCount++
-        errors.push(`${item.kodeBahan}: ${result.message || 'Unknown error'}`)
+        errors.push(result.message || 'Unknown error')
       }
     } catch (error) {
       console.error('Error saving barcode:', error)
       failCount++
-      errors.push(`${item.kodeBahan}: ${error.message}`)
+      errors.push(error.message)
     }
 
-    // Small delay to ensure unique timestamps
-    await new Promise(resolve => setTimeout(resolve, 10))
+    // Small delay to prevent race conditions
+    await new Promise(resolve => setTimeout(resolve, 50))
   }
 
   await nextTick()
-  
+  generating.value = false
   Swal.close()
   
   if (failCount === 0) {
     await Swal.fire({
       icon: 'success',
       title: 'Berhasil!',
-      text: `Berhasil generate ${successCount} barcode!`,
-      confirmButtonColor: '#10b981'
+      html: `
+        <div class="text-center">
+          <p class="mb-3">Berhasil generate ${successCount} barcode!</p>
+          <div class="bg-gray-50 rounded-lg p-3 max-h-40 overflow-y-auto">
+            <p class="text-xs font-semibold text-gray-700 mb-2">Kode yang dibuat:</p>
+            <div class="flex flex-wrap gap-2 justify-center">
+              ${generatedCodes.map(code => `<span class="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs font-mono font-semibold">${code}</span>`).join('')}
+            </div>
+          </div>
+        </div>
+      `,
+      confirmButtonColor: '#10b981',
+      width: '600px'
     })
-    savedItems.value = []
   } else {
     await Swal.fire({
-      icon: failCount === savedItems.value.length ? 'error' : 'warning',
-      title: failCount === savedItems.value.length ? 'Gagal!' : 'Sebagian Berhasil',
+      icon: failCount === quantity ? 'error' : 'warning',
+      title: failCount === quantity ? 'Gagal!' : 'Sebagian Berhasil',
       html: `
         <div class="text-left">
           <p class="mb-2">Berhasil: ${successCount} barcode</p>
           <p class="mb-2">Gagal: ${failCount} barcode</p>
           ${errors.length > 0 ? `
-            <div class="mt-3 p-2 bg-red-50 rounded text-sm">
+            <div class="mt-3 p-2 bg-red-50 rounded text-sm max-h-40 overflow-y-auto">
               <p class="font-semibold mb-1">Error:</p>
               <ul class="list-disc pl-5">
                 ${errors.slice(0, 5).map(e => `<li>${e}</li>`).join('')}
@@ -521,98 +302,8 @@ const generateAllBarcodes = async () => {
       `,
       confirmButtonColor: '#f59e0b'
     })
-    
-    if (successCount > 0) {
-      savedItems.value = []
-    }
   }
 }
-
-const onSupplierChange = () => {
-  // Reset bahan fields when supplier changes
-  form.value.kodeBahan = ''
-  form.value.model = ''
-  form.value.pricePerYard = 0
-  isManualInput.value = false
-  showBahanDropdown.value = false
-  calculateTotal()
-}
-
-const selectBahanFromHistory = (bahan) => {
-  form.value.kodeBahan = bahan.kode
-  form.value.model = bahan.nama || ''
-  // Store as numeric value directly, not formatted
-  form.value.pricePerYard = parseInt(bahan.harga) || 0
-  showBahanDropdown.value = false
-  isManualInput.value = false
-  calculateTotal()
-}
-
-const enableManualInput = () => {
-  isManualInput.value = true
-  showBahanDropdown.value = false
-  form.value.kodeBahan = ''
-  form.value.model = ''
-  form.value.pricePerYard = 0
-  calculateTotal()
-}
-
-const parseNumeric = (value) => {
-  if (typeof value === 'number') return value
-  if (!value) return 0
-  // Remove all non-digit characters except decimal point
-  const cleaned = String(value).replace(/[^\d]/g, '')
-  return parseInt(cleaned) || 0
-}
-
-const formatInputPrice = (value) => {
-  if (!value && value !== 0) return ''
-  // If already a number, format directly
-  if (typeof value === 'number') {
-    return new Intl.NumberFormat('id-ID').format(value)
-  }
-  // If string, parse then format
-  const num = parseNumeric(value)
-  if (!num) return ''
-  return new Intl.NumberFormat('id-ID').format(num)
-}
-
-const handlePriceInput = (e) => {
-  // Skip if readonly (from history)
-  if (e.target.readOnly) return
-  
-  const input = e.target
-  const cursorPos = input.selectionStart
-  const oldValue = input.value
-  const oldLength = oldValue.length
-  
-  // Get only numbers
-  const numericValue = parseNumeric(input.value)
-  
-  // Update form value with numeric
-  form.value.pricePerYard = numericValue
-  
-  // Format for display
-  const formattedValue = formatInputPrice(numericValue)
-  input.value = formattedValue
-  
-  // Restore cursor position
-  const newLength = formattedValue.length
-  const diff = newLength - oldLength
-  const newCursorPos = Math.max(0, cursorPos + diff)
-  input.setSelectionRange(newCursorPos, newCursorPos)
-  
-  // Calculate total
-  calculateTotal()
-}
-
-const calculateTotal = () => {
-  const qty = parseFloat(form.value.quantity) || 0
-  const price = parseNumeric(form.value.pricePerYard)
-  totalPrice.value = qty * price
-}
-
-const barcodes = ref([])
 
 const formatRupiah = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0)
 
@@ -629,90 +320,6 @@ const generateBarcodeImage = (element, code) => {
     })
   } catch (e) {
     console.error('Error generating barcode:', e)
-  }
-}
-
-const generateBarcode = async () => {
-  if (!form.value.model || !form.value.supplier || !form.value.kodeBahan) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Data Tidak Lengkap',
-      text: 'Supplier, Kode Bahan, dan Nama Bahan harus diisi!',
-      confirmButtonColor: '#f59e0b'
-    })
-    return
-  }
-
-  // Generate unique code based on timestamp
-  const timestamp = Date.now()
-  const uniqueCode = `BRC-${timestamp}`
-
-  // Parse numeric values
-  const qty = parseFloat(form.value.quantity) || 0
-  const price = parseNumeric(form.value.pricePerYard)
-  const total = qty * price
-
-  const barcodeData = {
-    code: uniqueCode,
-    suratJalan: form.value.suratJalan,
-    supplier: form.value.supplier,
-    kodeBahan: form.value.kodeBahan,
-    model: form.value.model,
-    quantity: qty,
-    pricePerYard: price,
-    totalPrice: total,
-    date: form.value.date
-  }
-
-  // Save to database
-  try {
-    const response = await fetch('/barcode', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': getCsrfToken()
-      },
-      body: JSON.stringify({
-        barcode_code: uniqueCode,
-        no_surat_jalan: form.value.suratJalan,
-        supplier: form.value.supplier,
-        kode_bahan: form.value.kodeBahan,
-        nama_bahan: form.value.model,
-        quantity: qty,
-        satuan: 'yard',
-        rp_per_yard: price > 0 ? price : null,
-        tanggal: form.value.date
-      })
-    })
-
-    const result = await response.json()
-    
-    if (result.success) {
-      barcodes.value.push(barcodeData)
-      await nextTick()
-      Swal.fire({
-        icon: 'success',
-        title: 'Berhasil!',
-        text: 'Barcode berhasil disimpan!',
-        timer: 1500,
-        showConfirmButton: false
-      })
-    } else {
-      Swal.fire({
-        icon: 'error',
-        title: 'Gagal!',
-        text: 'Gagal menyimpan barcode: ' + result.message,
-        confirmButtonColor: '#ef4444'
-      })
-    }
-  } catch (error) {
-    console.error('Error saving barcode:', error)
-    Swal.fire({
-      icon: 'error',
-      title: 'Error!',
-      text: 'Terjadi kesalahan saat menyimpan barcode',
-      confirmButtonColor: '#ef4444'
-    })
   }
 }
 
@@ -747,15 +354,9 @@ const clearAll = () => {
 const resetForm = () => {
   form.value = {
     code: '',
-    suratJalan: '',
-    supplier: '',
     kodeBahan: '',
-    model: '',
-    quantity: 0,
-    pricePerYard: 0,
     date: new Date().toISOString().split('T')[0]
   }
-  totalPrice.value = 0
 }
 
 const formatDate = (date) => {
@@ -795,11 +396,9 @@ const printSingle = (index) => {
           }
           .info-text {
             margin-top: 1mm;
-            font-size: 7pt;
+            font-size: 8pt;
             line-height: 1.3;
             color: #000;
-          }
-          .info-text .label {
             font-weight: 600;
           }
         </style>
@@ -808,9 +407,7 @@ const printSingle = (index) => {
         <div class="barcode-sticker">
           <svg id="barcode"></svg>
           <div class="info-text">
-            <div><span class="label">Kode:</span> ${item.kodeBahan}</div>
-            <div><span class="label">Supplier:</span> ${item.supplier}</div>
-            <div><span class="label">Qty:</span> ${item.quantity} yard</div>
+            ${item.kodeBahan}
           </div>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
@@ -893,12 +490,10 @@ const printBarcodes = () => {
           }
           .info-text {
             margin-top: 2mm;
-            font-size: 9pt;
+            font-size: 10pt;
             line-height: 1.4;
             color: #000;
             text-align: center;
-          }
-          .info-text .label {
             font-weight: 600;
           }
           @media print {
@@ -917,7 +512,7 @@ const printBarcodes = () => {
       <div class="barcode-item">
         <svg id="barcode-${idx}"></svg>
         <div class="info-text">
-          <div><span class="label">Kode:</span> ${item.kodeBahan} | <span class="label">Supplier:</span> ${item.supplier} | <span class="label">Qty:</span> ${item.quantity} yard</div>
+          ${item.kodeBahan}
         </div>
       </div>
     `

@@ -85,6 +85,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/barcode/scan', [BarcodeController::class, 'scan'])->name('barcode.scan');
     Route::post('/barcode/find', [BarcodeController::class, 'findByCode'])->name('barcode.find');
     Route::put('/barcode/{id}/price', [BarcodeController::class, 'updatePrice'])->name('barcode.updatePrice');
+    Route::put('/barcode/{id}/complete', [BarcodeController::class, 'updateComplete'])->name('barcode.updateComplete');
     Route::get('/rincian-bahan', [RincianBahanController::class, 'index'])->name('rincian-bahan.index');
     Route::get('/defect', [DefectController::class, 'index'])->name('defect.index');
     Route::get('/tracking-po', [TrackingPoController::class, 'index'])->name('tracking-po.index');
