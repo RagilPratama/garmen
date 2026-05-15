@@ -18,6 +18,13 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    // Role constants
+    const ROLE_SUPERADMIN = 'superadmin';
+    const ROLE_ADMIN_GUDANG = 'admingudang';
+    const ROLE_ADMIN_KANTOR = 'adminkantor';
+    const ROLE_ADMIN_JOMEI = 'adminjomei';
+    const ROLE_ADMIN_KAMIKO = 'adminkamiko';
+
     /**
      * Get the attributes that should be cast.
      *
@@ -36,24 +43,72 @@ class User extends Authenticatable
         return $this->belongsTo(Toko::class);
     }
 
+    // Role check methods
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === self::ROLE_SUPERADMIN;
+    }
+
+    public function isAdminGudang(): bool
+    {
+        return $this->role === self::ROLE_ADMIN_GUDANG;
+    }
+
+    public function isAdminKantor(): bool
+    {
+        return $this->role === self::ROLE_ADMIN_KANTOR;
+    }
+
+    public function isAdminJomei(): bool
+    {
+        return $this->role === self::ROLE_ADMIN_JOMEI;
+    }
+
+    public function isAdminKamiko(): bool
+    {
+        return $this->role === self::ROLE_ADMIN_KAMIKO;
+    }
+
+    public function isAdminToko(): bool
+    {
+        return in_array($this->role, [self::ROLE_ADMIN_JOMEI, self::ROLE_ADMIN_KAMIKO]);
+    }
+
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
-    }
-
-    public function isTokoJomei(): bool
-    {
-        return $this->role === 'toko_jomei';
-    }
-
-    public function isTokoKamiko(): bool
-    {
-        return $this->role === 'toko_kamiko';
+        return in_array($this->role, [
+            self::ROLE_SUPERADMIN,
+            self::ROLE_ADMIN_GUDANG,
+            self::ROLE_ADMIN_KANTOR
+        ]);
     }
 
     public function isToko(): bool
     {
-        return in_array($this->role, ['toko_jomei', 'toko_kamiko']);
+        return $this->isAdminToko();
+    }
+
+    public function hasRole(string $role): bool
+    {
+        return $this->role === $role;
+    }
+
+    public function hasAnyRole(array $roles): bool
+    {
+        return in_array($this->role, $roles);
+    }
+
+    // Get role display name
+    public function getRoleNameAttribute(): string
+    {
+        return match($this->role) {
+            self::ROLE_SUPERADMIN => 'Super Admin',
+            self::ROLE_ADMIN_GUDANG => 'Admin Gudang',
+            self::ROLE_ADMIN_KANTOR => 'Admin Kantor',
+            self::ROLE_ADMIN_JOMEI => 'Admin Jomei',
+            self::ROLE_ADMIN_KAMIKO => 'Admin Kamiko',
+            default => 'Unknown',
+        };
     }
 }
 

@@ -33,6 +33,8 @@ use App\Http\Controllers\KasGudangController;
 use App\Http\Controllers\KasGarmenController;
 use App\Http\Controllers\ImportProsesJualController;
 use App\Http\Controllers\BarcodeController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\MasterBahanController;
 use Illuminate\Support\Facades\Route;
 
 // Auth routes
@@ -46,8 +48,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('master-model', MasterModelController::class)->except(['show', 'create', 'edit']);
+    Route::resource('master-bahan', MasterBahanController::class)->except(['show', 'create', 'edit']);
     Route::resource('supplier', SupplierController::class)->except(['show', 'create', 'edit']);
     Route::resource('rekening', RekeningController::class)->except(['show', 'create', 'edit']);
+    
+    // User Management (Super Admin only)
+    Route::middleware('superadmin')->group(function () {
+        Route::resource('users', UserController::class)->except(['show', 'create', 'edit']);
+    });
     Route::resource('bahan-masuk', BahanMasukController::class)->except(['show']);
     Route::post('/bahan-masuk/{noNota}/pembayaran', [BahanMasukPembayaranController::class, 'store'])->name('bahan-masuk.pembayaran.store');
     Route::delete('/bahan-masuk/pembayaran/{pembayaran}', [BahanMasukPembayaranController::class, 'destroy'])->name('bahan-masuk.pembayaran.destroy');

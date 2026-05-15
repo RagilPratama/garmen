@@ -56,6 +56,7 @@
           </div>
           <div v-if="sidebarOpen" class="flex-1 min-w-0">
             <p class="text-sm font-medium text-white truncate">{{ $page.props.auth.user?.name }}</p>
+            <p class="text-xs text-amber-400 truncate font-medium">{{ userRole }}</p>
             <p class="text-xs text-gray-400 truncate">{{ $page.props.auth.user?.email }}</p>
           </div>
           <button v-if="sidebarOpen" @click="logout"
@@ -80,22 +81,6 @@
           </svg>
         </button>
         <h1 class="flex-1 text-lg font-semibold text-gray-800">{{ title }}</h1>
-        <!-- Flash success -->
-        <div v-if="$page.props.flash?.message"
-          class="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 text-sm rounded-lg border border-green-200">
-          <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-          </svg>
-          {{ $page.props.flash.message }}
-        </div>
-        <!-- Flash error -->
-        <div v-if="$page.props.flash?.error"
-          class="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-700 text-sm rounded-lg border border-red-200 max-w-sm">
-          <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-          </svg>
-          <span class="line-clamp-2">{{ $page.props.flash.error }}</span>
-        </div>
         <div class="flex items-center gap-2">
           <span class="text-sm text-gray-500">{{ new Date().toLocaleDateString('id-ID', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) }}</span>
         </div>
@@ -122,12 +107,36 @@
 </template>
 
 <script setup>
-import { ref, computed, h, onMounted, onUnmounted } from 'vue'
+import { ref, computed, h, onMounted, onUnmounted, watch } from 'vue'
 import { Link, usePage, router } from '@inertiajs/vue3'
 import DashboardSkeleton from '@/Components/DashboardSkeleton.vue'
+import Swal from 'sweetalert2'
 
 const props = defineProps({ title: { type: String, default: 'Dashboard' } })
 const page = usePage()
+
+// Watch for flash messages and show SweetAlert
+watch(() => page.props.flash, (flash) => {
+  if (flash?.message) {
+    Swal.fire({
+      icon: 'success',
+      title: 'Berhasil!',
+      text: flash.message,
+      confirmButtonColor: '#10b981',
+      timer: 3000,
+      timerProgressBar: true,
+    })
+  }
+  
+  if (flash?.error) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Gagal!',
+      text: flash.error,
+      confirmButtonColor: '#ef4444',
+    })
+  }
+}, { deep: true })
 const sidebarOpen = ref(typeof window !== 'undefined' && window.innerWidth >= 1024)
 const isNavigating = ref(false)
 const nextUrl = ref('')
@@ -151,14 +160,31 @@ const userInitial = computed(() => {
   return name.charAt(0).toUpperCase()
 })
 
+const userRole = computed(() => {
+  const role = page.props.auth?.user?.role
+  const roleNames = {
+    'superadmin': 'Super Admin',
+    'admingudang': 'Admin Gudang',
+    'adminkantor': 'Admin Kantor',
+    'adminjomei': 'Admin Jomei',
+    'adminkamiko': 'Admin Kamiko'
+  }
+  return roleNames[role] || 'Unknown'
+})
+
 const isAdmin = computed(() => page.props.auth?.user?.is_admin ?? false)
 const isToko = computed(() => page.props.auth?.user?.is_toko ?? false)
 
 // Filter menu berdasarkan role
 const filteredNavItems = computed(() => {
-  if (isAdmin.value) {
-    // Admin bisa akses semua menu kecuali Pengeluaran Toko
-    return navItems.filter(item => item.name !== 'pengeluaran-toko')
+  const userRole = page.props.auth?.user?.role
+  
+  if (userRole === 'superadmin') {
+    // Super Admin bisa akses semua menu
+    return navItems
+  } else if (isAdmin.value) {
+    // Admin Gudang & Kantor bisa akses semua menu kecuali Pengeluaran Toko dan Manajemen User
+    return navItems.filter(item => item.name !== 'pengeluaran-toko' && item.name !== 'users')
   } else if (isToko.value) {
     // User toko hanya bisa akses Dashboard dan Penjualan (Jual Toko, Pengeluaran Toko & Kas Toko)
     return navItems.filter(item => {
@@ -219,7 +245,9 @@ const IconWallet = { render: () => h('svg', { fill: 'none', stroke: 'currentColo
 const navItems = [
   { type: 'link', name: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: IconDashboard },
   { type: 'header', label: 'Data Master' },
+  { type: 'link', name: 'users', label: 'Manajemen User', href: '/users', icon: IconUsers },
   { type: 'link', name: 'master-model', label: 'Master Model', href: '/master-model', icon: IconUsers },
+  { type: 'link', name: 'master-bahan', label: 'Master Bahan', href: '/master-bahan', icon: IconBox },
   { type: 'link', name: 'supplier', label: 'Supplier', href: '/supplier', icon: IconUsers },
   { type: 'link', name: 'rekening', label: 'Rekening', href: '/rekening', icon: IconBank },
   { type: 'header', label: 'Inventori' },

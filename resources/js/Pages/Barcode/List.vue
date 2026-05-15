@@ -84,29 +84,22 @@
           
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Status Harga</label>
-            <select 
-              v-model="statusFilter" 
-              @change="applyFilters"
-              class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
-            >
-              <option value="">Semua Status</option>
-              <option value="sudah_harga">Sudah Ada Harga</option>
-              <option value="belum_harga">Belum Ada Harga</option>
-            </select>
+            <SearchableSelect
+              v-model="statusFilter"
+              :options="statusOptions"
+              placeholder="Semua Status"
+              @update:modelValue="applyFilters"
+            />
           </div>
 
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Supplier</label>
-            <select 
-              v-model="supplierFilter" 
-              @change="applyFilters"
-              class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
-            >
-              <option value="">Semua Supplier</option>
-              <option v-for="supplier in suppliers" :key="supplier" :value="supplier">
-                {{ supplier }}
-              </option>
-            </select>
+            <SearchableSelect
+              v-model="supplierFilter"
+              :options="supplierOptions"
+              placeholder="Semua Supplier"
+              @update:modelValue="applyFilters"
+            />
           </div>
 
           <div class="flex items-end">
@@ -118,6 +111,30 @@
             </button>
           </div>
         </div>
+        
+        <!-- Bulk Actions -->
+        <div v-if="selectedBarcodes.length > 0" class="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
+          <div class="text-sm text-gray-600">
+            <span class="font-semibold text-blue-600">{{ selectedBarcodes.length }}</span> barcode terpilih
+          </div>
+          <div class="flex gap-2">
+            <button 
+              @click="clearSelection"
+              class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition"
+            >
+              Batal Pilih
+            </button>
+            <button 
+              @click="printSelectedBarcodes"
+              class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition flex items-center gap-2"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+              </svg>
+              Cetak Terpilih ({{ selectedBarcodes.length }})
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Table -->
@@ -126,6 +143,14 @@
           <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th class="px-4 py-3 text-center">
+                  <input 
+                    type="checkbox" 
+                    :checked="isAllSelected"
+                    @change="toggleSelectAll"
+                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                </th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Barcode</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Kode Bahan</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Nama Bahan</th>
@@ -139,7 +164,15 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
-              <tr v-for="barcode in barcodes.data" :key="barcode.id" class="hover:bg-gray-50 transition">
+              <tr v-for="barcode in barcodes.data" :key="barcode.id" class="hover:bg-gray-50 transition" :class="{ 'bg-blue-50': isSelected(barcode.id) }">
+                <td class="px-4 py-3 text-center">
+                  <input 
+                    type="checkbox" 
+                    :checked="isSelected(barcode.id)"
+                    @change="toggleSelect(barcode)"
+                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                </td>
                 <td class="px-4 py-3">
                   <span class="font-mono text-xs font-medium text-gray-800">{{ barcode.barcode_code }}</span>
                 </td>
@@ -243,9 +276,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
+import SearchableSelect from '@/Components/SearchableSelect.vue'
 
 const props = defineProps({
   barcodes: Object,
@@ -257,6 +291,165 @@ const props = defineProps({
 const searchQuery = ref(props.filters.search || '')
 const statusFilter = ref(props.filters.status || '')
 const supplierFilter = ref(props.filters.supplier || '')
+const selectedBarcodes = ref([])
+
+// Check if all barcodes on current page are selected
+const isAllSelected = computed(() => {
+  return props.barcodes.data.length > 0 && 
+         props.barcodes.data.every(b => selectedBarcodes.value.some(s => s.id === b.id))
+})
+
+// Check if a barcode is selected
+const isSelected = (id) => {
+  return selectedBarcodes.value.some(b => b.id === id)
+}
+
+// Toggle select all barcodes on current page
+const toggleSelectAll = () => {
+  if (isAllSelected.value) {
+    // Deselect all on current page
+    const currentIds = props.barcodes.data.map(b => b.id)
+    selectedBarcodes.value = selectedBarcodes.value.filter(b => !currentIds.includes(b.id))
+  } else {
+    // Select all on current page
+    props.barcodes.data.forEach(barcode => {
+      if (!isSelected(barcode.id)) {
+        selectedBarcodes.value.push(barcode)
+      }
+    })
+  }
+}
+
+// Toggle select single barcode
+const toggleSelect = (barcode) => {
+  const index = selectedBarcodes.value.findIndex(b => b.id === barcode.id)
+  if (index > -1) {
+    selectedBarcodes.value.splice(index, 1)
+  } else {
+    selectedBarcodes.value.push(barcode)
+  }
+}
+
+// Clear all selection
+const clearSelection = () => {
+  selectedBarcodes.value = []
+}
+
+// Print selected barcodes
+const printSelectedBarcodes = () => {
+  if (selectedBarcodes.value.length === 0) return
+  
+  const printWindow = window.open('', '_blank')
+  
+  let htmlContent = `
+    <html>
+      <head>
+        <title>Print Barcode - ${selectedBarcodes.value.length} items</title>
+        <style>
+          @page {
+            size: 60mm 40mm;
+            margin: 0;
+          }
+          body { 
+            font-family: Arial, sans-serif; 
+            margin: 0;
+            padding: 0;
+          }
+          .barcode-page {
+            page-break-after: always;
+            padding: 3mm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 40mm;
+          }
+          .barcode-page:last-child {
+            page-break-after: auto;
+          }
+          .barcode-sticker { 
+            text-align: center;
+            width: 100%;
+          }
+          .barcode-sticker svg {
+            max-width: 100%;
+            height: auto;
+          }
+          .info-text {
+            margin-top: 1mm;
+            font-size: 7pt;
+            line-height: 1.3;
+            color: #000;
+          }
+          .info-text .label {
+            font-weight: 600;
+          }
+        </style>
+      </head>
+      <body>
+  `
+  
+  selectedBarcodes.value.forEach((barcode, index) => {
+    htmlContent += `
+      <div class="barcode-page">
+        <div class="barcode-sticker">
+          <svg id="barcode-${index}"></svg>
+          <div class="info-text">
+            <div><span class="label">Kode:</span> ${barcode.kode_bahan}</div>
+            <div><span class="label">Supplier:</span> ${barcode.supplier || '-'}</div>
+            <div><span class="label">Qty:</span> ${barcode.quantity || 0} ${barcode.satuan || 'yard'}</div>
+          </div>
+        </div>
+      </div>
+    `
+  })
+  
+  htmlContent += `
+        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+        <script>
+  `
+  
+  selectedBarcodes.value.forEach((barcode, index) => {
+    htmlContent += `
+          JsBarcode("#barcode-${index}", "${barcode.barcode_code}", {
+            format: "CODE128",
+            width: 2,
+            height: 40,
+            displayValue: false,
+            margin: 0
+          });
+    `
+  })
+  
+  htmlContent += `
+          setTimeout(() => window.print(), 500);
+        <\/script>
+      </body>
+    </html>
+  `
+  
+  printWindow.document.write(htmlContent)
+  printWindow.document.close()
+}
+
+// Status options for SearchableSelect
+const statusOptions = [
+  { value: '', label: 'Semua Status' },
+  { value: 'sudah_harga', label: 'Sudah Ada Harga' },
+  { value: 'belum_harga', label: 'Belum Ada Harga' }
+]
+
+// Supplier options for SearchableSelect
+const supplierOptions = computed(() => {
+  const options = [{ value: '', label: 'Semua Supplier' }]
+  props.suppliers.forEach(supplier => {
+    // Filter out null/empty suppliers
+    if (supplier && supplier.trim() !== '') {
+      options.push({ value: supplier, label: supplier })
+    }
+  })
+  return options
+})
 
 let searchTimeout = null
 
@@ -331,32 +524,25 @@ const printBarcode = (barcode) => {
             max-width: 100%;
             height: auto;
           }
-          .info-text {
-            margin-top: 1mm;
-            font-size: 7pt;
-            line-height: 1.3;
-            color: #000;
-          }
-          .info-text .label {
+          .kode-text {
+            margin-top: 2mm;
+            font-size: 10pt;
             font-weight: 600;
+            color: #000;
           }
         </style>
       </head>
       <body>
         <div class="barcode-sticker">
           <svg id="barcode"></svg>
-          <div class="info-text">
-            <div><span class="label">Kode:</span> ${barcode.kode_bahan}</div>
-            <div><span class="label">Supplier:</span> ${barcode.supplier}</div>
-            <div><span class="label">Qty:</span> ${barcode.quantity} ${barcode.satuan}</div>
-          </div>
+          <div class="kode-text">${barcode.kode_bahan}</div>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
         <script>
           JsBarcode("#barcode", "${barcode.barcode_code}", {
             format: "CODE128",
             width: 2,
-            height: 40,
+            height: 50,
             displayValue: false,
             margin: 0
           });

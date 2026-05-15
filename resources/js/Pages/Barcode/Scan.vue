@@ -198,27 +198,22 @@
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                   Supplier <span class="text-red-500">*</span>
                 </label>
-                <select 
-                  v-model="completeDataForm.supplier" 
-                  required
-                  class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white"
-                >
-                  <option value="" disabled>-- Pilih Supplier --</option>
-                  <option v-for="supplier in props.suppliers" :key="supplier.id" :value="supplier.nama">
-                    {{ supplier.nama }}
-                  </option>
-                </select>
+                <SearchableSelect
+                  v-model="completeDataForm.supplier"
+                  :options="supplierOptions"
+                  placeholder="-- Pilih Supplier --"
+                  searchPlaceholder="Cari supplier..."
+                />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                   Nama Bahan <span class="text-red-500">*</span>
                 </label>
-                <input 
-                  v-model="completeDataForm.nama_bahan" 
-                  type="text" 
-                  required
-                  placeholder="Contoh: Kain Katun Combed 30s"
-                  class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white"
+                <SearchableSelect
+                  v-model="completeDataForm.nama_bahan"
+                  :options="bahanOptions"
+                  placeholder="-- Pilih Nama Bahan --"
+                  searchPlaceholder="Cari nama bahan..."
                 />
               </div>
             </div>
@@ -366,11 +361,29 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
+import SearchableSelect from '@/Components/SearchableSelect.vue'
 import Swal from 'sweetalert2'
 
 // Props
 const props = defineProps({
-  suppliers: Array
+  suppliers: Array,
+  masterBahan: Array
+})
+
+// Computed supplier options for SearchableSelect
+const supplierOptions = computed(() => {
+  return props.suppliers?.map(s => ({
+    value: s.nama,
+    label: s.nama
+  })) || []
+})
+
+// Computed bahan options for SearchableSelect
+const bahanOptions = computed(() => {
+  return props.masterBahan?.map(b => ({
+    value: b.nama_bahan,
+    label: b.nama_bahan
+  })) || []
 })
 
 // Dynamic import html5-qrcode

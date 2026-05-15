@@ -120,7 +120,12 @@
                       <p v-if="editForm.errors[`items.${idx}.kode_bahan`]" class="mt-0.5 text-xs text-red-500">{{ editForm.errors[`items.${idx}.kode_bahan`] }}</p>
                     </td>
                     <td class="px-2 py-1.5">
-                      <input v-model="item.nama_bahan" type="text" placeholder="Nama bahan" class="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-amber-400"/>
+                      <SearchableSelect
+                        v-model="item.nama_bahan"
+                        :options="bahanOptions"
+                        placeholder="-- Pilih Nama Bahan --"
+                        searchPlaceholder="Cari nama bahan..."
+                      />
                     </td>
                     <td class="px-2 py-1.5">
                       <input v-model="item.yard" type="number" min="0" step="any" required placeholder="0.00" class="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-amber-400"/>
@@ -238,7 +243,12 @@
                       <p v-if="createForm.errors[`items.${idx}.kode_bahan`]" class="mt-0.5 text-xs text-red-500">{{ createForm.errors[`items.${idx}.kode_bahan`] }}</p>
                     </td>
                     <td class="px-2 py-1.5">
-                      <input v-model="item.nama_bahan" type="text" placeholder="Nama bahan" class="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-amber-400"/>
+                      <SearchableSelect
+                        v-model="item.nama_bahan"
+                        :options="bahanOptions"
+                        placeholder="-- Pilih Nama Bahan --"
+                        searchPlaceholder="Cari nama bahan..."
+                      />
                     </td>
                     <td class="px-2 py-1.5">
                       <input v-model="item.yard" type="number" min="0" step="any" required placeholder="0.00" class="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-amber-400"/>
@@ -496,6 +506,7 @@ const props = defineProps({
   data: Object,
   supplierOptions:  { type: Array, default: () => [] },
   rekeningOptions:  { type: Array, default: () => [] },
+  masterBahan:      { type: Array, default: () => [] },
   nextSuratJalan:   { type: String, default: '' },
   nextNota:         { type: String, default: '' },
   nextKodeBahan:    { type: String, default: '' },
@@ -505,6 +516,14 @@ const props = defineProps({
 // Bahan options from previous orders for the selected supplier
 const createBahanOptions = ref([])
 const editBahanOptions = ref([])
+
+// Computed options for SearchableSelect (from master bahan)
+const bahanOptions = computed(() => {
+  return props.masterBahan?.map((b) => ({
+    value: b.nama_bahan,
+    label: b.nama_bahan,
+  })) || []
+})
 
 const buildBahanOptions = (supplier) => {
   return props.supplierBahanMap[supplier] ?? []

@@ -85,6 +85,7 @@ class BahanMasukController extends Controller
             'data'              => $data,
             'supplierOptions'   => Supplier::orderBy('nama')->pluck('nama'),
             'rekeningOptions'   => Rekening::orderBy('bank')->get(['id', 'bank', 'nama', 'nomor_rekening']),
+            'masterBahan'       => \App\Models\MasterBahan::orderBy('nama_bahan')->get(['id', 'nama_bahan']),
             'nextSuratJalan'    => $this->nextSuratJalan(BahanMasuk::class, 'LJ-'),
             'nextNota'          => $this->nextCode(BahanMasuk::class, 'no_nota', 'NT-'),
             'nextKodeBahan'     => $this->nextCode(BahanMasuk::class, 'kode_bahan', 'KB-'),

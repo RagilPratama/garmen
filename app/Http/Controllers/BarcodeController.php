@@ -149,9 +149,11 @@ class BarcodeController extends Controller
     public function scan()
     {
         $suppliers = Supplier::orderBy('nama')->get(['id', 'nama']);
+        $masterBahan = \App\Models\MasterBahan::orderBy('nama_bahan')->get(['id', 'nama_bahan']);
         
         return Inertia::render('Barcode/Scan', [
-            'suppliers' => $suppliers
+            'suppliers' => $suppliers,
+            'masterBahan' => $masterBahan,
         ]);
     }
 
@@ -185,8 +187,10 @@ class BarcodeController extends Controller
 
         $barcodes = $query->orderBy('created_at', 'desc')->paginate(20);
         
-        // Get unique suppliers for filter
+        // Get unique suppliers for filter (exclude null/empty)
         $suppliers = BarcodeBahan::select('supplier')
+            ->whereNotNull('supplier')
+            ->where('supplier', '!=', '')
             ->distinct()
             ->orderBy('supplier')
             ->pluck('supplier');

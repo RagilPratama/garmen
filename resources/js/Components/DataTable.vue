@@ -165,13 +165,7 @@
     </div>
 
     <!-- Delete Confirm Modal -->
-    <ConfirmDialog
-      v-model="showConfirm"
-      title="Hapus Data?"
-      message="Tindakan ini tidak dapat dibatalkan. Data akan dihapus permanen."
-      :loading="deleteLoading"
-      @confirm="doDelete"
-    />
+    <!-- Using SweetAlert2 instead of ConfirmDialog as per rules.md -->
 
     <!-- Form Modal Slot -->
     <slot name="modal" />
@@ -182,7 +176,7 @@
 import { ref, watch } from 'vue'
 import { Link, router, usePage } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
-import ConfirmDialog from '@/Components/ConfirmDialog.vue'
+import Swal from 'sweetalert2'
 
 const props = defineProps({
   title: String,
@@ -195,9 +189,7 @@ defineEmits(['open-create', 'open-edit'])
 
 const page = usePage()
 const searchQuery = ref(page.props.ziggy?.query?.search ?? new URLSearchParams(window.location.search).get('search') ?? '')
-const deleteId     = ref(null)
-const showConfirm  = ref(false)
-const deleteLoading = ref(false)
+const deleteId = ref(null)
 const isSearching = ref(false)
 
 let searchTimer = null
@@ -227,17 +219,23 @@ const appendSearch = (url) => {
   return u.pathname + u.search
 }
 
-const confirmDelete = (id) => { deleteId.value = id; showConfirm.value = true }
-const doDelete = () => {
-  deleteLoading.value = true
-  router.delete(`${props.basePath}/${deleteId.value}`, {
-    onSuccess: () => {
-      deleteId.value      = null
-      showConfirm.value   = false
-      deleteLoading.value = false
-    },
-    onError: () => { deleteLoading.value = false },
+const confirmDelete = async (id) => {
+  const result = await Swal.fire({
+    title: 'Hapus Data?',
+    text: 'Tindakan ini tidak dapat dibatalkan. Data akan dihapus permanen.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Ya, Hapus',
+    cancelButtonText: 'Batal',
   })
+  
+  if (result.isConfirmed) {
+    router.delete(`${props.basePath}/${id}`, {
+      preserveScroll: true,
+    })
+  }
 }
 
 const formatRupiah = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0)
