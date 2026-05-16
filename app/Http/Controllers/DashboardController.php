@@ -218,7 +218,7 @@ class DashboardController extends Controller
         }
 
         // Recent data
-        $recentBahanMasuk = $isAdmin ? BahanMasuk::latest()->take(5)->get(['id', 'supplier', 'kode_bahan', 'yard', 'created_at']) : collect();
+        $recentBahanMasuk = $isAdmin ? \App\Models\BarcodeBahan::where('harga_sudah_diisi', true)->latest()->take(5)->get(['id', 'supplier', 'kode_bahan', 'nama_bahan', 'quantity', 'created_at']) : collect();
 
         if ($isAdmin) {
             $recentPenjualan = ProsesJual::with('toko')->latest()->take(5)->get(['id', 'buyer', 'model', 'pcs', 'total_harga', 'status', 'tanggal_nota', 'toko_id'])

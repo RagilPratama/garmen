@@ -66,8 +66,8 @@
         <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
             <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <div>
-                    <h3 class="text-lg font-semibold text-gray-800">History Pembayaran</h3>
-                    <p class="text-sm text-gray-500">{{ selectedItem?.no_nota }} — {{ selectedItem?.no_surat_jalan }}</p>
+                    <h3 class="text-lg font-semibold text-gray-800">Detail Nota: {{ selectedItem?.no_nota }}</h3>
+                    <p class="text-sm text-gray-500">{{ selectedItem?.no_surat_jalan }}</p>
                 </div>
                 <button @click="detailOpen = false" class="p-2 hover:bg-gray-100 rounded-lg transition">
                     <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,58 +75,95 @@
                     </svg>
                 </button>
             </div>
-            <div class="flex-1 overflow-y-auto p-6">
-                <div class="grid grid-cols-3 gap-4 mb-6">
-                    <div class="bg-gray-50 rounded-lg p-3">
-                        <p class="text-xs text-gray-500">Total Tagihan</p>
-                        <p class="text-sm font-bold text-gray-800">{{ formatRupiah(selectedItem?.total_tagihan) }}</p>
+            <div class="flex-1 overflow-y-auto p-6 space-y-4">
+                <!-- Header Info -->
+                <div class="grid grid-cols-2 gap-3 bg-gray-50 rounded-xl p-4 text-sm">
+                    <div>
+                        <p class="text-gray-400 text-xs mb-0.5">No. Surat Jalan</p>
+                        <p class="font-medium text-gray-800">{{ selectedItem?.no_surat_jalan }}</p>
                     </div>
-                    <div class="bg-green-50 rounded-lg p-3">
-                        <p class="text-xs text-green-600">Sudah Dibayar</p>
-                        <p class="text-sm font-bold text-green-800">{{ formatRupiah(selectedItem?.total_dibayar) }}</p>
-                    </div>
-                    <div class="bg-red-50 rounded-lg p-3">
-                        <p class="text-xs text-red-600">Sisa Tagihan</p>
-                        <p class="text-sm font-bold text-red-800">{{ formatRupiah(selectedItem?.sisa_tagihan) }}</p>
+                    <div>
+                        <p class="text-gray-400 text-xs mb-0.5">Tanggal</p>
+                        <p class="font-medium text-gray-800">{{ formatDate(selectedItem?.tanggal) }}</p>
                     </div>
                 </div>
 
-                <table v-if="selectedItem?.pembayarans?.length" class="w-full text-sm">
-                    <thead class="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase w-10">No</th>
-                            <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Tanggal</th>
-                            <th class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Jumlah</th>
-                            <th class="text-center px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Metode</th>
-                            <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Keterangan</th>
-                            <th class="text-center px-4 py-2 text-xs font-semibold text-gray-500 uppercase w-16">Hapus</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        <tr v-for="(p, idx) in selectedItem.pembayarans" :key="p.id" class="hover:bg-gray-50">
-                            <td class="px-4 py-2 text-gray-500">{{ idx + 1 }}</td>
-                            <td class="px-4 py-2 text-gray-600">{{ formatDate(p.tanggal_bayar) }}</td>
-                            <td class="px-4 py-2 text-right font-semibold text-gray-800">{{ formatRupiah(p.jumlah) }}</td>
-                            <td class="px-4 py-2 text-center">
-                                <span class="px-2 py-0.5 text-xs font-medium rounded-full" :class="p.metode === 'cash' ? 'bg-green-50 text-green-700' : 'bg-purple-50 text-purple-700'">
-                                    {{ p.metode }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-2 text-gray-600">{{ p.keterangan ?? '—' }}</td>
-                            <td class="px-4 py-2 text-center">
-                                <button @click="deletePembayaran(p.id)" class="text-red-500 hover:text-red-700">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-                <p v-else class="text-center text-gray-400 py-6 text-sm">Belum ada pembayaran.</p>
-            </div>
-            <div class="px-6 py-4 border-t border-gray-100 flex justify-end">
-                <button @click="detailOpen = false" class="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition">Tutup</button>
+                <!-- Payment Summary -->
+                <div class="grid grid-cols-3 gap-3 border border-gray-200 rounded-xl p-4 text-sm text-center">
+                    <div>
+                        <p class="text-gray-400 text-xs mb-0.5">Total Tagihan</p>
+                        <p class="font-bold text-gray-800">{{ formatRupiah(selectedItem?.total_tagihan) }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-xs mb-0.5">Sudah Dibayar</p>
+                        <p class="font-bold text-emerald-600">{{ formatRupiah(selectedItem?.total_dibayar) }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-xs mb-0.5">Sisa Hutang</p>
+                        <p class="font-bold" :class="selectedItem?.sisa_tagihan > 0 ? 'text-orange-600' : 'text-emerald-600'">
+                            {{ selectedItem?.sisa_tagihan <= 0 ? 'LUNAS' : formatRupiah(selectedItem?.sisa_tagihan) }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Riwayat Pembayaran -->
+                <div v-if="selectedItem?.pembayarans?.length" class="border border-gray-200 rounded-lg overflow-hidden">
+                    <div class="px-3 py-2 bg-gray-50 border-b border-gray-200">
+                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Riwayat Pembayaran</span>
+                    </div>
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">Tanggal</th>
+                                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">Metode</th>
+                                <th class="px-3 py-2 text-right text-xs font-semibold text-gray-500">Jumlah</th>
+                                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">Keterangan</th>
+                                <th class="px-3 py-2 w-8"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <tr v-for="p in selectedItem.pembayarans" :key="p.id" class="hover:bg-gray-50/50">
+                                <td class="px-3 py-2">{{ formatDate(p.tanggal_bayar) }}</td>
+                                <td class="px-3 py-2">
+                                    <span
+                                        :class="p.metode === 'cash' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'"
+                                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize"
+                                    >
+                                        {{ p.metode }}
+                                    </span>
+                                </td>
+                                <td class="px-3 py-2 text-right font-medium text-gray-800">{{ formatRupiah(p.jumlah) }}</td>
+                                <td class="px-3 py-2 text-gray-500 text-xs">{{ p.keterangan ?? '—' }}</td>
+                                <td class="px-3 py-2 text-center">
+                                    <button @click="deletePembayaran(p.id)" class="text-red-400 hover:text-red-600 transition">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                            />
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p v-else class="text-center text-gray-400 py-4 text-sm">Belum ada pembayaran.</p>
+
+                <!-- Tombol Bayar -->
+                <div v-if="selectedItem?.sisa_tagihan > 0" class="pt-2">
+                    <button
+                        @click="
+                            detailOpen = false;
+                            openBayar(selectedItem);
+                        "
+                        class="w-full px-4 py-2.5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-sm font-semibold rounded-lg transition"
+                    >
+                        Bayar Sekarang
+                    </button>
+                </div>
             </div>
         </div>
     </div>
