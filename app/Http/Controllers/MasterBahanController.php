@@ -21,7 +21,7 @@ class MasterBahanController extends Controller
             });
         }
 
-        $data = $query->orderBy('nama_bahan')->paginate(50);
+        $data = $query->orderBy('nama_bahan')->paginate(20);
 
         return Inertia::render('MasterBahan/Index', [
             'data' => $data,

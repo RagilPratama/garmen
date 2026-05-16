@@ -89,7 +89,7 @@
                         <p class="text-xl font-bold text-red-700 mt-0.5 truncate">{{ formatRupiah(sisaHutang) }}</p>
                         <p class="text-xs text-red-500 mt-0.5 truncate">
                             {{ jumlahNotaBelumLunas }} nota belum lunas &mdash;
-                            <a href="/bahan-masuk" class="underline hover:text-red-700">Lihat detail →</a>
+                            <a href="/pembayaran-supplier" class="underline hover:text-red-700">Lihat detail →</a>
                         </p>
                     </div>
                 </div>

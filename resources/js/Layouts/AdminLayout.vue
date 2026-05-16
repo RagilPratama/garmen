@@ -451,6 +451,7 @@ const navItems = [
     { type: 'link', name: 'stok-bahan-garmen', label: 'Stok Bahan Garmen', href: '/stok-bahan-garmen', icon: IconStock },
     { type: 'link', name: 'bahan-masuk', label: 'Bahan Masuk', href: '/bahan-masuk', icon: IconBox },
     { type: 'link', name: 'bahan-keluar', label: 'Bahan Keluar', href: '/bahan-keluar', icon: IconArrowOut },
+    { type: 'link', name: 'pembayaran-supplier', label: 'Pembayaran Supplier', href: '/pembayaran-supplier', icon: IconCash },
     // Fokus Stock Dulu
     // { type: 'header', label: 'Produksi' },
     // { type: 'link', name: 'tracking-po', label: 'Tracking PO', href: '/tracking-po', icon: IconMap },

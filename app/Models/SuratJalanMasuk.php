@@ -10,6 +10,7 @@ class SuratJalanMasuk extends Model
 
     protected $fillable = [
         'no_surat_jalan',
+        'no_nota',
         'tanggal',
         'keterangan',
     ];

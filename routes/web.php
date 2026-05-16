@@ -37,6 +37,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\MasterBahanController;
 use App\Http\Controllers\SuratJalanGarmenController;
 use App\Http\Controllers\SuratJalanMasukController;
+use App\Http\Controllers\PembayaranSupplierController;
 use Illuminate\Support\Facades\Route;
 
 // Auth routes
@@ -95,6 +96,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/surat-jalan-masuk/{id}', [SuratJalanMasukController::class, 'destroy'])->name('surat-jalan-masuk.destroy');
 
     Route::get('/stok-bahan-garmen', [StokBahanGarmenController::class, 'index'])->name('stok-bahan-garmen.index');
+
+    // Pembayaran Supplier
+    Route::get('/pembayaran-supplier', [PembayaranSupplierController::class, 'index'])->name('pembayaran-supplier.index');
+    Route::post('/pembayaran-supplier', [PembayaranSupplierController::class, 'store'])->name('pembayaran-supplier.store');
+    Route::delete('/pembayaran-supplier/{id}', [PembayaranSupplierController::class, 'destroy'])->name('pembayaran-supplier.destroy');
     Route::get('/stok-barang', [StokBarangController::class, 'index'])->name('stok-barang.index');
     Route::put('/stok-barang', [StokBarangController::class, 'update'])->name('stok-barang.update');
     Route::get('/barcode', [BarcodeController::class, 'index'])->name('barcode.index');

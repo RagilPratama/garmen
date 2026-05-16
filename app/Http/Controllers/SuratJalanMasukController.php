@@ -52,6 +52,7 @@ class SuratJalanMasukController extends Controller
 
         SuratJalanMasuk::create([
             'no_surat_jalan' => $request->no_surat_jalan,
+            'no_nota' => $this->generateNextNota(),
             'tanggal' => $request->tanggal,
             'keterangan' => $request->keterangan,
         ]);
@@ -89,5 +90,19 @@ class SuratJalanMasukController extends Controller
         $nextNum = isset($matches[1]) ? (int) $matches[1] + 1 : 1;
 
         return 'SJ-MSK-' . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
+    }
+
+    private function generateNextNota(): string
+    {
+        $latest = SuratJalanMasuk::whereNotNull('no_nota')->orderByDesc('id')->first();
+
+        if (!$latest || !$latest->no_nota) {
+            return 'INV-SUP-0001';
+        }
+
+        preg_match('/(\d+)$/', $latest->no_nota, $matches);
+        $nextNum = isset($matches[1]) ? (int) $matches[1] + 1 : 1;
+
+        return 'INV-SUP-' . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
     }
 }

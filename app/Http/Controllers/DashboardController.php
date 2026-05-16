@@ -72,25 +72,21 @@ class DashboardController extends Controller
             $bahanGarmen = \App\Models\SuratJalanGarmenItem::count();
         }
 
-        // Hutang bahan masuk - hanya admin
+        // Hutang bahan masuk - hanya admin (dari surat jalan masuk)
         if ($isAdmin) {
-            $hutangRow = \DB::selectOne("
-                SELECT
-                    COALESCE(SUM(bm.total), 0) - COALESCE(SUM(bp.dibayar), 0) AS sisa_hutang,
-                    COUNT(CASE WHEN COALESCE(bp.dibayar, 0) < bm.grand_total THEN 1 END) AS nota_belum_lunas
-                FROM (
-                    SELECT no_nota, SUM(total) AS grand_total, SUM(total) AS total
-                    FROM bahan_masuk
-                    GROUP BY no_nota
-                ) bm
-                LEFT JOIN (
-                    SELECT no_nota, SUM(jumlah) AS dibayar
-                    FROM bahan_masuk_pembayaran
-                    GROUP BY no_nota
-                ) bp ON bp.no_nota = bm.no_nota
-            ");
-            $sisaHutang           = max(0, (float) ($hutangRow->sisa_hutang ?? 0));
-            $jumlahNotaBelumLunas = (int) ($hutangRow->nota_belum_lunas ?? 0);
+            $suratJalanMasuk = \App\Models\SuratJalanMasuk::whereNotNull('no_nota')->get();
+            $sisaHutang = 0;
+            $jumlahNotaBelumLunas = 0;
+
+            foreach ($suratJalanMasuk as $sj) {
+                $totalTagihan = (float) \App\Models\BarcodeBahan::where('no_surat_jalan', $sj->no_surat_jalan)
+                    ->where('harga_sudah_diisi', true)
+                    ->sum('total_harga');
+                $totalDibayar = (float) \App\Models\BahanMasukPembayaran::where('no_nota', $sj->no_nota)->sum('jumlah');
+                $sisa = max(0, $totalTagihan - $totalDibayar);
+                $sisaHutang += $sisa;
+                if ($sisa > 0) $jumlahNotaBelumLunas++;
+            }
         } else {
             $sisaHutang = 0;
             $jumlahNotaBelumLunas = 0;
