@@ -9,6 +9,9 @@ use App\Models\Supplier;
 use App\Traits\GeneratesSuratJalan;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class BahanMasukController extends Controller
 {
@@ -198,6 +201,93 @@ class BahanMasukController extends Controller
         $this->bulkAddStok($stokDeltas);
 
         return redirect()->route('bahan-masuk.index')->with('message', 'Data berhasil dihapus.');
+    }
+
+    private function getFilteredQuery()
+    {
+        $search = request('search');
+        $namaBahan = request('nama_bahan');
+        $supplier = request('supplier');
+        $status = request('status');
+
+        return \App\Models\BarcodeBahan::where('harga_sudah_diisi', true)
+            ->when($search, fn($q) => $q->where(fn($q) => $q
+                ->where('kode_bahan', 'like', "%{$search}%")
+                ->orWhere('nama_bahan', 'like', "%{$search}%")
+                ->orWhere('supplier', 'like', "%{$search}%")
+                ->orWhere('no_surat_jalan', 'like', "%{$search}%")
+            ))
+            ->when($namaBahan, fn($q) => $q->where('nama_bahan', $namaBahan))
+            ->when($supplier, fn($q) => $q->where('supplier', $supplier))
+            ->when($status === 'gudang', fn($q) => $q->whereDoesntHave('suratJalanGarmenItem'))
+            ->when($status === 'garmen', fn($q) => $q->whereHas('suratJalanGarmenItem'))
+            ->with('suratJalanGarmenItem.suratJalan')
+            ->orderBy('created_at', 'desc');
+    }
+
+    public function exportExcel()
+    {
+        $data = $this->getFilteredQuery()->get();
+
+        $data->transform(function ($item) {
+            $item->lokasi = $item->suratJalanGarmenItem ? 'Garmen' : 'Gudang';
+            return $item;
+        });
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Bahan Masuk');
+
+        $headers = ['No', 'Tanggal', 'No. Surat Jalan', 'Kode Bahan', 'Nama Bahan', 'Supplier', 'Qty', 'Satuan', 'Harga/Yard', 'Total Harga', 'Lokasi'];
+        $sheet->fromArray($headers, null, 'A1');
+        $sheet->getStyle('A1:K1')->getFont()->setBold(true);
+
+        $row = 2;
+        foreach ($data as $i => $item) {
+            $sheet->fromArray([
+                $i + 1,
+                $item->tanggal ? $item->tanggal->format('d/m/Y') : '-',
+                $item->no_surat_jalan,
+                $item->kode_bahan,
+                $item->nama_bahan,
+                $item->supplier,
+                (float) $item->quantity,
+                $item->satuan ?? 'yard',
+                (float) $item->rp_per_yard,
+                (float) $item->total_harga,
+                $item->lokasi,
+            ], null, "A{$row}");
+            $row++;
+        }
+
+        foreach (range('A', 'K') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $filename = 'bahan_masuk_' . date('Ymd_His') . '.xlsx';
+        $temp = tempnam(sys_get_temp_dir(), $filename);
+        $writer->save($temp);
+
+        return response()->download($temp, $filename)->deleteFileAfterSend(true);
+    }
+
+    public function exportPdf()
+    {
+        $data = $this->getFilteredQuery()->get();
+
+        $data->transform(function ($item) {
+            $item->lokasi = $item->suratJalanGarmenItem ? 'Garmen' : 'Gudang';
+            return $item;
+        });
+
+        $pdf = Pdf::loadView('exports.bahan-masuk', [
+            'data' => $data,
+            'title' => 'Laporan Bahan Masuk',
+            'tanggal' => now()->format('d/m/Y H:i'),
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download('bahan_masuk_' . date('Ymd_His') . '.pdf');
     }
 
     private function bulkAddStok(array $deltas): void

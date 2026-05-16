@@ -23,9 +23,34 @@
                             @update:modelValue="applyFilters"
                         />
                     </div>
-                    <div class="flex items-end">
-                        <button @click="resetFilters" class="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-xl transition">Reset Filter</button>
+                    <div class="flex items-end gap-2">
+                        <button @click="resetFilters" class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-xl transition">Reset Filter</button>
                     </div>
+                </div>
+                <!-- Export Buttons -->
+                <div class="flex gap-2 mt-4">
+                    <a :href="exportExcelUrl" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-xl transition">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                        </svg>
+                        Export Excel
+                    </a>
+                    <a :href="exportPdfUrl" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-xl transition">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                            />
+                        </svg>
+                        Export PDF
+                    </a>
                 </div>
             </div>
         </template>
@@ -58,6 +83,7 @@ const props = defineProps({
 });
 
 const columns = [
+    { key: 'no_surat_jalan', label: 'No. Surat Jalan' },
     { key: 'kode_bahan', label: 'Kode Bahan' },
     { key: 'nama_bahan', label: 'Nama Bahan' },
     { key: 'supplier', label: 'Supplier' },
@@ -105,6 +131,22 @@ const resetFilters = () => {
     supplierFilter.value = '';
     router.get('/stok-bahan');
 };
+
+const exportExcelUrl = computed(() => {
+    const params = new URLSearchParams();
+    if (namaBahanFilter.value) params.set('nama_bahan', namaBahanFilter.value);
+    if (supplierFilter.value) params.set('supplier', supplierFilter.value);
+    const qs = params.toString();
+    return '/stok-bahan/export-excel' + (qs ? '?' + qs : '');
+});
+
+const exportPdfUrl = computed(() => {
+    const params = new URLSearchParams();
+    if (namaBahanFilter.value) params.set('nama_bahan', namaBahanFilter.value);
+    if (supplierFilter.value) params.set('supplier', supplierFilter.value);
+    const qs = params.toString();
+    return '/stok-bahan/export-pdf' + (qs ? '?' + qs : '');
+});
 
 const formatYard = (val) => Number(val ?? 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const formatRupiah = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);

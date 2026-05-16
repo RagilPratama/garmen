@@ -60,6 +60,8 @@ Route::middleware('auth')->group(function () {
         Route::resource('users', UserController::class)->except(['show', 'create', 'edit']);
     });
     Route::resource('bahan-masuk', BahanMasukController::class)->except(['show']);
+    Route::get('/bahan-masuk/export-excel', [BahanMasukController::class, 'exportExcel'])->name('bahan-masuk.export-excel');
+    Route::get('/bahan-masuk/export-pdf', [BahanMasukController::class, 'exportPdf'])->name('bahan-masuk.export-pdf');
     Route::post('/bahan-masuk/{noNota}/pembayaran', [BahanMasukPembayaranController::class, 'store'])->name('bahan-masuk.pembayaran.store');
     Route::delete('/bahan-masuk/pembayaran/{pembayaran}', [BahanMasukPembayaranController::class, 'destroy'])->name('bahan-masuk.pembayaran.destroy');
     Route::get('/bahan-keluar/detail', [BahanKeluarController::class, 'detail'])->name('bahan-keluar.detail');
@@ -87,6 +89,8 @@ Route::middleware('auth')->group(function () {
     Route::put('/penjualan-pembayaran/{pembayaran}', [PenjualanPembayaranController::class, 'update'])->name('penjualan-pembayaran.update');
     Route::delete('/penjualan-pembayaran/{pembayaran}', [PenjualanPembayaranController::class, 'destroy'])->name('penjualan-pembayaran.destroy');
     Route::get('/stok-bahan', [StokBahanController::class, 'index'])->name('stok-bahan.index');
+    Route::get('/stok-bahan/export-excel', [StokBahanController::class, 'exportExcel'])->name('stok-bahan.export-excel');
+    Route::get('/stok-bahan/export-pdf', [StokBahanController::class, 'exportPdf'])->name('stok-bahan.export-pdf');
 
     // Surat Jalan Bahan Masuk
     Route::get('/surat-jalan-masuk', [SuratJalanMasukController::class, 'index'])->name('surat-jalan-masuk.index');
@@ -96,6 +100,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/surat-jalan-masuk/{id}', [SuratJalanMasukController::class, 'destroy'])->name('surat-jalan-masuk.destroy');
 
     Route::get('/stok-bahan-garmen', [StokBahanGarmenController::class, 'index'])->name('stok-bahan-garmen.index');
+    Route::get('/stok-bahan-garmen/export-excel', [StokBahanGarmenController::class, 'exportExcel'])->name('stok-bahan-garmen.export-excel');
+    Route::get('/stok-bahan-garmen/export-pdf', [StokBahanGarmenController::class, 'exportPdf'])->name('stok-bahan-garmen.export-pdf');
 
     // Pembayaran Supplier
     Route::get('/pembayaran-supplier', [PembayaranSupplierController::class, 'index'])->name('pembayaran-supplier.index');
