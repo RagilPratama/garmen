@@ -36,6 +36,7 @@ use App\Http\Controllers\BarcodeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\MasterBahanController;
 use App\Http\Controllers\SuratJalanGarmenController;
+use App\Http\Controllers\SuratJalanMasukController;
 use Illuminate\Support\Facades\Route;
 
 // Auth routes
@@ -85,6 +86,14 @@ Route::middleware('auth')->group(function () {
     Route::put('/penjualan-pembayaran/{pembayaran}', [PenjualanPembayaranController::class, 'update'])->name('penjualan-pembayaran.update');
     Route::delete('/penjualan-pembayaran/{pembayaran}', [PenjualanPembayaranController::class, 'destroy'])->name('penjualan-pembayaran.destroy');
     Route::get('/stok-bahan', [StokBahanController::class, 'index'])->name('stok-bahan.index');
+
+    // Surat Jalan Bahan Masuk
+    Route::get('/surat-jalan-masuk', [SuratJalanMasukController::class, 'index'])->name('surat-jalan-masuk.index');
+    Route::get('/surat-jalan-masuk/create', [SuratJalanMasukController::class, 'create'])->name('surat-jalan-masuk.create');
+    Route::get('/surat-jalan-masuk/detail', [SuratJalanMasukController::class, 'detail'])->name('surat-jalan-masuk.detail');
+    Route::post('/surat-jalan-masuk', [SuratJalanMasukController::class, 'store'])->name('surat-jalan-masuk.store');
+    Route::delete('/surat-jalan-masuk/{id}', [SuratJalanMasukController::class, 'destroy'])->name('surat-jalan-masuk.destroy');
+
     Route::get('/stok-bahan-garmen', [StokBahanGarmenController::class, 'index'])->name('stok-bahan-garmen.index');
     Route::get('/stok-barang', [StokBarangController::class, 'index'])->name('stok-barang.index');
     Route::put('/stok-barang', [StokBarangController::class, 'update'])->name('stok-barang.update');

@@ -1,9 +1,9 @@
 <template>
     <DataTable title="Surat Jalan Garmen" :data="data" :columns="columns" basePath="/surat-jalan-garmen" @open-create="goCreate" customActions>
         <template #cell-no_surat_jalan="{ item }">
-            <a :href="`/surat-jalan-garmen/${item.id}`" class="text-amber-600 hover:text-amber-700 font-semibold hover:underline underline-offset-2 transition font-mono">
+            <button @click="showDetail(item.id)" class="text-amber-600 hover:text-amber-700 font-semibold hover:underline underline-offset-2 transition font-mono">
                 {{ item.no_surat_jalan }}
-            </a>
+            </button>
         </template>
 
         <template #cell-tanggal="{ item }">
@@ -44,9 +44,91 @@
             </a>
         </template>
     </DataTable>
+
+    <!-- Detail Modal -->
+    <div v-if="detailOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/50" @click="detailOpen = false"></div>
+        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800">Detail Surat Jalan Garmen</h3>
+                    <p class="text-sm text-gray-500 font-mono">{{ detailData?.no_surat_jalan }}</p>
+                </div>
+                <button @click="detailOpen = false" class="p-2 hover:bg-gray-100 rounded-lg transition">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6">
+                <div v-if="detailLoading" class="text-center py-8">
+                    <svg class="animate-spin w-8 h-8 text-amber-500 mx-auto" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                </div>
+
+                <div v-else-if="detailData">
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-xs text-gray-500 mb-1">No. Surat Jalan</p>
+                            <p class="text-sm font-mono font-semibold text-gray-800">{{ detailData.no_surat_jalan }}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-xs text-gray-500 mb-1">Tanggal</p>
+                            <p class="text-sm font-semibold text-gray-800">{{ formatDate(detailData.tanggal) }}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-xs text-gray-500 mb-1">Jumlah Item</p>
+                            <p class="text-sm font-semibold text-gray-800">{{ detailData.items?.length ?? 0 }} roll</p>
+                        </div>
+                    </div>
+
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase w-10">No</th>
+                                <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Kode Bahan</th>
+                                <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Nama Bahan</th>
+                                <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Supplier</th>
+                                <th class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Qty</th>
+                                <th class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Harga Keluar</th>
+                                <th class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <tr v-for="(item, idx) in detailData.items" :key="item.id" class="hover:bg-gray-50">
+                                <td class="px-4 py-2 text-gray-500">{{ idx + 1 }}</td>
+                                <td class="px-4 py-2 font-mono font-medium text-gray-800">{{ item.kode_bahan }}</td>
+                                <td class="px-4 py-2 text-gray-600">{{ item.nama_bahan }}</td>
+                                <td class="px-4 py-2 text-gray-600">{{ item.supplier }}</td>
+                                <td class="px-4 py-2 text-right font-semibold text-gray-800">{{ formatYard(item.quantity) }} {{ item.satuan }}</td>
+                                <td class="px-4 py-2 text-right text-gray-700">{{ formatRupiah(item.harga_keluar) }}</td>
+                                <td class="px-4 py-2 text-right font-semibold text-gray-800">{{ formatRupiah(item.total_harga) }}</td>
+                            </tr>
+                        </tbody>
+                        <tfoot class="bg-gray-50 border-t border-gray-200">
+                            <tr>
+                                <td colspan="4" class="px-4 py-2 text-sm font-semibold text-gray-700 text-right">Total:</td>
+                                <td class="px-4 py-2 text-right text-sm font-bold text-gray-800">{{ formatYard(detailTotalQty) }} yard</td>
+                                <td></td>
+                                <td class="px-4 py-2 text-right text-sm font-bold text-gray-800">{{ formatRupiah(detailTotalHarga) }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 border-t border-gray-100 flex justify-end">
+                <button @click="detailOpen = false" class="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition">Tutup</button>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script setup>
+import { ref, computed } from 'vue';
 import { router } from '@inertiajs/vue3';
 import DataTable from '@/Components/DataTable.vue';
 
@@ -60,12 +142,44 @@ const columns = [
     { key: 'keterangan', label: 'Keterangan' },
 ];
 
+const detailOpen = ref(false);
+const detailLoading = ref(false);
+const detailData = ref(null);
+
+const detailTotalQty = computed(() => {
+    if (!detailData.value?.items) return 0;
+    return detailData.value.items.reduce((sum, i) => sum + (parseFloat(i.quantity) || 0), 0);
+});
+
+const detailTotalHarga = computed(() => {
+    if (!detailData.value?.items) return 0;
+    return detailData.value.items.reduce((sum, i) => sum + (parseFloat(i.total_harga) || 0), 0);
+});
+
 const goCreate = () => {
     router.get('/surat-jalan-garmen/create');
 };
 
+const showDetail = async (id) => {
+    detailOpen.value = true;
+    detailLoading.value = true;
+    detailData.value = null;
+
+    try {
+        const response = await fetch(`/surat-jalan-garmen/${id}`, {
+            headers: { Accept: 'application/json' },
+        });
+        detailData.value = await response.json();
+    } catch (error) {
+        console.error('Error loading detail:', error);
+    } finally {
+        detailLoading.value = false;
+    }
+};
+
 const formatDate = (d) => (d ? new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-');
 const formatYard = (val) => Number(val ?? 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const formatRupiah = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
 
 const printSuratJalan = async (id) => {
     try {
@@ -133,10 +247,8 @@ const printSuratJalan = async (id) => {
             margin: { left: margin, right: margin },
             head: [['No', 'Kode Bahan', 'Nama Bahan', 'Supplier', 'Qty']],
             body: tableRows,
-            foot: [['', '', '', 'Total:', `${sj.items.reduce((s, i) => s + parseFloat(i.quantity || 0), 0).toFixed(2)} yard`]],
             headStyles: { fillColor: [240, 240, 240], textColor: 0, fontStyle: 'bold', fontSize: 8 },
             bodyStyles: { fontSize: 8, textColor: 30 },
-            footStyles: { fillColor: [245, 245, 245], textColor: 0, fontStyle: 'bold', fontSize: 8 },
             columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 4: { halign: 'right', cellWidth: 30 } },
         });
 

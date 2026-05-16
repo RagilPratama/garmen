@@ -441,6 +441,7 @@ const navItems = [
     { type: 'link', name: 'supplier', label: 'Supplier', href: '/supplier', icon: IconUsers },
     { type: 'link', name: 'rekening', label: 'Rekening', href: '/rekening', icon: IconBank },
     { type: 'header', label: 'Inventori' },
+    { type: 'link', name: 'surat-jalan-masuk', label: 'Surat Jalan Masuk', href: '/surat-jalan-masuk', icon: IconTruck },
     { type: 'link', name: 'surat-jalan-garmen', label: 'Surat Jalan Garmen', href: '/surat-jalan-garmen', icon: IconTruck },
     // { type: 'link', name: 'stok-barang', label: 'Stok Barang', href: '/stok-barang', icon: IconWarehouse },
     { type: 'link', name: 'barcode', label: 'Barcode Generator', href: '/barcode', icon: IconBox },

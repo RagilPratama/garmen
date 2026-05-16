@@ -156,10 +156,12 @@ class BarcodeController extends Controller
     {
         $suppliers = Supplier::orderBy('nama')->get(['id', 'nama']);
         $masterBahan = \App\Models\MasterBahan::orderBy('nama_bahan')->get(['id', 'nama_bahan']);
+        $suratJalanMasuk = \App\Models\SuratJalanMasuk::orderByDesc('tanggal')->get(['id', 'no_surat_jalan']);
         
         return Inertia::render('Barcode/Scan', [
             'suppliers' => $suppliers,
             'masterBahan' => $masterBahan,
+            'suratJalanMasuk' => $suratJalanMasuk,
         ]);
     }
 

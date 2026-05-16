@@ -255,12 +255,11 @@
                                     No. Surat Jalan
                                     <span class="text-red-500">*</span>
                                 </label>
-                                <input
+                                <SearchableSelect
                                     v-model="completeDataForm.no_surat_jalan"
-                                    type="text"
-                                    required
-                                    placeholder="Contoh: SJ-2024-001"
-                                    class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white"
+                                    :options="suratJalanOptions"
+                                    placeholder="-- Pilih No. Surat Jalan --"
+                                    searchPlaceholder="Cari surat jalan..."
                                 />
                             </div>
                             <div>
@@ -382,6 +381,7 @@ import Swal from 'sweetalert2';
 const props = defineProps({
     suppliers: Array,
     masterBahan: Array,
+    suratJalanMasuk: Array,
 });
 
 // Computed supplier options for SearchableSelect
@@ -400,6 +400,16 @@ const bahanOptions = computed(() => {
         props.masterBahan?.map((b) => ({
             value: b.nama_bahan,
             label: b.nama_bahan,
+        })) || []
+    );
+});
+
+// Computed surat jalan masuk options for SearchableSelect
+const suratJalanOptions = computed(() => {
+    return (
+        props.suratJalanMasuk?.map((sj) => ({
+            value: sj.no_surat_jalan,
+            label: sj.no_surat_jalan,
         })) || []
     );
 });

@@ -67,6 +67,8 @@
                                 <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Nama Bahan</th>
                                 <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Supplier</th>
                                 <th class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Qty</th>
+                                <th class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Harga Keluar</th>
+                                <th class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Total</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
@@ -76,12 +78,16 @@
                                 <td class="px-4 py-2 text-gray-600">{{ item.nama_bahan }}</td>
                                 <td class="px-4 py-2 text-gray-600">{{ item.supplier }}</td>
                                 <td class="px-4 py-2 text-right font-semibold text-gray-800">{{ formatYard(item.quantity) }} {{ item.satuan }}</td>
+                                <td class="px-4 py-2 text-right text-gray-700">{{ formatRupiah(item.harga_keluar) }}</td>
+                                <td class="px-4 py-2 text-right font-semibold text-gray-800">{{ formatRupiah(item.total_harga) }}</td>
                             </tr>
                         </tbody>
                         <tfoot class="bg-gray-50 border-t border-gray-200">
                             <tr>
                                 <td colspan="4" class="px-4 py-2 text-sm font-semibold text-gray-700 text-right">Total:</td>
                                 <td class="px-4 py-2 text-right text-sm font-bold text-gray-800">{{ formatYard(detailTotal) }} yard</td>
+                                <td></td>
+                                <td class="px-4 py-2 text-right text-sm font-bold text-gray-800">{{ formatRupiah(detailTotalHarga) }}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -120,6 +126,11 @@ const detailTotal = computed(() => {
     return detailData.value.items.reduce((sum, i) => sum + (parseFloat(i.quantity) || 0), 0);
 });
 
+const detailTotalHarga = computed(() => {
+    if (!detailData.value?.items) return 0;
+    return detailData.value.items.reduce((sum, i) => sum + (parseFloat(i.total_harga) || 0), 0);
+});
+
 const showDetail = async (noSJ) => {
     detailNoSJ.value = noSJ;
     detailOpen.value = true;
@@ -140,4 +151,5 @@ const showDetail = async (noSJ) => {
 
 const formatYard = (val) => Number(val ?? 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const formatDate = (d) => (d ? new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
+const formatRupiah = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
 </script>
