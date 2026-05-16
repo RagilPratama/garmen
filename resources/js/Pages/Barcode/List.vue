@@ -140,7 +140,7 @@
                                     <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Barcode</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Kode Bahan</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">No. Surat Jalan</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Nama Bahan</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Supplier</th>
                                 <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Qty</th>
@@ -165,7 +165,7 @@
                                     <span class="font-mono text-xs font-medium text-gray-800">{{ barcode.barcode_code }}</span>
                                 </td>
                                 <td class="px-4 py-3">
-                                    <span class="text-sm font-medium text-gray-800">{{ barcode.kode_bahan }}</span>
+                                    <span class="text-sm text-gray-600">{{ barcode.no_surat_jalan ?? '—' }}</span>
                                 </td>
                                 <td class="px-4 py-3">
                                     <span class="text-sm text-gray-600">{{ barcode.nama_bahan }}</span>

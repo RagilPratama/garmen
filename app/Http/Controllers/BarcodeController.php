@@ -265,10 +265,15 @@ class BarcodeController extends Controller
             'quantity' => 'required|numeric|min:0',
             'satuan' => 'nullable|string',
             'rp_per_yard' => 'required|numeric|min:0',
-            'no_surat_jalan' => 'nullable|string'
+            'no_surat_jalan' => 'required|string',
+            'tanggal_masuk' => 'required|date',
         ]);
 
         $barcode = BarcodeBahan::findOrFail($id);
+
+        // Cek apakah sudah pernah diisi sebelumnya (untuk menghindari double stok)
+        $sudahDiisiSebelumnya = $barcode->harga_sudah_diisi;
+        $qtyLama = (float) $barcode->quantity;
         
         // Update all fields
         $barcode->supplier = $validated['supplier'];
@@ -277,9 +282,36 @@ class BarcodeController extends Controller
         $barcode->satuan = $validated['satuan'] ?? 'yard';
         $barcode->rp_per_yard = $validated['rp_per_yard'];
         $barcode->no_surat_jalan = $validated['no_surat_jalan'];
+        $barcode->tanggal = $validated['tanggal_masuk'];
         $barcode->total_harga = $validated['quantity'] * $validated['rp_per_yard'];
         $barcode->harga_sudah_diisi = true;
         $barcode->save();
+
+        // Update stok bahan berdasarkan kode_bahan dari barcode
+        $kodeBahan = $barcode->kode_bahan;
+        $qty = (float) $validated['quantity'];
+
+        if ($sudahDiisiSebelumnya) {
+            // Jika sudah pernah diisi, hitung selisih qty untuk update stok
+            $selisih = $qty - $qtyLama;
+            if ($selisih != 0) {
+                \DB::statement("
+                    UPDATE stok_bahan
+                    SET quantity = GREATEST(0, quantity + ?),
+                        updated_at = NOW()
+                    WHERE kode_bahan = ?
+                ", [$selisih, $kodeBahan]);
+            }
+        } else {
+            // Pertama kali diisi — tambahkan ke stok bahan (INSERT or UPDATE)
+            \DB::statement("
+                INSERT INTO stok_bahan (kode_bahan, quantity, created_at, updated_at)
+                VALUES (?, ?, NOW(), NOW())
+                ON DUPLICATE KEY UPDATE
+                    quantity = quantity + ?,
+                    updated_at = NOW()
+            ", [$kodeBahan, $qty, $qty]);
+        }
 
         return response()->json([
             'success' => true,

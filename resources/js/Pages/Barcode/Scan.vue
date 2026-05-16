@@ -249,14 +249,32 @@
                             </div>
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">No. Surat Jalan (Opsional)</label>
-                            <input
-                                v-model="completeDataForm.no_surat_jalan"
-                                type="text"
-                                placeholder="Contoh: SJ-2024-001"
-                                class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white"
-                            />
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    No. Surat Jalan
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    v-model="completeDataForm.no_surat_jalan"
+                                    type="text"
+                                    required
+                                    placeholder="Contoh: SJ-2024-001"
+                                    class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Tanggal Masuk Barang
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    v-model="completeDataForm.tanggal_masuk"
+                                    type="date"
+                                    required
+                                    class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white"
+                                />
+                            </div>
                         </div>
 
                         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -278,7 +296,7 @@
                                 </svg>
                                 <span>{{ saving ? 'Menyimpan...' : 'Simpan Data Lengkap' }}</span>
                             </button>
-                            <button type="button" @click="reset" class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition">Batal</button>
+                            <button type="button" @click="goBackToList" class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition">Batal</button>
                         </div>
                     </form>
                 </div>
@@ -440,6 +458,7 @@ const completeDataForm = ref({
     quantity: 0,
     rp_per_yard: 0,
     no_surat_jalan: '',
+    tanggal_masuk: new Date().toISOString().split('T')[0],
 });
 const loading = ref(false);
 const saving = ref(false);
@@ -723,11 +742,19 @@ const searchBarcode = async () => {
 };
 
 const submitCompleteData = async () => {
-    if (!completeDataForm.value.supplier || !completeDataForm.value.nama_bahan || !completeDataForm.value.quantity || !completeDataForm.value.rp_per_yard || !barcodeData.value) {
+    if (
+        !completeDataForm.value.supplier ||
+        !completeDataForm.value.nama_bahan ||
+        !completeDataForm.value.quantity ||
+        !completeDataForm.value.rp_per_yard ||
+        !completeDataForm.value.no_surat_jalan ||
+        !completeDataForm.value.tanggal_masuk ||
+        !barcodeData.value
+    ) {
         await Swal.fire({
             icon: 'warning',
             title: 'Data Tidak Lengkap',
-            text: 'Supplier, Nama Bahan, Quantity, dan Harga harus diisi!',
+            text: 'Supplier, Nama Bahan, Quantity, Harga, No. Surat Jalan, dan Tanggal Masuk harus diisi!',
             confirmButtonColor: '#f59e0b',
         });
         return;
@@ -748,7 +775,8 @@ const submitCompleteData = async () => {
                 quantity: completeDataForm.value.quantity,
                 satuan: 'yard',
                 rp_per_yard: completeDataForm.value.rp_per_yard,
-                no_surat_jalan: completeDataForm.value.no_surat_jalan || null,
+                no_surat_jalan: completeDataForm.value.no_surat_jalan,
+                tanggal_masuk: completeDataForm.value.tanggal_masuk,
             }),
         });
 
@@ -803,6 +831,7 @@ const restartCamera = async () => {
         quantity: 0,
         rp_per_yard: 0,
         no_surat_jalan: '',
+        tanggal_masuk: new Date().toISOString().split('T')[0],
     };
     errorMessage.value = '';
     scanInput.value = '';
@@ -821,6 +850,7 @@ const reset = () => {
         quantity: 0,
         rp_per_yard: 0,
         no_surat_jalan: '',
+        tanggal_masuk: new Date().toISOString().split('T')[0],
     };
     errorMessage.value = '';
 
@@ -828,5 +858,9 @@ const reset = () => {
     if (cameraStarted.value) {
         stopCamera();
     }
+};
+
+const goBackToList = () => {
+    window.location.href = '/barcode/list';
 };
 </script>

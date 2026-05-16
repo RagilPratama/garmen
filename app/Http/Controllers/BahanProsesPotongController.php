@@ -126,8 +126,7 @@ class BahanProsesPotongController extends Controller
         }
         foreach ($yardPerKode as $kode => $totalYard) {
             StokBahan::where('kode_bahan', $kode)->update([
-                'total_keluar' => DB::raw("total_keluar + {$totalYard}"),
-                'sisa_stok'    => DB::raw("sisa_stok - {$totalYard}"),
+                'quantity' => DB::raw("GREATEST(0, quantity - {$totalYard})"),
             ]);
         }
 
@@ -141,8 +140,7 @@ class BahanProsesPotongController extends Controller
     }
     public function destroy(BahanProsesPotong $bahanProsesPotong) {
         StokBahan::where('kode_bahan', $bahanProsesPotong->kode_bahan)->update([
-            'total_keluar' => DB::raw("total_keluar - {$bahanProsesPotong->yard}"),
-            'sisa_stok'    => DB::raw("sisa_stok + {$bahanProsesPotong->yard}"),
+            'quantity' => DB::raw("quantity + {$bahanProsesPotong->yard}"),
         ]);
         $bahanProsesPotong->delete();
         return redirect()->route('bahan-proses-potong.index')->with('message','Data berhasil dihapus.');
@@ -171,8 +169,7 @@ class BahanProsesPotongController extends Controller
         }
         foreach ($oldYardPerKode as $kode => $yard) {
             StokBahan::where('kode_bahan', $kode)->update([
-                'total_keluar' => DB::raw("total_keluar - {$yard}"),
-                'sisa_stok'    => DB::raw("sisa_stok + {$yard}"),
+                'quantity' => DB::raw("quantity + {$yard}"),
             ]);
         }
 
@@ -205,8 +202,7 @@ class BahanProsesPotongController extends Controller
         }
         foreach ($newYardPerKode as $kode => $yard) {
             StokBahan::where('kode_bahan', $kode)->update([
-                'total_keluar' => DB::raw("total_keluar + {$yard}"),
-                'sisa_stok'    => DB::raw("sisa_stok - {$yard}"),
+                'quantity' => DB::raw("GREATEST(0, quantity - {$yard})"),
             ]);
         }
 

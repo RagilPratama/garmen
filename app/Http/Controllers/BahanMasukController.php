@@ -16,99 +16,61 @@ class BahanMasukController extends Controller
     public function index()
     {
         $search  = request('search');
-        $page    = max(1, (int) request('page', 1));
-        $perPage = 15;
+        $namaBahan = request('nama_bahan');
+        $supplier = request('supplier');
+        $status = request('status');
 
-        // Step 1: Paginate group keys (no_nota) di database
-        $groupQuery = BahanMasuk::select('no_nota', \DB::raw('MIN(id) as first_id'))
+        // Bahan masuk = SEMUA barcode yang sudah lengkap (history tracking)
+        $query = \App\Models\BarcodeBahan::where('harga_sudah_diisi', true)
             ->when($search, fn($q) => $q->where(fn($q) => $q
-                ->where('supplier',        'like', "%{$search}%")
-                ->orWhere('kode_bahan',    'like', "%{$search}%")
-                ->orWhere('no_nota',       'like', "%{$search}%")
-                ->orWhere('no_surat_jalan','like', "%{$search}%")
+                ->where('kode_bahan', 'like', "%{$search}%")
+                ->orWhere('nama_bahan', 'like', "%{$search}%")
+                ->orWhere('supplier', 'like', "%{$search}%")
+                ->orWhere('no_surat_jalan', 'like', "%{$search}%")
             ))
-            ->groupBy('no_nota')
-            ->orderByDesc('first_id');
+            ->when($namaBahan, fn($q) => $q->where('nama_bahan', $namaBahan))
+            ->when($supplier, fn($q) => $q->where('supplier', $supplier))
+            ->when($status === 'gudang', fn($q) => $q->whereDoesntHave('suratJalanGarmenItem'))
+            ->when($status === 'garmen', fn($q) => $q->whereHas('suratJalanGarmenItem'))
+            ->with('suratJalanGarmenItem.suratJalan')
+            ->orderBy('created_at', 'desc')
+            ->paginate(20)
+            ->appends(request()->query());
 
-        $total = $groupQuery->get()->count();
-        $groupKeys = $groupQuery->skip(($page - 1) * $perPage)->take($perPage)->pluck('no_nota');
-
-        // Step 2: Ambil rows hanya untuk group keys halaman ini
-        $rows = BahanMasuk::whereIn('no_nota', $groupKeys)->latest()->get();
-
-        $grouped = $rows
-            ->groupBy(fn($r) => $r->no_nota ?: 'id_'.$r->id)
-            ->map(fn($items) => [
-                'id'             => $items->first()->no_nota ?? (string) $items->first()->id,
-                'no_nota'        => $items->first()->no_nota,
-                'tanggal'        => $items->first()->tanggal,
-                'no_surat_jalan' => $items->first()->no_surat_jalan,
-                'supplier'       => $items->first()->supplier,
-                'grand_total'    => $items->sum('total'),
-                'items_count'    => $items->count(),
-                'items'          => $items->values()->map(fn($i) => [
-                    'id'          => $i->id,
-                    'kode_bahan'  => $i->kode_bahan,
-                    'nama_bahan'  => $i->nama_bahan,
-                    'yard'        => $i->yard,
-                    'rp_per_yard' => $i->rp_per_yard,
-                    'total'       => $i->total,
-                ])->toArray(),
-            ])
-            ->values();
-
-        // Step 3: Load pembayaran hanya untuk halaman ini
-        $noNotaList  = $grouped->pluck('no_nota')->filter()->values()->toArray();
-        $payments    = BahanMasukPembayaran::whereIn('no_nota', $noNotaList)
-            ->orderBy('tanggal_bayar')
-            ->get()
-            ->groupBy('no_nota');
-
-        $pageItems = $grouped->map(function ($nota) use ($payments) {
-            $pays         = $payments->get($nota['no_nota'], collect());
-            $totalDibayar = (float) $pays->sum('jumlah');
-            return array_merge($nota, [
-                'total_dibayar' => $totalDibayar,
-                'sisa_tagihan'  => (float) $nota['grand_total'] - $totalDibayar,
-                'pembayaran'    => $pays->map(fn($p) => [
-                    'id'            => $p->id,
-                    'tanggal_bayar' => $p->tanggal_bayar,
-                    'jumlah'        => $p->jumlah,
-                    'metode'        => $p->metode,
-                    'rekening_id'   => $p->rekening_id,
-                    'keterangan'    => $p->keterangan,
-                ])->values()->toArray(),
-            ]);
+        // Transform: tambahkan status lokasi
+        $query->getCollection()->transform(function ($item) {
+            $item->lokasi = $item->suratJalanGarmenItem ? 'Garmen' : 'Gudang';
+            $item->no_sj_garmen = $item->suratJalanGarmenItem?->suratJalan?->no_surat_jalan ?? null;
+            return $item;
         });
 
-        $data = new \Illuminate\Pagination\LengthAwarePaginator(
-            $pageItems,
-            $total,
-            $perPage,
-            $page,
-            ['path' => request()->url(), 'query' => request()->query()]
-        );
+        // Daftar supplier unik untuk filter
+        $supplierOptions = \App\Models\BarcodeBahan::where('harga_sudah_diisi', true)
+            ->whereNotNull('supplier')
+            ->where('supplier', '!=', '')
+            ->select('supplier')
+            ->distinct()
+            ->orderBy('supplier')
+            ->pluck('supplier');
+
+        // Daftar nama bahan unik untuk filter
+        $namaBahanOptions = \App\Models\BarcodeBahan::where('harga_sudah_diisi', true)
+            ->whereNotNull('nama_bahan')
+            ->select('nama_bahan')
+            ->distinct()
+            ->orderBy('nama_bahan')
+            ->pluck('nama_bahan');
 
         return Inertia::render('BahanMasuk/Index', [
-            'data'              => $data,
-            'supplierOptions'   => Supplier::orderBy('nama')->pluck('nama'),
-            'rekeningOptions'   => Rekening::orderBy('bank')->get(['id', 'bank', 'nama', 'nomor_rekening']),
-            'masterBahan'       => \App\Models\MasterBahan::orderBy('nama_bahan')->get(['id', 'nama_bahan']),
-            'nextSuratJalan'    => $this->nextSuratJalan(BahanMasuk::class, 'LJ-'),
-            'nextNota'          => $this->nextCode(BahanMasuk::class, 'no_nota', 'NT-'),
-            'nextKodeBahan'     => $this->nextCode(BahanMasuk::class, 'kode_bahan', 'KB-'),
-            'supplierBahanMap'  => BahanMasuk::select('supplier', 'kode_bahan', 'nama_bahan')
-                ->whereNotNull('kode_bahan')
-                ->distinct()
-                ->orderBy('supplier')
-                ->orderBy('kode_bahan')
-                ->get()
-                ->groupBy('supplier')
-                ->map(fn($items) => $items->map(fn($i) => [
-                    'kode_bahan' => $i->kode_bahan,
-                    'nama_bahan' => $i->nama_bahan,
-                ])->values())
-                ->toArray(),
+            'data'              => $query,
+            'supplierOptions'   => $supplierOptions,
+            'namaBahanOptions'  => $namaBahanOptions,
+            'filters' => [
+                'search' => $search,
+                'nama_bahan' => $namaBahan,
+                'supplier' => $supplier,
+                'status' => $status,
+            ],
         ]);
     }
 
@@ -249,21 +211,19 @@ class BahanMasukController extends Controller
         $bindings     = [];
 
         foreach ($deltas as $kode => $delta) {
-            $placeholders[] = '(?, ?, 0, GREATEST(0, ?))';
+            $placeholders[] = '(?, ?, NOW(), NOW())';
             $bindings[]     = $kode;
-            $bindings[]     = (float) max(0, $delta);
             $bindings[]     = (float) max(0, $delta);
         }
 
         $values = implode(', ', $placeholders);
 
         \DB::statement("
-            INSERT INTO stok_bahan (kode_bahan, total_masuk, total_keluar, sisa_stok)
+            INSERT INTO stok_bahan (kode_bahan, quantity, created_at, updated_at)
             VALUES {$values}
             ON DUPLICATE KEY UPDATE
-                total_masuk = GREATEST(0, total_masuk + VALUES(total_masuk)),
-                sisa_stok   = GREATEST(0, GREATEST(0, total_masuk + VALUES(total_masuk)) - total_keluar),
-                updated_at  = NOW()
+                quantity   = quantity + VALUES(quantity),
+                updated_at = NOW()
         ", $bindings);
     }
 }

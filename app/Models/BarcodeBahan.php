@@ -29,4 +29,9 @@ class BarcodeBahan extends Model
         'tanggal' => 'date',
         'harga_sudah_diisi' => 'boolean'
     ];
+
+    public function suratJalanGarmenItem()
+    {
+        return $this->hasOne(SuratJalanGarmenItem::class, 'barcode_bahan_id');
+    }
 }

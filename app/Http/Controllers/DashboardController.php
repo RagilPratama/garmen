@@ -62,9 +62,15 @@ class DashboardController extends Controller
             $omsetKamiko = 0;
         }
 
-        // Stok bahan - hanya admin yang lihat
-        $stokBahan = $isAdmin ? StokBahan::where('sisa_stok', '>', 0)->count() : 0;
-        $totalSisaBahan = $isAdmin ? StokBahan::sum('sisa_stok') : 0;
+        // Stok bahan gudang & garmen - hanya admin yang lihat
+        $bahanGudang = 0;
+        $bahanGarmen = 0;
+        if ($isAdmin) {
+            $bahanGudang = \App\Models\BarcodeBahan::where('harga_sudah_diisi', true)
+                ->whereDoesntHave('suratJalanGarmenItem')
+                ->count();
+            $bahanGarmen = \App\Models\SuratJalanGarmenItem::count();
+        }
 
         // Hutang bahan masuk - hanya admin
         if ($isAdmin) {
@@ -334,8 +340,8 @@ class DashboardController extends Controller
             'omsetGudangBulanIni'  => (float) $omsetGudangBulanIni,
             'omsetJomei'           => (float) ($omsetJomei ?? 0),
             'omsetKamiko'          => (float) ($omsetKamiko ?? 0),
-            'stokBahan'            => (int) $stokBahan,
-            'totalSisaBahan'       => (float) $totalSisaBahan,
+            'stokBahan'            => (int) $bahanGudang,
+            'totalSisaBahan'       => (int) $bahanGarmen,
             'stokKantor'           => (int) $stokKantor,
             'stokToko'             => (int) $stokToko,
             'pipeline'             => $pipeline,

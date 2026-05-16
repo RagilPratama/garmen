@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BahanKeluar;
-use App\Models\BahanMasuk;
-use App\Models\BahanProsesPotong;
+use App\Models\SuratJalanGarmenItem;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 
@@ -13,74 +11,49 @@ class StokBahanGarmenController extends Controller
     public function index()
     {
         $search = request('search');
+        $namaBahan = request('nama_bahan');
+        $supplier = request('supplier');
 
-        $namaBahan = BahanMasuk::select('kode_bahan', DB::raw('MAX(nama_bahan) as nama_bahan'))
-            ->groupBy('kode_bahan')->pluck('nama_bahan', 'kode_bahan');
+        // Stok bahan garmen = item yang sudah masuk via surat jalan
+        $query = SuratJalanGarmenItem::with('suratJalan')
+            ->when($search, fn($q) => $q->where('kode_bahan', 'like', "%{$search}%"))
+            ->when($namaBahan, fn($q) => $q->where('nama_bahan', $namaBahan))
+            ->when($supplier, fn($q) => $q->where('supplier', $supplier))
+            ->orderByDesc('created_at')
+            ->paginate(20)
+            ->appends(request()->query());
 
-        // Total yard already used in cutting (per kode_bahan)
-        $sudahDipotong = BahanProsesPotong::select('kode_bahan', DB::raw('SUM(yard) as total_potong'))
-            ->groupBy('kode_bahan')->pluck('total_potong', 'kode_bahan');
+        // Transform untuk tambahkan no_surat_jalan
+        $query->getCollection()->transform(function ($item) {
+            $item->no_surat_jalan = $item->suratJalan->no_surat_jalan ?? '—';
+            $item->tanggal_kirim = $item->suratJalan->tanggal ?? null;
+            return $item;
+        });
 
-        // Grouped summary per kode_bahan from bahan_keluar
-        $grouped = BahanKeluar::select(
-                'kode_bahan',
-                DB::raw('COUNT(*) as jumlah_transaksi'),
-                DB::raw('SUM(yard) as total_yard'),
-                DB::raw('SUM(total) as total_nilai'),
-                DB::raw('MAX(tanggal) as last_keluar')
-            )
-            ->groupBy('kode_bahan')
-            ->orderBy('kode_bahan')
-            ->get()
-            ->map(function ($row) use ($namaBahan, $sudahDipotong) {
-                $totalKeluar         = (float) $row->total_yard;
-                $terpakai            = (float) ($sudahDipotong[$row->kode_bahan] ?? 0);
-                $row->nama_bahan     = $namaBahan[$row->kode_bahan] ?? null;
-                $row->sisa_stok      = max(0, $totalKeluar - $terpakai);
-                $row->total_yard     = $totalKeluar;
-                $row->total_nilai    = (float) $row->total_nilai;
-                $row->sudah_dipotong = $terpakai;
-                return $row;
-            });
+        // Daftar nama bahan unik untuk filter
+        $namaBahanOptions = SuratJalanGarmenItem::whereNotNull('nama_bahan')
+            ->select('nama_bahan')
+            ->distinct()
+            ->orderBy('nama_bahan')
+            ->pluck('nama_bahan');
 
-        // Apply search
-        if ($search) {
-            $s = strtolower($search);
-            $grouped = $grouped->filter(fn($r) =>
-                str_contains(strtolower($r->kode_bahan), $s) ||
-                str_contains(strtolower($r->nama_bahan ?? ''), $s)
-            )->values();
-        }
-
-        $stats = [
-            'total_kode'    => $grouped->count(),
-            'total_yard'    => (float) $grouped->sum('total_yard'),
-            'total_nilai'   => (float) $grouped->sum('total_nilai'),
-            'total_transaksi' => (int) $grouped->sum('jumlah_transaksi'),
-        ];
-
-        $page    = max(1, (int) request('page', 1));
-        $perPage = 20;
-        $total   = $grouped->count();
-        $items   = $grouped->slice(($page - 1) * $perPage, $perPage)->values();
-        $data    = new \Illuminate\Pagination\LengthAwarePaginator(
-            $items, $total, $perPage, $page,
-            ['path' => request()->url(), 'query' => request()->query()]
-        );
+        // Daftar supplier unik untuk filter
+        $supplierOptions = SuratJalanGarmenItem::whereNotNull('supplier')
+            ->where('supplier', '!=', '')
+            ->select('supplier')
+            ->distinct()
+            ->orderBy('supplier')
+            ->pluck('supplier');
 
         return Inertia::render('StokBahanGarmen/Index', [
-            'data'   => $data,
-            'stats'  => $stats,
-            'search' => $search ?? '',
+            'data' => $query,
+            'namaBahanOptions' => $namaBahanOptions,
+            'supplierOptions' => $supplierOptions,
+            'filters' => [
+                'search' => $search,
+                'nama_bahan' => $namaBahan,
+                'supplier' => $supplier,
+            ],
         ]);
-    }
-
-    public function detail()
-    {
-        $kodeBahan = request('kode_bahan');
-        $rows = BahanKeluar::where('kode_bahan', $kodeBahan)
-            ->orderByDesc('tanggal')
-            ->get(['id', 'tanggal', 'no_surat_jalan', 'yard', 'rp_per_yard', 'total']);
-        return response()->json($rows);
     }
 }

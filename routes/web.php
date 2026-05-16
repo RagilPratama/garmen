@@ -35,6 +35,7 @@ use App\Http\Controllers\ImportProsesJualController;
 use App\Http\Controllers\BarcodeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\MasterBahanController;
+use App\Http\Controllers\SuratJalanGarmenController;
 use Illuminate\Support\Facades\Route;
 
 // Auth routes
@@ -59,6 +60,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('bahan-masuk', BahanMasukController::class)->except(['show']);
     Route::post('/bahan-masuk/{noNota}/pembayaran', [BahanMasukPembayaranController::class, 'store'])->name('bahan-masuk.pembayaran.store');
     Route::delete('/bahan-masuk/pembayaran/{pembayaran}', [BahanMasukPembayaranController::class, 'destroy'])->name('bahan-masuk.pembayaran.destroy');
+    Route::get('/bahan-keluar/detail', [BahanKeluarController::class, 'detail'])->name('bahan-keluar.detail');
     Route::resource('bahan-keluar', BahanKeluarController::class)->except(['show']);
     Route::post('/bahan-proses-potong/update-model', [BahanProsesPotongController::class, 'updateModel'])->name('bahan-proses-potong.update-model');
     Route::resource('bahan-proses-potong', BahanProsesPotongController::class)->except(['show']);
@@ -84,7 +86,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/penjualan-pembayaran/{pembayaran}', [PenjualanPembayaranController::class, 'destroy'])->name('penjualan-pembayaran.destroy');
     Route::get('/stok-bahan', [StokBahanController::class, 'index'])->name('stok-bahan.index');
     Route::get('/stok-bahan-garmen', [StokBahanGarmenController::class, 'index'])->name('stok-bahan-garmen.index');
-    Route::get('/stok-bahan-garmen/detail', [StokBahanGarmenController::class, 'detail'])->name('stok-bahan-garmen.detail');
     Route::get('/stok-barang', [StokBarangController::class, 'index'])->name('stok-barang.index');
     Route::put('/stok-barang', [StokBarangController::class, 'update'])->name('stok-barang.update');
     Route::get('/barcode', [BarcodeController::class, 'index'])->name('barcode.index');
@@ -95,6 +96,17 @@ Route::middleware('auth')->group(function () {
     Route::put('/barcode/{id}/price', [BarcodeController::class, 'updatePrice'])->name('barcode.updatePrice');
     Route::put('/barcode/{id}/complete', [BarcodeController::class, 'updateComplete'])->name('barcode.updateComplete');
     Route::get('/rincian-bahan', [RincianBahanController::class, 'index'])->name('rincian-bahan.index');
+
+    // Surat Jalan Gudang → Garmen
+    Route::get('/surat-jalan-garmen', [SuratJalanGarmenController::class, 'index'])->name('surat-jalan-garmen.index');
+    Route::get('/surat-jalan-garmen/create', [SuratJalanGarmenController::class, 'create'])->name('surat-jalan-garmen.create');
+    Route::post('/surat-jalan-garmen/scan', [SuratJalanGarmenController::class, 'scanBarcode'])->name('surat-jalan-garmen.scan');
+    Route::post('/surat-jalan-garmen', [SuratJalanGarmenController::class, 'store'])->name('surat-jalan-garmen.store');
+    Route::get('/surat-jalan-garmen/{id}', [SuratJalanGarmenController::class, 'show'])->name('surat-jalan-garmen.show');
+    Route::delete('/surat-jalan-garmen/{id}', [SuratJalanGarmenController::class, 'destroy'])->name('surat-jalan-garmen.destroy');
+    Route::delete('/surat-jalan-garmen/{id}/item/{itemId}', [SuratJalanGarmenController::class, 'removeItem'])->name('surat-jalan-garmen.remove-item');
+    Route::put('/surat-jalan-garmen/{id}/item/{itemId}/harga', [SuratJalanGarmenController::class, 'updateItemHarga'])->name('surat-jalan-garmen.update-item-harga');
+
     Route::get('/defect', [DefectController::class, 'index'])->name('defect.index');
     Route::get('/tracking-po', [TrackingPoController::class, 'index'])->name('tracking-po.index');
     Route::get('/barang-siap-kirim', [BarangSiapKirimController::class, 'index'])->name('barang-siap-kirim.index');

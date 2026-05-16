@@ -16,58 +16,34 @@ class BahanKeluarController extends Controller
 
     public function index()
     {
-        $search  = request('search');
-        $page    = max(1, (int) request('page', 1));
-        $perPage = 15;
+        $search = request('search');
 
-        // Step 1: Paginate group keys (no_surat_jalan) di database
-        $groupQuery = BahanKeluar::select('no_surat_jalan', \DB::raw('MIN(id) as first_id'))
-            ->when($search, fn($q) => $q->where(fn($q) => $q
-                ->where('kode_bahan',     'like', "%{$search}%")
-                ->orWhere('no_surat_jalan', 'like', "%{$search}%")
-            ))
-            ->groupBy('no_surat_jalan')
-            ->orderByDesc('first_id');
-
-        $total = $groupQuery->get()->count();
-        $groupKeys = $groupQuery->skip(($page - 1) * $perPage)->take($perPage)->pluck('no_surat_jalan');
-
-        // Step 2: Ambil rows hanya untuk group keys halaman ini
-        $rows = BahanKeluar::whereIn('no_surat_jalan', $groupKeys)->latest()->get();
-
-        $grouped = $rows
-            ->groupBy(fn($r) => $r->no_surat_jalan ?: 'id_'.$r->id)
-            ->map(fn($items) => [
-                'id'             => $items->first()->no_surat_jalan ?? (string) $items->first()->id,
-                'no_surat_jalan' => $items->first()->no_surat_jalan,
-                'tanggal'        => $items->first()->tanggal,
-                'grand_total'    => $items->sum('total'),
-                'items_count'    => $items->count(),
-                'items'          => $items->values()->map(fn($i) => [
-                    'id'          => $i->id,
-                    'kode_bahan'  => $i->kode_bahan,
-                    'yard'        => $i->yard,
-                    'rp_per_yard' => $i->rp_per_yard,
-                    'total'       => $i->total,
-                ])->toArray(),
-            ])
-            ->values();
-
-        $data = new \Illuminate\Pagination\LengthAwarePaginator(
-            $grouped,
-            $total,
-            $perPage,
-            $page,
-            ['path' => request()->url(), 'query' => request()->query()]
-        );
-
-        $stok = StokBahan::orderBy('kode_bahan')->where('sisa_stok', '>', 0)->get(['kode_bahan', 'sisa_stok']);
+        // Bahan keluar = surat jalan garmen (grouped by no surat jalan)
+        $data = \App\Models\SuratJalanGarmen::withCount('items')
+            ->withSum('items', 'quantity')
+            ->when($search, fn($q) => $q->where('no_surat_jalan', 'like', "%{$search}%"))
+            ->orderByDesc('tanggal')
+            ->paginate(20)
+            ->appends(request()->query());
 
         return Inertia::render('BahanKeluar/Index', [
-            'data'           => $data,
-            'stok'           => $stok,
-            'nextSuratJalan' => $this->nextSuratJalan(BahanKeluar::class, 'BK-'),
+            'data' => $data,
         ]);
+    }
+
+    public function detail()
+    {
+        $noSuratJalan = request('no_surat_jalan');
+
+        $suratJalan = \App\Models\SuratJalanGarmen::with('items')
+            ->where('no_surat_jalan', $noSuratJalan)
+            ->first();
+
+        if (!$suratJalan) {
+            return response()->json(['error' => 'Surat jalan tidak ditemukan'], 404);
+        }
+
+        return response()->json($suratJalan);
     }
 
     public function create()
@@ -195,7 +171,7 @@ class BahanKeluarController extends Controller
     private function validateStok(string $kodeBahan, float $yard): void
     {
         $stok = StokBahan::where('kode_bahan', $kodeBahan)->first();
-        $sisa = (float) ($stok?->sisa_stok ?? 0);
+        $sisa = (float) ($stok?->quantity ?? 0);
         if ($yard > $sisa) {
             throw ValidationException::withMessages([
                 'items' => "Stok tidak cukup untuk {$kodeBahan}. Sisa: {$sisa} yard.",
@@ -209,11 +185,10 @@ class BahanKeluarController extends Controller
             if ($delta == 0) continue;
             DB::statement("
                 UPDATE stok_bahan
-                SET total_keluar = GREATEST(0, total_keluar + ?),
-                    sisa_stok    = GREATEST(0, total_masuk - GREATEST(0, total_keluar + ?)),
-                    updated_at   = NOW()
+                SET quantity   = GREATEST(0, quantity - ?),
+                    updated_at = NOW()
                 WHERE kode_bahan = ?
-            ", [$delta, $delta, $kode]);
+            ", [$delta, $kode]);
         }
     }
 }

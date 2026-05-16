@@ -10,14 +10,10 @@ class StokBahan extends Model
 
     protected $fillable = [
         'kode_bahan',
-        'total_masuk',
-        'total_keluar',
-        'sisa_stok',
+        'quantity',
     ];
 
     protected $casts = [
-        'total_masuk' => 'float',
-        'total_keluar' => 'float',
-        'sisa_stok'   => 'float',
+        'quantity' => 'float',
     ];
 }

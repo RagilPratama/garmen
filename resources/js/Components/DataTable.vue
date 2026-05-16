@@ -49,6 +49,7 @@
                         </button>
                     </div>
                     <button
+                        v-if="!hideCreate"
                         @click="$emit('open-create')"
                         class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-orange-500 text-white text-sm font-medium rounded-xl transition-all shadow-sm hover:shadow-md whitespace-nowrap"
                     >
@@ -60,6 +61,9 @@
                 </div>
             </div>
 
+            <!-- Filters Slot -->
+            <slot name="filters" />
+
             <!-- Table -->
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
@@ -69,7 +73,7 @@
                             <th v-for="col in columns" :key="col.key" class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
                                 {{ col.label }}
                             </th>
-                            <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide w-28">Aksi</th>
+                            <th v-if="!hideActions" class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide w-28">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -115,44 +119,46 @@
                                     </template>
                                 </slot>
                             </td>
-                            <td class="px-5 py-3.5">
+                            <td v-if="!hideActions" class="px-5 py-3.5">
                                 <div class="flex items-center justify-center gap-1.5">
                                     <slot name="actions" :item="item" />
-                                    <button
-                                        @click="$emit('open-edit', item)"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-                                        title="Edit"
-                                    >
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                stroke-width="2"
-                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                            />
-                                        </svg>
-                                        Edit
-                                    </button>
-                                    <button
-                                        @click="confirmDelete(item.id)"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-                                        title="Hapus"
-                                    >
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                            />
-                                        </svg>
-                                        Hapus
-                                    </button>
+                                    <template v-if="!customActions">
+                                        <button
+                                            @click="$emit('open-edit', item)"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                                            title="Edit"
+                                        >
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                                />
+                                            </svg>
+                                            Edit
+                                        </button>
+                                        <button
+                                            @click="confirmDelete(item.id)"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                                            title="Hapus"
+                                        >
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                />
+                                            </svg>
+                                            Hapus
+                                        </button>
+                                    </template>
                                 </div>
                             </td>
                         </tr>
                         <tr v-if="!data?.data?.length">
-                            <td :colspan="columns.length + 2" class="px-4 py-16 text-center">
+                            <td :colspan="columns.length + (hideActions ? 1 : 2)" class="px-4 py-16 text-center">
                                 <div class="flex flex-col items-center gap-3">
                                     <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
                                         <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -227,6 +233,9 @@ const props = defineProps({
     data: Object,
     columns: Array,
     basePath: String,
+    hideCreate: { type: Boolean, default: false },
+    hideActions: { type: Boolean, default: false },
+    customActions: { type: Boolean, default: false },
 });
 
 defineEmits(['open-create', 'open-edit']);
