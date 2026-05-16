@@ -315,87 +315,44 @@ const printSelectedBarcodes = () => {
       <head>
         <title>Print Barcode - ${selectedBarcodes.value.length} items</title>
         <style>
-          @page {
-            size: 60mm 40mm;
-            margin: 0;
-          }
-          body { 
-            font-family: Arial, sans-serif; 
-            margin: 0;
-            padding: 0;
-          }
-          .barcode-page {
-            page-break-after: always;
-            padding: 3mm;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 40mm;
-          }
-          .barcode-page:last-child {
-            page-break-after: auto;
-          }
-          .barcode-sticker { 
-            text-align: center;
-            width: 100%;
-          }
-          .barcode-sticker svg {
-            max-width: 100%;
-            height: auto;
-          }
-          .info-text {
-            margin-top: 1mm;
-            font-size: 7pt;
-            line-height: 1.3;
-            color: #000;
-          }
-          .info-text .label {
-            font-weight: 600;
-          }
+          @page { size: 60mm 40mm; margin: 0; }
+          body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+          .barcode-page { width: 60mm; height: 40mm; display: flex; flex-direction: column; align-items: center; justify-content: center; page-break-after: always; padding: 2mm; box-sizing: border-box; }
+          .barcode-page:last-child { page-break-after: auto; }
+          .barcode-sticker { text-align: center; width: 100%; }
+          .barcode-sticker svg { max-width: 100%; height: auto; }
+          .info-text { margin-top: 1mm; font-size: 8pt; font-weight: 600; color: #000; }
         </style>
       </head>
       <body>
   `;
 
-    selectedBarcodes.value.forEach((barcode, index) => {
-        htmlContent += `
-      <div class="barcode-page">
-        <div class="barcode-sticker">
-          <svg id="barcode-${index}"></svg>
-          <div class="info-text">
-            <div><span class="label">Kode:</span> ${barcode.kode_bahan}</div>
-            <div><span class="label">Supplier:</span> ${barcode.supplier || '-'}</div>
-            <div><span class="label">Qty:</span> ${barcode.quantity || 0} ${barcode.satuan || 'yard'}</div>
+    let idx = 0;
+    selectedBarcodes.value.forEach((barcode) => {
+        for (let copy = 0; copy < 2; copy++) {
+            htmlContent += `
+        <div class="barcode-page">
+          <div class="barcode-sticker">
+            <svg id="barcode-${idx}"></svg>
+            <div class="info-text">${barcode.kode_bahan}</div>
           </div>
         </div>
-      </div>
-    `;
+      `;
+            idx++;
+        }
     });
 
-    htmlContent += `
-        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
-        <script>
-  `;
+    htmlContent += `<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script><script>`;
 
-    selectedBarcodes.value.forEach((barcode, index) => {
-        htmlContent += `
-          JsBarcode("#barcode-${index}", "${barcode.barcode_code}", {
-            format: "CODE128",
-            width: 2,
-            height: 40,
-            displayValue: false,
-            margin: 0
-          });
-    `;
+    idx = 0;
+    selectedBarcodes.value.forEach((barcode) => {
+        for (let copy = 0; copy < 2; copy++) {
+            htmlContent += `JsBarcode("#barcode-${idx}", "${barcode.barcode_code}", { format: "CODE128", width: 2, height: 40, displayValue: false, margin: 0 });\n`;
+            idx++;
+        }
     });
 
-    htmlContent += `
-          setTimeout(() => window.print(), 500);
-        <\/script>
-      </body>
-    </html>
-  `;
+    htmlContent += `setTimeout(() => window.print(), 300);<\/script></body></html>`;
 
     printWindow.document.write(htmlContent);
     printWindow.document.close();
@@ -475,50 +432,32 @@ const printBarcode = (barcode) => {
       <head>
         <title>Print Barcode - ${barcode.barcode_code}</title>
         <style>
-          @page {
-            size: 60mm 40mm;
-            margin: 0;
-          }
-          body { 
-            font-family: Arial, sans-serif; 
-            margin: 0;
-            padding: 3mm;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 40mm;
-          }
-          .barcode-sticker { 
-            text-align: center;
-            width: 100%;
-          }
-          .barcode-sticker svg {
-            max-width: 100%;
-            height: auto;
-          }
-          .kode-text {
-            margin-top: 2mm;
-            font-size: 10pt;
-            font-weight: 600;
-            color: #000;
-          }
+          @page { size: 60mm 40mm; margin: 0; }
+          body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+          .barcode-page { width: 60mm; height: 40mm; display: flex; flex-direction: column; align-items: center; justify-content: center; page-break-after: always; padding: 2mm; box-sizing: border-box; }
+          .barcode-page:last-child { page-break-after: auto; }
+          .barcode-sticker { text-align: center; width: 100%; }
+          .barcode-sticker svg { max-width: 100%; height: auto; }
+          .info-text { margin-top: 1mm; font-size: 8pt; font-weight: 600; color: #000; }
         </style>
       </head>
       <body>
-        <div class="barcode-sticker">
-          <svg id="barcode"></svg>
-          <div class="kode-text">${barcode.kode_bahan}</div>
+        <div class="barcode-page">
+          <div class="barcode-sticker">
+            <svg id="barcode1"></svg>
+            <div class="info-text">${barcode.kode_bahan}</div>
+          </div>
+        </div>
+        <div class="barcode-page">
+          <div class="barcode-sticker">
+            <svg id="barcode2"></svg>
+            <div class="info-text">${barcode.kode_bahan}</div>
+          </div>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
         <script>
-          JsBarcode("#barcode", "${barcode.barcode_code}", {
-            format: "CODE128",
-            width: 2,
-            height: 50,
-            displayValue: false,
-            margin: 0
-          });
+          JsBarcode("#barcode1", "${barcode.barcode_code}", { format: "CODE128", width: 2, height: 40, displayValue: false, margin: 0 });
+          JsBarcode("#barcode2", "${barcode.barcode_code}", { format: "CODE128", width: 2, height: 40, displayValue: false, margin: 0 });
           setTimeout(() => window.print(), 100);
         <\/script>
       </body>
