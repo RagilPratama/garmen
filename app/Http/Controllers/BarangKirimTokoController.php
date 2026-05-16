@@ -15,14 +15,25 @@ class BarangKirimTokoController extends Controller
     public function index()
     {
         $search = request('search');
-        $allRows = BarangKirimToko::with('toko')
-            ->latest()
+        $page    = (int) request('page', 1);
+        $perPage = 15;
+
+        // Step 1: Paginate group keys (no_surat_jalan) di database
+        $groupQuery = BarangKirimToko::select('no_surat_jalan', \DB::raw('MAX(tanggal_kirim) as max_tanggal'))
             ->when($search, fn($q) => $q->where(fn($q) => $q
                 ->where('model', 'like', "%{$search}%")
                 ->orWhere('no_surat_jalan', 'like', "%{$search}%")
-            ))->get();
+            ))
+            ->groupBy('no_surat_jalan')
+            ->orderByDesc('max_tanggal');
 
-        $grouped = $allRows->groupBy('no_surat_jalan')->map(function ($rows, $sj) {
+        $total = $groupQuery->get()->count();
+        $groupKeys = $groupQuery->skip(($page - 1) * $perPage)->take($perPage)->pluck('no_surat_jalan');
+
+        // Step 2: Ambil rows hanya untuk group keys halaman ini
+        $pageRows = BarangKirimToko::with('toko')->whereIn('no_surat_jalan', $groupKeys)->latest()->get();
+
+        $grouped = $pageRows->groupBy('no_surat_jalan')->map(function ($rows, $sj) {
             return [
                 'no_surat_jalan' => $sj,
                 'tanggal_kirim'  => $rows->min('tanggal_kirim'),
@@ -38,12 +49,8 @@ class BarangKirimTokoController extends Controller
             ];
         })->sortByDesc('tanggal_kirim')->values();
 
-        $page    = (int) request('page', 1);
-        $perPage = 15;
-        $total   = $grouped->count();
-        $items   = $grouped->slice(($page - 1) * $perPage, $perPage)->values();
-        $data    = new \Illuminate\Pagination\LengthAwarePaginator(
-            $items, $total, $perPage, $page,
+        $data = new \Illuminate\Pagination\LengthAwarePaginator(
+            $grouped, $total, $perPage, $page,
             ['path' => request()->url(), 'query' => request()->query()]
         );
 

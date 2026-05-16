@@ -19,24 +19,30 @@ class ProsesJualController extends Controller
     {
         $user = auth()->user();
         $search  = request('search');
+        $page    = (int) request('page', 1);
+        $perPage = 15;
         
-        // Filter berdasarkan role user
-        $query = ProsesJual::with('toko')->latest();
-        
-        if ($user->isTokoJomei() || $user->isTokoKamiko()) {
-            // User toko hanya lihat data toko mereka
-            $query->where('toko_id', $user->toko_id);
-        }
-        
-        $allRows = $query->when($search, fn($q) => $q->where(fn($q) => $q
+        // Step 1: Paginate group keys (no_nota) di database
+        $groupQuery = ProsesJual::select('no_nota', \DB::raw('MAX(tanggal_nota) as max_tanggal'))
+            ->when($user->isTokoJomei() || $user->isTokoKamiko(), fn($q) => $q->where('toko_id', $user->toko_id))
+            ->when($search, fn($q) => $q->where(fn($q) => $q
                 ->where('buyer', 'like', "%{$search}%")
                 ->orWhere('model', 'like', "%{$search}%")
                 ->orWhere('no_nota', 'like', "%{$search}%")
                 ->orWhere('status', 'like', "%{$search}%")
-            ))->get();
+            ))
+            ->groupBy('no_nota')
+            ->orderByDesc('max_tanggal');
 
-        // Load pembayaran per no_nota
+        $total = $groupQuery->get()->count();
+        $groupKeys = $groupQuery->skip(($page - 1) * $perPage)->take($perPage)->pluck('no_nota');
+
+        // Step 2: Ambil rows hanya untuk group keys halaman ini
+        $allRows = ProsesJual::with('toko')->whereIn('no_nota', $groupKeys)->latest()->get();
+
+        // Step 3: Load pembayaran hanya untuk nota di halaman ini
         $pembayaranMap = PenjualanPembayaran::where('channel', 'toko')
+            ->whereIn('no_nota', $groupKeys)
             ->get()
             ->groupBy('no_nota');
 
@@ -69,12 +75,8 @@ class ProsesJualController extends Controller
             ];
         })->sortByDesc('tanggal_nota')->values();
 
-        $page    = (int) request('page', 1);
-        $perPage = 15;
-        $total   = $grouped->count();
-        $items   = $grouped->slice(($page - 1) * $perPage, $perPage)->values();
-        $data    = new \Illuminate\Pagination\LengthAwarePaginator(
-            $items, $total, $perPage, $page,
+        $data = new \Illuminate\Pagination\LengthAwarePaginator(
+            $grouped, $total, $perPage, $page,
             ['path' => request()->url(), 'query' => request()->query()]
         );
 

@@ -25,10 +25,16 @@ class BarcodeController extends Controller
                 // Get unique kode_bahan with latest data
                 return $items->unique('kode_bahan')->values();
             });
+
+        // Get barcode yang belum lengkap (belum diisi harga/supplier)
+        $belumLengkap = BarcodeBahan::where('harga_sudah_diisi', false)
+            ->orderBy('created_at', 'desc')
+            ->get();
         
         return Inertia::render('Barcode/Index', [
             'suppliers' => $suppliers,
-            'bahanHistory' => $bahanHistory
+            'bahanHistory' => $bahanHistory,
+            'belumLengkap' => $belumLengkap
         ]);
     }
 

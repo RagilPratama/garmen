@@ -11,14 +11,25 @@ class ProsesJahitController extends Controller
     public function index()
     {
         $search = request('search');
+        $page    = (int) request('page', 1);
+        $perPage = 15;
 
-        $allRows = ProsesJahit::latest()
+        // Step 1: Paginate group keys (po) di database
+        $groupQuery = ProsesJahit::select('po', \DB::raw('MIN(tanggal_jahit) as min_tanggal'))
             ->when($search, fn($q) => $q->where(fn($q) => $q
                 ->where('po', 'like', "%{$search}%")
                 ->orWhere('model', 'like', "%{$search}%")
-            ))->get();
+            ))
+            ->groupBy('po')
+            ->orderByDesc('min_tanggal');
 
-        $grouped = $allRows->groupBy('po')->map(function ($rows, $po) {
+        $total = $groupQuery->get()->count();
+        $groupKeys = $groupQuery->skip(($page - 1) * $perPage)->take($perPage)->pluck('po');
+
+        // Step 2: Ambil rows hanya untuk group keys halaman ini
+        $pageRows = ProsesJahit::whereIn('po', $groupKeys)->latest()->get();
+
+        $grouped = $pageRows->groupBy('po')->map(function ($rows, $po) {
             $totalHasil = $rows->sum(fn($r) => (int)($r->pcs_hasil_jahit ?? 0));
             $models = $rows->map(fn($r) => [
                 'id'                    => $r->id,
@@ -36,14 +47,12 @@ class ProsesJahitController extends Controller
             ];
         })->sortByDesc('tanggal_jahit')->values();
 
-        $page    = (int) request('page', 1);
-        $perPage = 15;
-        $total   = $grouped->count();
-        $items   = $grouped->slice(($page - 1) * $perPage, $perPage)->values();
-        $data    = new \Illuminate\Pagination\LengthAwarePaginator(
-            $items, $total, $perPage, $page,
+        $data = new \Illuminate\Pagination\LengthAwarePaginator(
+            $grouped, $total, $perPage, $page,
             ['path' => request()->url(), 'query' => request()->query()]
         );
+
+        // Gunakan pluck langsung untuk cek existing (lebih ringan dari get semua kolom)
         $alreadyJahit = ProsesJahit::select('po', 'model')->get()
             ->map(fn($r) => $r->po . '|||' . $r->model)->toArray();
         $poOptions = BahanProsesPotong::selectRaw("po, model, SUM(hasil_potongan) as max_pcs")

@@ -212,7 +212,7 @@
                                             :href="`/barcode/scan?code=${barcode.barcode_code}`"
                                             class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-medium rounded transition"
                                         >
-                                            Input Harga
+                                            Lengkapi Data
                                         </a>
                                         <button @click="printBarcode(barcode)" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-medium rounded transition">Print</button>
                                     </div>

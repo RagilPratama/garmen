@@ -19,14 +19,22 @@ class BahanMasukController extends Controller
         $page    = max(1, (int) request('page', 1));
         $perPage = 15;
 
-        $rows = BahanMasuk::latest()
+        // Step 1: Paginate group keys (no_nota) di database
+        $groupQuery = BahanMasuk::select('no_nota', \DB::raw('MIN(id) as first_id'))
             ->when($search, fn($q) => $q->where(fn($q) => $q
                 ->where('supplier',        'like', "%{$search}%")
                 ->orWhere('kode_bahan',    'like', "%{$search}%")
                 ->orWhere('no_nota',       'like', "%{$search}%")
                 ->orWhere('no_surat_jalan','like', "%{$search}%")
             ))
-            ->get();
+            ->groupBy('no_nota')
+            ->orderByDesc('first_id');
+
+        $total = $groupQuery->get()->count();
+        $groupKeys = $groupQuery->skip(($page - 1) * $perPage)->take($perPage)->pluck('no_nota');
+
+        // Step 2: Ambil rows hanya untuk group keys halaman ini
+        $rows = BahanMasuk::whereIn('no_nota', $groupKeys)->latest()->get();
 
         $grouped = $rows
             ->groupBy(fn($r) => $r->no_nota ?: 'id_'.$r->id)
@@ -49,14 +57,14 @@ class BahanMasukController extends Controller
             ])
             ->values();
 
-        $pageItems   = $grouped->forPage($page, $perPage)->values();
-        $noNotaList  = $pageItems->pluck('no_nota')->filter()->values()->toArray();
+        // Step 3: Load pembayaran hanya untuk halaman ini
+        $noNotaList  = $grouped->pluck('no_nota')->filter()->values()->toArray();
         $payments    = BahanMasukPembayaran::whereIn('no_nota', $noNotaList)
             ->orderBy('tanggal_bayar')
             ->get()
             ->groupBy('no_nota');
 
-        $pageItems = $pageItems->map(function ($nota) use ($payments) {
+        $pageItems = $grouped->map(function ($nota) use ($payments) {
             $pays         = $payments->get($nota['no_nota'], collect());
             $totalDibayar = (float) $pays->sum('jumlah');
             return array_merge($nota, [
@@ -75,7 +83,7 @@ class BahanMasukController extends Controller
 
         $data = new \Illuminate\Pagination\LengthAwarePaginator(
             $pageItems,
-            $grouped->count(),
+            $total,
             $perPage,
             $page,
             ['path' => request()->url(), 'query' => request()->query()]

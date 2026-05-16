@@ -29,13 +29,16 @@ class LaporanHppController extends Controller
                   ->orWhere('bahan_proses_potong.model', 'like', "%$search%");
             });
 
-        $results = $query->get()->map(function($item) {
-            // Cari harga bahan per yard dari tabel BahanKeluar (ambil rata-rata atau terbaru)
-            // Di sistem ini kita asumsikan harga bahan diambil dari BahanKeluar yang sesuai kode_bahan
-            $hargaBahan = BahanKeluar::where('kode_bahan', $item->kode_bahan)
-                ->orderBy('tanggal', 'desc')
-                ->first();
-            
+        // Pre-load semua harga bahan sekaligus (fix N+1)
+        $allKodeBahan = (clone $query)->distinct()->pluck('bahan_proses_potong.kode_bahan');
+        $hargaBahanMap = BahanKeluar::whereIn('kode_bahan', $allKodeBahan)
+            ->orderBy('tanggal', 'desc')
+            ->get()
+            ->unique('kode_bahan')
+            ->keyBy('kode_bahan');
+
+        $results = $query->get()->map(function($item) use ($hargaBahanMap) {
+            $hargaBahan = $hargaBahanMap->get($item->kode_bahan);
             $rpPerYard = $hargaBahan ? (float) $hargaBahan->rp_per_yard : 0;
             
             $totalBiayaBahan = $item->yard_pakai * $rpPerYard;

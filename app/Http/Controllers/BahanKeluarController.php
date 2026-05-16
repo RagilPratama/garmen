@@ -20,12 +20,20 @@ class BahanKeluarController extends Controller
         $page    = max(1, (int) request('page', 1));
         $perPage = 15;
 
-        $rows = BahanKeluar::latest()
+        // Step 1: Paginate group keys (no_surat_jalan) di database
+        $groupQuery = BahanKeluar::select('no_surat_jalan', \DB::raw('MIN(id) as first_id'))
             ->when($search, fn($q) => $q->where(fn($q) => $q
                 ->where('kode_bahan',     'like', "%{$search}%")
                 ->orWhere('no_surat_jalan', 'like', "%{$search}%")
             ))
-            ->get();
+            ->groupBy('no_surat_jalan')
+            ->orderByDesc('first_id');
+
+        $total = $groupQuery->get()->count();
+        $groupKeys = $groupQuery->skip(($page - 1) * $perPage)->take($perPage)->pluck('no_surat_jalan');
+
+        // Step 2: Ambil rows hanya untuk group keys halaman ini
+        $rows = BahanKeluar::whereIn('no_surat_jalan', $groupKeys)->latest()->get();
 
         $grouped = $rows
             ->groupBy(fn($r) => $r->no_surat_jalan ?: 'id_'.$r->id)
@@ -45,11 +53,9 @@ class BahanKeluarController extends Controller
             ])
             ->values();
 
-        $pageItems = $grouped->forPage($page, $perPage)->values();
-
         $data = new \Illuminate\Pagination\LengthAwarePaginator(
-            $pageItems,
-            $grouped->count(),
+            $grouped,
+            $total,
             $perPage,
             $page,
             ['path' => request()->url(), 'query' => request()->query()]

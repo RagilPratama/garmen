@@ -13,13 +13,25 @@ class BarangMasukKantorController extends Controller
     public function index()
     {
         $search = request('search');
-        $allRows = BarangMasukKantor::latest()
+        $page    = (int) request('page', 1);
+        $perPage = 15;
+
+        // Step 1: Paginate group keys (no_surat_jalan) di database
+        $groupQuery = BarangMasukKantor::select('no_surat_jalan', \DB::raw('MAX(tanggal_kirim) as max_tanggal'))
             ->when($search, fn($q) => $q->where(fn($q) => $q
                 ->orWhere('model', 'like', "%{$search}%")
                 ->orWhere('no_surat_jalan', 'like', "%{$search}%")
-            ))->get();
+            ))
+            ->groupBy('no_surat_jalan')
+            ->orderByDesc('max_tanggal');
 
-        $grouped = $allRows->groupBy('no_surat_jalan')->map(function ($rows, $noSuratJalan) {
+        $total = $groupQuery->get()->count();
+        $groupKeys = $groupQuery->skip(($page - 1) * $perPage)->take($perPage)->pluck('no_surat_jalan');
+
+        // Step 2: Ambil rows hanya untuk group keys halaman ini
+        $pageRows = BarangMasukKantor::whereIn('no_surat_jalan', $groupKeys)->latest()->get();
+
+        $grouped = $pageRows->groupBy('no_surat_jalan')->map(function ($rows, $noSuratJalan) {
             $models = $rows->map(fn($r) => [
                 'id'              => $r->id,
                 'model'           => $r->model,
@@ -34,27 +46,21 @@ class BarangMasukKantorController extends Controller
             ];
         })->sortByDesc('tanggal_kirim')->values();
 
-        $page    = (int) request('page', 1);
-        $perPage = 15;
-        $total   = $grouped->count();
-        $items   = $grouped->slice(($page - 1) * $perPage, $perPage)->values();
-        $data    = new \Illuminate\Pagination\LengthAwarePaginator(
-            $items, $total, $perPage, $page,
+        $data = new \Illuminate\Pagination\LengthAwarePaginator(
+            $grouped, $total, $perPage, $page,
             ['path' => request()->url(), 'query' => request()->query()]
         );
 
-        // Derive sums from already-loaded $allRows — no extra DB query needed
-        $kantorSums = $allRows->groupBy('model')
-            ->map(fn($rows) => $rows->sum(fn($r) => (int) $r->pcs_barang_jadi));
+        // Hitung stok kantor dari aggregation (ringan karena sudah GROUP BY)
+        $kantorSums = BarangMasukKantor::selectRaw('model, SUM(pcs_barang_jadi) as total')
+            ->groupBy('model')->pluck('total', 'model');
 
         // Stok yang tersedia untuk masuk kantor = finishing - yang sudah masuk kantor
-        // TIDAK dikurangi kirim toko karena kirim toko itu dari stok kantor
         $modelOptions = ProsesFinishing::selectRaw("model, SUM(pcs_barang_jadi) as max_pcs, MAX(harga_satuan) as harga_satuan")
             ->whereNotNull('pcs_barang_jadi')->where('pcs_barang_jadi', '>', 0)
-            ->whereNotNull('tanggal_selesai') // Hanya yang sudah selesai
+            ->whereNotNull('tanggal_selesai')
             ->groupBy('model')->orderBy('model')->get()
             ->map(function ($r) use ($kantorSums) {
-                // Kurangi hanya dengan yang sudah masuk kantor
                 $r->max_pcs = (int) $r->max_pcs - ($kantorSums[$r->model] ?? 0);
                 return $r;
             })

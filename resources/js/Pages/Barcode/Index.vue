@@ -36,30 +36,6 @@
                     <h2 class="text-xl font-bold text-gray-800 mb-2">Generate Barcode Otomatis</h2>
                     <p class="text-sm text-gray-600 mb-6">Klik tombol di bawah untuk generate barcode dengan kode unik</p>
 
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 max-w-md mx-auto">
-                        <div class="flex items-start gap-2 text-left">
-                            <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <div class="text-xs text-blue-800">
-                                <p class="font-semibold mb-1">Workflow Barcode:</p>
-                                <ol class="list-decimal pl-4 space-y-0.5">
-                                    <li>Klik "Generate Barcode" → kode otomatis dibuat (A0001, A0002, ...)</li>
-                                    <li>Print sticker barcode</li>
-                                    <li>
-                                        Saat pengiriman ke garmen:
-                                        <strong>scan barcode</strong>
-                                        → input supplier, nama bahan, yard, harga
-                                    </li>
-                                </ol>
-                                <div class="mt-2 p-2 bg-blue-100 rounded">
-                                    <p class="font-semibold">Format Kode:</p>
-                                    <p>A0001 → A9999 → B0001 → B9999 → ... → Z9999</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Batch Quantity Input -->
                     <div class="max-w-xs mx-auto mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Jumlah Barcode yang Akan Di-generate</label>
@@ -100,8 +76,10 @@
             <!-- Generated Barcodes -->
             <div v-if="barcodes.length > 0" class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-base font-semibold text-gray-800">Barcode yang Sudah Dibuat ({{ barcodes.length }})</h2>
-                    <button @click="clearAll" class="text-sm text-red-600 hover:text-red-700 font-medium">Hapus Semua</button>
+                    <div>
+                        <h2 class="text-base font-semibold text-gray-800">Barcode Belum Lengkap ({{ barcodes.length }})</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Barcode yang belum diisi supplier & harga. Scan barcode untuk melengkapi data.</p>
+                    </div>
                 </div>
 
                 <!-- Barcode Grid -->
@@ -188,6 +166,7 @@ const getCsrfToken = () => {
 const props = defineProps({
     suppliers: Array,
     bahanHistory: Object,
+    belumLengkap: Array,
 });
 
 const savedItems = ref([]); // Not used anymore but keep for compatibility
@@ -199,6 +178,18 @@ const form = ref({
     code: '',
     kodeBahan: '',
     date: new Date().toISOString().split('T')[0],
+});
+
+// Load barcode yang belum lengkap dari database saat halaman dimuat
+onMounted(() => {
+    if (props.belumLengkap && props.belumLengkap.length > 0) {
+        barcodes.value = props.belumLengkap.map((item) => ({
+            id: item.id,
+            code: item.barcode_code,
+            kodeBahan: item.kode_bahan,
+            date: item.tanggal,
+        }));
+    }
 });
 
 const generateBarcodes = async () => {
@@ -251,6 +242,7 @@ const generateBarcodes = async () => {
 
             if (result.success) {
                 barcodes.value.push({
+                    id: result.data.id,
                     code: result.data.kode_bahan,
                     kodeBahan: result.data.kode_bahan,
                     date: form.value.date,
@@ -344,30 +336,6 @@ const generateBarcodeImage = (element, code) => {
 
 const removeBarcode = (index) => {
     barcodes.value.splice(index, 1);
-};
-
-const clearAll = () => {
-    Swal.fire({
-        icon: 'warning',
-        title: 'Hapus Semua Barcode?',
-        text: 'Semua barcode yang sudah dibuat akan dihapus',
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Ya, Hapus!',
-        cancelButtonText: 'Batal',
-    }).then((result) => {
-        if (result.isConfirmed) {
-            barcodes.value = [];
-            Swal.fire({
-                icon: 'success',
-                title: 'Terhapus!',
-                text: 'Semua barcode berhasil dihapus',
-                timer: 1500,
-                showConfirmButton: false,
-            });
-        }
-    });
 };
 
 const resetForm = () => {

@@ -14,14 +14,26 @@ class ProsesCuciController extends Controller
     public function index()
     {
         $search = request('search');
-        $allRows = ProsesCuci::latest()
+        $page    = (int) request('page', 1);
+        $perPage = 15;
+
+        // Step 1: Paginate group keys (po) di database
+        $groupQuery = ProsesCuci::select('po', \DB::raw('MIN(tanggal_kirim_cuci) as min_tanggal'))
             ->when($search, fn($q) => $q->where(fn($q) => $q
                 ->where('po', 'like', "%{$search}%")
                 ->orWhere('model', 'like', "%{$search}%")
                 ->orWhere('no_surat_jalan', 'like', "%{$search}%")
-            ))->get();
+            ))
+            ->groupBy('po')
+            ->orderByDesc('min_tanggal');
 
-        $grouped = $allRows->groupBy('po')->map(function ($rows, $po) {
+        $total = $groupQuery->get()->count();
+        $groupKeys = $groupQuery->skip(($page - 1) * $perPage)->take($perPage)->pluck('po');
+
+        // Step 2: Ambil rows hanya untuk group keys halaman ini
+        $pageRows = ProsesCuci::whereIn('po', $groupKeys)->latest()->get();
+
+        $grouped = $pageRows->groupBy('po')->map(function ($rows, $po) {
             $models = $rows->map(fn($r) => [
                 'id'                       => $r->id,
                 'model'                    => $r->model,
@@ -40,12 +52,8 @@ class ProsesCuciController extends Controller
             ];
         })->sortByDesc('tanggal_kirim_cuci')->values();
 
-        $page    = (int) request('page', 1);
-        $perPage = 15;
-        $total   = $grouped->count();
-        $items   = $grouped->slice(($page - 1) * $perPage, $perPage)->values();
-        $data    = new \Illuminate\Pagination\LengthAwarePaginator(
-            $items, $total, $perPage, $page,
+        $data = new \Illuminate\Pagination\LengthAwarePaginator(
+            $grouped, $total, $perPage, $page,
             ['path' => request()->url(), 'query' => request()->query()]
         );
 
