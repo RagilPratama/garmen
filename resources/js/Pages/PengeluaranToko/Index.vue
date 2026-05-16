@@ -3,47 +3,29 @@
         <div class="space-y-5">
             <!-- Summary Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div
-                    class="bg-gradient-to-br from-red-400 to-red-500 rounded-xl p-5 text-white shadow-md"
-                >
-                    <p
-                        class="text-xs font-medium uppercase tracking-wide opacity-80"
-                    >
-                        Total Pengeluaran
-                    </p>
+                <div class="bg-gradient-to-br from-red-400 to-red-500 rounded-xl p-5 text-white shadow-md">
+                    <p class="text-xs font-medium uppercase tracking-wide opacity-80">Total Pengeluaran</p>
                     <p class="text-2xl font-bold mt-1">
                         {{ formatRupiah(totalPengeluaran) }}
                     </p>
                     <p class="text-xs opacity-70 mt-1">All time</p>
                 </div>
-                <div
-                    class="bg-gradient-to-br from-orange-400 to-orange-500 rounded-xl p-5 text-white shadow-md"
-                >
-                    <p
-                        class="text-xs font-medium uppercase tracking-wide opacity-80"
-                    >
-                        Pengeluaran Bulan Ini
-                    </p>
+                <div class="bg-gradient-to-br from-orange-400 to-orange-500 rounded-xl p-5 text-white shadow-md">
+                    <p class="text-xs font-medium uppercase tracking-wide opacity-80">Pengeluaran Bulan Ini</p>
                     <p class="text-2xl font-bold mt-1">
                         {{ formatRupiah(pengeluaranBulanIni) }}
                     </p>
                     <p class="text-xs opacity-70 mt-1">
                         {{
-                            new Date().toLocaleDateString("id-ID", {
-                                month: "long",
-                                year: "numeric",
+                            new Date().toLocaleDateString('id-ID', {
+                                month: 'long',
+                                year: 'numeric',
                             })
                         }}
                     </p>
                 </div>
-                <div
-                    class="bg-gradient-to-br from-violet-400 to-violet-500 rounded-xl p-5 text-white shadow-md"
-                >
-                    <p
-                        class="text-xs font-medium uppercase tracking-wide opacity-80"
-                    >
-                        Rata-rata per Bulan
-                    </p>
+                <div class="bg-gradient-to-br from-violet-400 to-violet-500 rounded-xl p-5 text-white shadow-md">
+                    <p class="text-xs font-medium uppercase tracking-wide opacity-80">Rata-rata per Bulan</p>
                     <p class="text-2xl font-bold mt-1">
                         {{ formatRupiah(totalPengeluaran / 12) }}
                     </p>
@@ -52,27 +34,14 @@
             </div>
 
             <!-- Main Card -->
-            <div
-                class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
-            >
-                <div
-                    class="h-1 bg-gradient-to-r from-red-400 via-orange-500 to-red-400"
-                ></div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="h-1 bg-gradient-to-r from-red-400 via-orange-500 to-red-400"></div>
 
                 <!-- Header -->
-                <div
-                    class="px-6 py-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                >
+                <div class="px-6 py-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div class="flex items-center gap-3">
-                        <div
-                            class="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center"
-                        >
-                            <svg
-                                class="w-5 h-5 text-red-500"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
+                        <div class="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center">
+                            <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
@@ -82,28 +51,14 @@
                             </svg>
                         </div>
                         <div>
-                            <h2 class="text-base font-semibold text-gray-800">
-                                Pengeluaran Toko
-                            </h2>
-                            <p class="text-xs text-gray-400 mt-0.5">
-                                {{ data?.total ?? 0 }} Transaksi
-                            </p>
+                            <h2 class="text-base font-semibold text-gray-800">Pengeluaran Toko</h2>
+                            <p class="text-xs text-gray-400 mt-0.5">{{ data?.total ?? 0 }} Transaksi</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
                         <div class="relative">
-                            <svg
-                                class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"
-                                />
+                            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0" />
                             </svg>
                             <input
                                 v-model="searchQuery"
@@ -116,18 +71,8 @@
                                 @click="searchQuery = ''"
                                 class="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full bg-gray-300 hover:bg-gray-400 transition-colors"
                             >
-                                <svg
-                                    class="w-2.5 h-2.5 text-white"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="3"
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
+                                <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
@@ -135,18 +80,8 @@
                             @click="openCreate"
                             class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white text-sm font-medium rounded-xl transition-all shadow-sm hover:shadow-md whitespace-nowrap"
                         >
-                            <svg
-                                class="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2.5"
-                                    d="M12 4v16m8-8H4"
-                                />
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
                             </svg>
                             Tambah Pengeluaran
                         </button>
@@ -158,41 +93,13 @@
                     <table class="w-full text-sm">
                         <thead>
                             <tr class="bg-gray-50 border-b border-gray-100">
-                                <th
-                                    class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide w-12"
-                                >
-                                    No
-                                </th>
-                                <th
-                                    class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide"
-                                >
-                                    Tanggal
-                                </th>
-                                <th
-                                    class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide"
-                                >
-                                    Kategori
-                                </th>
-                                <th
-                                    class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide"
-                                >
-                                    Keterangan
-                                </th>
-                                <th
-                                    class="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide"
-                                >
-                                    Jumlah
-                                </th>
-                                <th
-                                    class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide"
-                                >
-                                    Metode
-                                </th>
-                                <th
-                                    class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide w-24"
-                                >
-                                    Aksi
-                                </th>
+                                <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide w-12">No</th>
+                                <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tanggal</th>
+                                <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Kategori</th>
+                                <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Keterangan</th>
+                                <th class="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Jumlah</th>
+                                <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Metode</th>
+                                <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide w-24">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -200,34 +107,18 @@
                                 v-for="(item, index) in data?.data"
                                 :key="item.id"
                                 class="border-b border-gray-50 hover:bg-red-50/40 transition-colors group"
-                                :class="
-                                    index % 2 === 0
-                                        ? 'bg-white'
-                                        : 'bg-gray-50/30'
-                                "
+                                :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'"
                             >
                                 <td class="px-5 py-3.5">
                                     <span
                                         class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-xs font-medium text-gray-500 group-hover:bg-red-100 group-hover:text-red-700 transition-colors"
                                     >
-                                        {{
-                                            (data.current_page - 1) *
-                                                data.per_page +
-                                            index +
-                                            1
-                                        }}
+                                        {{ (data.current_page - 1) * data.per_page + index + 1 }}
                                     </span>
                                 </td>
                                 <td class="px-5 py-3.5 text-gray-600">
-                                    <span
-                                        class="inline-flex items-center gap-1.5"
-                                    >
-                                        <svg
-                                            class="w-3.5 h-3.5 text-gray-400 shrink-0"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path
                                                 stroke-linecap="round"
                                                 stroke-linejoin="round"
@@ -239,19 +130,14 @@
                                     </span>
                                 </td>
                                 <td class="px-5 py-3.5">
-                                    <span
-                                        class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full"
-                                        :class="getKategoriClass(item.kategori)"
-                                    >
+                                    <span class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full" :class="getKategoriClass(item.kategori)">
                                         {{ item.kategori }}
                                     </span>
                                 </td>
                                 <td class="px-5 py-3.5 text-gray-700">
                                     {{ item.keterangan }}
                                 </td>
-                                <td
-                                    class="px-5 py-3.5 text-right font-semibold text-red-600"
-                                >
+                                <td class="px-5 py-3.5 text-right font-semibold text-red-600">
                                     {{ formatRupiah(item.jumlah) }}
                                 </td>
                                 <td class="px-5 py-3.5 text-center">
@@ -260,8 +146,7 @@
                                         :class="
                                             item.metode_bayar === 'cash'
                                                 ? 'bg-green-100 text-green-700'
-                                                : item.metode_bayar ===
-                                                    'transfer'
+                                                : item.metode_bayar === 'transfer'
                                                   ? 'bg-blue-100 text-blue-700'
                                                   : 'bg-purple-100 text-purple-700'
                                         "
@@ -270,19 +155,9 @@
                                     </span>
                                 </td>
                                 <td class="px-5 py-3.5 text-center">
-                                    <div
-                                        class="flex items-center justify-center gap-1.5"
-                                    >
-                                        <button
-                                            @click="openEdit(item)"
-                                            class="text-blue-400 hover:text-blue-600 transition"
-                                        >
-                                            <svg
-                                                class="w-4 h-4"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <button @click="openEdit(item)" class="text-blue-400 hover:text-blue-600 transition">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path
                                                     stroke-linecap="round"
                                                     stroke-linejoin="round"
@@ -291,16 +166,8 @@
                                                 />
                                             </svg>
                                         </button>
-                                        <button
-                                            @click="confirmDelete(item.id)"
-                                            class="text-red-400 hover:text-red-600 transition"
-                                        >
-                                            <svg
-                                                class="w-4 h-4"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
+                                        <button @click="confirmDelete(item.id)" class="text-red-400 hover:text-red-600 transition">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path
                                                     stroke-linecap="round"
                                                     stroke-linejoin="round"
@@ -314,18 +181,9 @@
                             </tr>
                             <tr v-if="!data?.data?.length">
                                 <td colspan="7" class="px-4 py-16 text-center">
-                                    <div
-                                        class="flex flex-col items-center gap-3"
-                                    >
-                                        <div
-                                            class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center"
-                                        >
-                                            <svg
-                                                class="w-8 h-8 text-gray-300"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
+                                    <div class="flex flex-col items-center gap-3">
+                                        <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
+                                            <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path
                                                     stroke-linecap="round"
                                                     stroke-linejoin="round"
@@ -334,14 +192,8 @@
                                                 />
                                             </svg>
                                         </div>
-                                        <p
-                                            class="text-sm font-medium text-gray-500"
-                                        >
-                                            {{
-                                                searchQuery
-                                                    ? "Data tidak ditemukan"
-                                                    : "Belum ada pengeluaran"
-                                            }}
+                                        <p class="text-sm font-medium text-gray-500">
+                                            {{ searchQuery ? 'Data tidak ditemukan' : 'Belum ada pengeluaran' }}
                                         </p>
                                     </div>
                                 </td>
@@ -351,30 +203,19 @@
                 </div>
 
                 <!-- Pagination -->
-                <div
-                    v-if="data?.last_page > 1"
-                    class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3"
-                >
+                <div v-if="data?.last_page > 1" class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
                     <p class="text-xs text-gray-500">
                         Menampilkan
-                        <span class="font-semibold text-gray-700"
-                            >{{ data.from }}–{{ data.to }}</span
-                        >
+                        <span class="font-semibold text-gray-700">{{ data.from }}–{{ data.to }}</span>
                         dari
-                        <span class="font-semibold text-gray-700">{{
-                            data.total
-                        }}</span>
+                        <span class="font-semibold text-gray-700">{{ data.total }}</span>
                         Transaksi
                     </p>
-                    <div
-                        class="flex items-center gap-1 flex-wrap justify-center"
-                    >
+                    <div class="flex items-center gap-1 flex-wrap justify-center">
                         <a
                             v-for="link in data.links"
                             :key="link.label"
-                            :href="
-                                link.url ? appendSearch(link.url) : undefined
-                            "
+                            :href="link.url ? appendSearch(link.url) : undefined"
                             @click.prevent="
                                 link.url &&
                                 router.visit(appendSearch(link.url), {
@@ -397,15 +238,13 @@
         </div>
 
         <!-- CREATE/EDIT MODAL -->
-        <Modal
-            v-model="showModal"
-            :title="editMode ? 'Edit Pengeluaran' : 'Tambah Pengeluaran'"
-        >
+        <Modal v-model="showModal" :title="editMode ? 'Edit Pengeluaran' : 'Tambah Pengeluaran'">
             <form @submit.prevent="submit" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"
-                        >Tanggal <span class="text-red-500">*</span></label
-                    >
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Tanggal
+                        <span class="text-red-500">*</span>
+                    </label>
                     <input
                         v-model="form.tanggal"
                         type="date"
@@ -414,9 +253,10 @@
                     />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"
-                        >Kategori <span class="text-red-500">*</span></label
-                    >
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Kategori
+                        <span class="text-red-500">*</span>
+                    </label>
                     <select
                         v-model="form.kategori"
                         required
@@ -434,9 +274,10 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"
-                        >Keterangan <span class="text-red-500">*</span></label
-                    >
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Keterangan
+                        <span class="text-red-500">*</span>
+                    </label>
                     <textarea
                         v-model="form.keterangan"
                         required
@@ -446,9 +287,10 @@
                     ></textarea>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"
-                        >Jumlah <span class="text-red-500">*</span></label
-                    >
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Jumlah
+                        <span class="text-red-500">*</span>
+                    </label>
                     <input
                         v-model.number="form.jumlah"
                         type="number"
@@ -460,84 +302,44 @@
                     />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"
-                        >Metode Bayar <span class="text-red-500">*</span></label
-                    >
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Metode Bayar
+                        <span class="text-red-500">*</span>
+                    </label>
                     <div class="flex gap-4 mt-2">
-                        <label
-                            v-for="m in ['cash', 'transfer', 'debit']"
-                            :key="m"
-                            class="flex items-center gap-2 cursor-pointer"
-                        >
-                            <input
-                                v-model="form.metode_bayar"
-                                type="radio"
-                                :value="m"
-                                class="text-red-500"
-                            />
-                            <span class="text-sm text-gray-700 capitalize">{{
-                                m
-                            }}</span>
+                        <label v-for="m in ['cash', 'transfer', 'debit']" :key="m" class="flex items-center gap-2 cursor-pointer">
+                            <input v-model="form.metode_bayar" type="radio" :value="m" class="text-red-500" />
+                            <span class="text-sm text-gray-700 capitalize">{{ m }}</span>
                         </label>
                     </div>
                 </div>
-                <div
-                    class="flex justify-end gap-3 pt-2 border-t border-gray-100"
-                >
-                    <button
-                        type="button"
-                        @click="showModal = false"
-                        class="px-5 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                        Batal
-                    </button>
+                <div class="flex justify-end gap-3 pt-2 border-t border-gray-100">
+                    <button type="button" @click="showModal = false" class="px-5 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Batal</button>
                     <button
                         type="submit"
                         :disabled="processing"
                         class="px-5 py-2.5 text-sm text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors disabled:opacity-60 flex items-center gap-2"
                     >
-                        <svg
-                            v-if="processing"
-                            class="animate-spin w-4 h-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                        >
-                            <circle
-                                class="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                stroke-width="4"
-                            />
-                            <path
-                                class="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                            />
+                        <svg v-if="processing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                         </svg>
-                        {{ editMode ? "Update" : "Simpan" }}
+                        {{ editMode ? 'Update' : 'Simpan' }}
                     </button>
                 </div>
             </form>
         </Modal>
 
-        <ConfirmDialog
-            v-model="showConfirm"
-            title="Hapus Pengeluaran?"
-            message="Tindakan ini tidak dapat dibatalkan."
-            :loading="deleteLoading"
-            @confirm="doDelete"
-        />
+        <ConfirmDialog v-model="showConfirm" title="Hapus Pengeluaran?" message="Tindakan ini tidak dapat dibatalkan." :loading="deleteLoading" @confirm="doDelete" />
     </AdminLayout>
 </template>
 
 <script setup>
-import { ref, watch } from "vue";
-import { router } from "@inertiajs/vue3";
-import AdminLayout from "@/Layouts/AdminLayout.vue";
-import Modal from "@/Components/Modal.vue";
-import ConfirmDialog from "@/Components/ConfirmDialog.vue";
+import { ref, watch } from 'vue';
+import { router } from '@inertiajs/vue3';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
+import Modal from '@/Components/Modal.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 
 const props = defineProps({
     data: Object,
@@ -550,52 +352,46 @@ const props = defineProps({
 
 const formatDate = (d) =>
     d
-        ? new Date(d).toLocaleDateString("id-ID", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
+        ? new Date(d).toLocaleDateString('id-ID', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
           })
-        : "—";
+        : '—';
 const formatRupiah = (val) =>
-    new Intl.NumberFormat("id-ID", {
-        style: "currency",
-        currency: "IDR",
+    new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
         minimumFractionDigits: 0,
     }).format(val ?? 0);
 
 const getKategoriClass = (kategori) => {
     const classes = {
-        plastik: "bg-blue-100 text-blue-700",
-        upah_tukang: "bg-green-100 text-green-700",
-        listrik: "bg-yellow-100 text-yellow-700",
-        air: "bg-cyan-100 text-cyan-700",
-        sewa: "bg-purple-100 text-purple-700",
-        transportasi: "bg-orange-100 text-orange-700",
-        perlengkapan: "bg-pink-100 text-pink-700",
-        lainnya: "bg-gray-100 text-gray-700",
+        plastik: 'bg-blue-100 text-blue-700',
+        upah_tukang: 'bg-green-100 text-green-700',
+        listrik: 'bg-yellow-100 text-yellow-700',
+        air: 'bg-cyan-100 text-cyan-700',
+        sewa: 'bg-purple-100 text-purple-700',
+        transportasi: 'bg-orange-100 text-orange-700',
+        perlengkapan: 'bg-pink-100 text-pink-700',
+        lainnya: 'bg-gray-100 text-gray-700',
     };
-    return classes[kategori] || "bg-gray-100 text-gray-700";
+    return classes[kategori] || 'bg-gray-100 text-gray-700';
 };
 
 // Search
-const searchQuery = ref(
-    new URLSearchParams(window.location.search).get("search") ?? "",
-);
+const searchQuery = ref(new URLSearchParams(window.location.search).get('search') ?? '');
 let searchTimer = null;
 watch(searchQuery, (val) => {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
-        router.get(
-            "/pengeluaran-toko",
-            { search: val || undefined },
-            { preserveState: true, replace: true },
-        );
+        router.get('/pengeluaran-toko', { search: val || undefined }, { preserveState: true, replace: true });
     }, 350);
 });
 const appendSearch = (url) => {
     if (!searchQuery.value) return url;
     const u = new URL(url, window.location.origin);
-    u.searchParams.set("search", searchQuery.value);
+    u.searchParams.set('search', searchQuery.value);
     return u.pathname + u.search;
 };
 
@@ -606,11 +402,11 @@ const editId = ref(null);
 const processing = ref(false);
 const form = ref({
     toko_id: props.userTokoId,
-    tanggal: "",
-    kategori: "",
-    keterangan: "",
-    jumlah: "",
-    metode_bayar: "cash",
+    tanggal: '',
+    kategori: '',
+    keterangan: '',
+    jumlah: '',
+    metode_bayar: 'cash',
 });
 
 const openCreate = () => {
@@ -619,10 +415,10 @@ const openCreate = () => {
     form.value = {
         toko_id: props.userTokoId,
         tanggal: new Date().toISOString().substring(0, 10),
-        kategori: "",
-        keterangan: "",
-        jumlah: "",
-        metode_bayar: "cash",
+        kategori: '',
+        keterangan: '',
+        jumlah: '',
+        metode_bayar: 'cash',
     };
     showModal.value = true;
 };
@@ -643,10 +439,8 @@ const openEdit = (item) => {
 
 const submit = () => {
     processing.value = true;
-    const url = editMode.value
-        ? `/pengeluaran-toko/${editId.value}`
-        : "/pengeluaran-toko";
-    const method = editMode.value ? "put" : "post";
+    const url = editMode.value ? `/pengeluaran-toko/${editId.value}` : '/pengeluaran-toko';
+    const method = editMode.value ? 'put' : 'post';
 
     router[method](url, form.value, {
         onSuccess: () => {

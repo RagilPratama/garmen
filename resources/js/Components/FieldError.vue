@@ -1,6 +1,6 @@
 <template>
-  <p v-if="error" class="mt-1 text-xs text-red-500">{{ error }}</p>
+    <p v-if="error" class="mt-1 text-xs text-red-500">{{ error }}</p>
 </template>
 <script setup>
-defineProps({ error: String })
+defineProps({ error: String });
 </script>

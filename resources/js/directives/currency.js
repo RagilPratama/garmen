@@ -4,20 +4,20 @@
  */
 
 const formatNumber = (value) => {
-    if (!value && value !== 0) return "";
-    const num = String(value).replace(/\D/g, "");
-    if (!num) return "";
-    return new Intl.NumberFormat("id-ID").format(parseInt(num));
+    if (!value && value !== 0) return '';
+    const num = String(value).replace(/\D/g, '');
+    if (!num) return '';
+    return new Intl.NumberFormat('id-ID').format(parseInt(num));
 };
 
 const parseNumber = (value) => {
     if (!value) return 0;
-    return parseInt(String(value).replace(/\D/g, "")) || 0;
+    return parseInt(String(value).replace(/\D/g, '')) || 0;
 };
 
 export default {
     mounted(el, binding) {
-        const input = el.tagName === "INPUT" ? el : el.querySelector("input");
+        const input = el.tagName === 'INPUT' ? el : el.querySelector('input');
         if (!input) return;
 
         // Format initial value
@@ -47,16 +47,13 @@ export default {
             // Emit the numeric value to v-model
             if (binding.instance && binding.value) {
                 const modelValue = binding.value;
-                if (
-                    typeof modelValue === "object" &&
-                    modelValue.value !== undefined
-                ) {
+                if (typeof modelValue === 'object' && modelValue.value !== undefined) {
                     modelValue.value = numericValue;
                 }
             }
 
             // Trigger input event for v-model
-            e.target.dispatchEvent(new Event("input", { bubbles: true }));
+            e.target.dispatchEvent(new Event('input', { bubbles: true }));
         };
 
         // Handle blur to ensure formatting
@@ -65,24 +62,20 @@ export default {
             e.target.value = formatNumber(numericValue);
         };
 
-        input.addEventListener("input", handleInput);
-        input.addEventListener("blur", handleBlur);
+        input.addEventListener('input', handleInput);
+        input.addEventListener('blur', handleBlur);
 
         // Store handlers for cleanup
         input._currencyHandlers = { handleInput, handleBlur };
     },
 
     updated(el, binding) {
-        const input = el.tagName === "INPUT" ? el : el.querySelector("input");
+        const input = el.tagName === 'INPUT' ? el : el.querySelector('input');
         if (!input) return;
 
         // Update formatted value if model changes externally
         if (binding.value !== binding.oldValue) {
-            const numericValue =
-                typeof binding.value === "object" &&
-                binding.value.value !== undefined
-                    ? binding.value.value
-                    : binding.value;
+            const numericValue = typeof binding.value === 'object' && binding.value.value !== undefined ? binding.value.value : binding.value;
 
             if (document.activeElement !== input) {
                 input.value = formatNumber(numericValue);
@@ -91,11 +84,11 @@ export default {
     },
 
     unmounted(el) {
-        const input = el.tagName === "INPUT" ? el : el.querySelector("input");
+        const input = el.tagName === 'INPUT' ? el : el.querySelector('input');
         if (!input || !input._currencyHandlers) return;
 
-        input.removeEventListener("input", input._currencyHandlers.handleInput);
-        input.removeEventListener("blur", input._currencyHandlers.handleBlur);
+        input.removeEventListener('input', input._currencyHandlers.handleInput);
+        input.removeEventListener('blur', input._currencyHandlers.handleBlur);
         delete input._currencyHandlers;
     },
 };

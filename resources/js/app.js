@@ -6,7 +6,7 @@ import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 import currencyDirective from './directives/currency';
 
 createInertiaApp({
-    title: (title) => title ? `${title} - GarmenApp` : 'GarmenApp',
+    title: (title) => (title ? `${title} - GarmenApp` : 'GarmenApp'),
     resolve: (name) => resolvePageComponent(`./Pages/${name}.vue`, import.meta.glob('./Pages/**/*.vue')),
     setup({ el, App, props, plugin }) {
         return createApp({ render: () => h(App, props) })
