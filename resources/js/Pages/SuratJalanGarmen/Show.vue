@@ -9,6 +9,64 @@
                 </div>
                 <a href="/surat-jalan-garmen" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition">← Kembali</a>
             </div>
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 class="text-sm font-semibold text-gray-800">Persetujuan Marker & Pola</h2>
+                        <p class="text-xs text-gray-500">Admin gudang harus menyetujui kedua status sebelum mencetak surat jalan.</p>
+                    </div>
+                    <button
+                        @click="printSuratJalan"
+                        :disabled="!canPrint || approvalSaving"
+                        class="px-4 py-2 bg-amber-500 text-white rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {{ approvalSaving ? 'Memproses...' : 'Print Surat Jalan' }}
+                    </button>
+                </div>
+
+                <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer">
+                        <input
+                            type="checkbox"
+                            class="h-4 w-4 text-blue-600 rounded border-gray-300"
+                            v-model="approval.marker_approved"
+                            :disabled="!canEditApproval || approvalSaving"
+                            @change="saveApproval"
+                        />
+                        <span class="text-sm font-medium">Marker disetujui</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer">
+                        <input
+                            type="checkbox"
+                            class="h-4 w-4 text-blue-600 rounded border-gray-300"
+                            v-model="approval.pola_approved"
+                            :disabled="!canEditApproval || approvalSaving"
+                            @change="saveApproval"
+                        />
+                        <span class="text-sm font-medium">Pola disetujui</span>
+                    </label>
+                    <label v-if="isSuperAdmin" class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer">
+                        <input
+                            type="checkbox"
+                            class="h-4 w-4 text-blue-600 rounded border-gray-300"
+                            v-model="approval.superadmin_allow_print"
+                            :disabled="approvalSaving"
+                            @change="saveApproval"
+                        />
+                        <span class="text-sm font-medium">Izinkan cetak tanpa marker/pola</span>
+                    </label>
+                </div>
+
+                <p v-if="isAdminGudang && approval.superadmin_allow_print" class="mt-3 text-sm text-emerald-700">
+                    Superadmin telah mengizinkan cetak tanpa marker/pola.
+                </p>
+                <p v-else-if="isAdminGudang && !canPrint" class="mt-3 text-sm text-red-600">
+                    Anda harus menyetujui marker dan pola agar dapat mencetak surat jalan.
+                </p>
+                <p v-else-if="isSuperAdmin && !canPrint" class="mt-3 text-sm text-emerald-600">
+                    Superadmin dapat mencetak tanpa persetujuan marker/pola.
+                </p>
+            </div>
             <!-- Scan Barcode -->
             <div class="bg-white rounded-xl border-2 border-blue-200 shadow-sm p-6">
                 <div class="flex items-center gap-3 mb-4">
@@ -165,8 +223,6 @@
                                 <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Nama Bahan</th>
                                 <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Supplier</th>
                                 <th class="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Qty</th>
-                                <th class="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Harga/Yard</th>
-                                <th class="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Total</th>
                                 <th class="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase w-16">Hapus</th>
                             </tr>
                         </thead>
@@ -177,17 +233,6 @@
                                 <td class="px-4 py-3 text-gray-600">{{ item.nama_bahan }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ item.supplier }}</td>
                                 <td class="px-4 py-3 text-right font-semibold text-gray-800">{{ formatYard(item.quantity) }} {{ item.satuan }}</td>
-                                <td class="px-4 py-3 text-right text-gray-700">
-                                    <input
-                                        :value="formatInputPrice(item.harga_keluar)"
-                                        @input="handleHargaInput(item, $event)"
-                                        @blur="updateHarga(item, $event)"
-                                        type="text"
-                                        inputmode="numeric"
-                                        class="w-28 px-2 py-1 border border-gray-200 rounded text-sm text-right focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
-                                    />
-                                </td>
-                                <td class="px-4 py-3 text-right font-semibold text-gray-800">{{ formatRupiah(item.total_harga) }}</td>
                                 <td class="px-4 py-3 text-center">
                                     <button @click="removeItem(item.id)" class="text-red-500 hover:text-red-700 transition">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -207,8 +252,6 @@
                                 <td colspan="4" class="px-4 py-3 text-sm font-semibold text-gray-700 text-right">Total:</td>
                                 <td class="px-4 py-3 text-right text-sm font-bold text-gray-800">{{ formatYard(totalQty) }} yard</td>
                                 <td></td>
-                                <td class="px-4 py-3 text-right text-sm font-bold text-gray-800">{{ formatRupiah(totalHarga) }}</td>
-                                <td></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -220,10 +263,12 @@
 
 <script setup>
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import Swal from 'sweetalert2';
 
 const props = defineProps({ suratJalan: Object });
+const page = usePage();
 
 const items = ref([...(props.suratJalan.items || [])]);
 const scanInput = ref('');
@@ -233,6 +278,21 @@ const scanMessage = ref('');
 const scanSuccess = ref(false);
 const scanMethod = ref('manual');
 const cameraStarted = ref(false);
+
+const approval = ref({
+    marker_approved: Boolean(props.suratJalan.marker_approved),
+    pola_approved: Boolean(props.suratJalan.pola_approved),
+    superadmin_allow_print: Boolean(props.suratJalan.superadmin_allow_print),
+});
+const approvalSaving = ref(false);
+
+const isSuperAdmin = computed(() => page.props.auth.user?.role === 'superadmin');
+const isAdminGudang = computed(() => page.props.auth.user?.role === 'admingudang');
+const canEditApproval = computed(() => isSuperAdmin.value || isAdminGudang.value);
+const canPrint = computed(
+    () => isSuperAdmin.value ||
+        (isAdminGudang.value && (approval.value.superadmin_allow_print || (approval.value.marker_approved && approval.value.pola_approved)))
+);
 
 let Html5Qrcode = null;
 let html5QrCode = null;
@@ -357,61 +417,12 @@ const scanBarcode = async () => {
             return;
         }
 
-        const barcodeData = checkResult.data;
-
-        // Step 2: Minta input harga keluar via SweetAlert
-        const { value: hargaKeluar, isConfirmed } = await Swal.fire({
-            title: `${barcodeData.kode_bahan} - ${barcodeData.nama_bahan}`,
-            html: `
-                <div class="text-left text-sm space-y-2 mb-4">
-                    <p><span class="text-gray-500">Supplier:</span> <strong>${barcodeData.supplier}</strong></p>
-                    <p><span class="text-gray-500">Qty:</span> <strong>${Number(barcodeData.quantity).toFixed(2)} ${barcodeData.satuan ?? 'yard'}</strong></p>
-                    <p><span class="text-gray-500">Harga Masuk:</span> <strong>Rp ${Number(barcodeData.rp_per_yard).toLocaleString('id-ID')}</strong></p>
-                </div>
-                <label class="block text-sm font-medium text-gray-700 text-left mb-1">Harga Keluar (per yard)</label>
-            `,
-            input: 'text',
-            inputValue: new Intl.NumberFormat('id-ID').format(barcodeData.rp_per_yard),
-            inputAttributes: { inputmode: 'numeric' },
-            inputPlaceholder: 'Masukkan harga keluar...',
-            showCancelButton: true,
-            confirmButtonText: 'Tambahkan',
-            cancelButtonText: 'Batal',
-            confirmButtonColor: '#10b981',
-            cancelButtonColor: '#6b7280',
-            didOpen: () => {
-                const input = Swal.getInput();
-                input.addEventListener('input', () => {
-                    const raw = input.value.replace(/[^\d]/g, '');
-                    const num = parseInt(raw) || 0;
-                    input.value = num ? new Intl.NumberFormat('id-ID').format(num) : '';
-                });
-            },
-            preConfirm: (value) => {
-                const num = parseInt(String(value).replace(/[^\d]/g, '')) || 0;
-                if (num <= 0) {
-                    Swal.showValidationMessage('Harga harus lebih dari 0');
-                    return false;
-                }
-                return num;
-            },
-        });
-
-        if (!isConfirmed) {
-            scanning.value = false;
-            scanInput.value = '';
-            focusInput();
-            return;
-        }
-
-        // Step 3: Simpan dengan harga keluar
         const response = await fetch('/surat-jalan-garmen/scan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrfToken() },
             body: JSON.stringify({
                 barcode_code: code,
                 surat_jalan_id: props.suratJalan.id,
-                harga_keluar: parseFloat(hargaKeluar),
             }),
         });
 
@@ -507,7 +518,47 @@ const updateHarga = async (item, event) => {
     }
 };
 
+const saveApproval = async () => {
+    if (!canEditApproval.value) {
+        return;
+    }
+
+    approvalSaving.value = true;
+
+    try {
+        const response = await fetch(`/surat-jalan-garmen/${props.suratJalan.id}/approval`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrfToken() },
+            body: JSON.stringify(approval.value),
+        });
+
+        const result = await response.json();
+        if (response.ok && result.success) {
+            approval.value.marker_approved = Boolean(result.data.marker_approved);
+            approval.value.pola_approved = Boolean(result.data.pola_approved);
+            approval.value.superadmin_allow_print = Boolean(result.data.superadmin_allow_print);
+            await Swal.fire({
+                icon: 'success',
+                title: 'Disimpan',
+                text: 'Status approval marker, pola, dan override berhasil diperbarui.',
+                timer: 1200,
+                showConfirmButton: false,
+            });
+        } else {
+            await Swal.fire('Gagal', result.message || 'Tidak dapat menyimpan approval.', 'error');
+        }
+    } catch (error) {
+        await Swal.fire('Gagal', 'Terjadi kesalahan saat menyimpan approval.', 'error');
+    } finally {
+        approvalSaving.value = false;
+    }
+};
+
 const printSuratJalan = () => {
+    if (!canPrint.value) {
+        Swal.fire('Tidak dapat mencetak', 'Surat jalan harus disetujui marker dan pola sebelum dapat dicetak.', 'warning');
+        return;
+    }
     const sj = props.suratJalan;
     const tanggal = sj.tanggal ? new Date(sj.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '—';
     const today = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });

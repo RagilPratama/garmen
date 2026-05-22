@@ -134,6 +134,7 @@
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Supplier</th>
                                 <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Qty</th>
                                 <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Harga/Yard</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Harga Keluar</th>
                                 <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Total</th>
                                 <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Status</th>
                                 <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Tanggal</th>
@@ -168,6 +169,12 @@
                                 <td class="px-4 py-3 text-right">
                                     <span v-if="barcode.rp_per_yard" class="text-sm font-medium text-gray-800">
                                         {{ formatRupiah(barcode.rp_per_yard) }}
+                                    </span>
+                                    <span v-else class="text-xs text-gray-400">-</span>
+                                </td>
+                                <td class="px-4 py-3 text-right">
+                                    <span v-if="barcode.harga_keluar" class="text-sm font-medium text-gray-800">
+                                        {{ formatRupiah(barcode.harga_keluar) }}
                                     </span>
                                     <span v-else class="text-xs text-gray-400">-</span>
                                 </td>

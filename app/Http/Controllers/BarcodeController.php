@@ -267,6 +267,7 @@ class BarcodeController extends Controller
             'quantity' => 'required|numeric|min:0',
             'satuan' => 'nullable|string',
             'rp_per_yard' => 'required|numeric|min:0',
+            'harga_keluar' => 'required|numeric|min:0',
             'no_surat_jalan' => 'required|string',
             'tanggal_masuk' => 'required|date',
         ]);
@@ -283,6 +284,7 @@ class BarcodeController extends Controller
         $barcode->quantity = $validated['quantity'];
         $barcode->satuan = $validated['satuan'] ?? 'yard';
         $barcode->rp_per_yard = $validated['rp_per_yard'];
+        $barcode->harga_keluar = $validated['harga_keluar'];
         $barcode->no_surat_jalan = $validated['no_surat_jalan'];
         $barcode->tanggal = $validated['tanggal_masuk'];
         $barcode->total_harga = $validated['quantity'] * $validated['rp_per_yard'];

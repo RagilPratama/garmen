@@ -131,6 +131,7 @@
 import { ref, computed } from 'vue';
 import { router } from '@inertiajs/vue3';
 import DataTable from '@/Components/DataTable.vue';
+import Swal from 'sweetalert2';
 
 defineProps({ data: Object, nextSuratJalan: String });
 
@@ -169,7 +170,8 @@ const showDetail = async (id) => {
         const response = await fetch(`/surat-jalan-garmen/${id}`, {
             headers: { Accept: 'application/json' },
         });
-        detailData.value = await response.json();
+        const json = await response.json();
+        detailData.value = json.data ?? json;
     } catch (error) {
         console.error('Error loading detail:', error);
     } finally {
@@ -186,7 +188,21 @@ const printSuratJalan = async (id) => {
         const response = await fetch(`/surat-jalan-garmen/${id}`, {
             headers: { Accept: 'application/json' },
         });
-        const sj = await response.json();
+
+        if (response.status === 403) {
+            await Swal.fire('Tidak diizinkan', 'Anda tidak memiliki hak untuk mencetak surat jalan ini.', 'error');
+            return;
+        }
+
+        const json = await response.json();
+        const sj = json.data ?? json;
+        const canPrint = json.can_print ?? true;
+
+        if (!canPrint) {
+            await Swal.fire('Cetak diblokir', 'Surat jalan harus disetujui marker dan pola sebelum dapat dicetak.', 'warning');
+            return;
+        }
+
         if (!sj || !sj.items) return;
 
         const { jsPDF } = await import('jspdf');

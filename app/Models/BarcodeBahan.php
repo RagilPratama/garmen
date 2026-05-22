@@ -17,6 +17,7 @@ class BarcodeBahan extends Model
         'quantity',
         'satuan',
         'rp_per_yard',
+        'harga_keluar',
         'total_harga',
         'tanggal',
         'harga_sudah_diisi'
@@ -25,6 +26,7 @@ class BarcodeBahan extends Model
     protected $casts = [
         'quantity' => 'decimal:2',
         'rp_per_yard' => 'decimal:2',
+        'harga_keluar' => 'decimal:2',
         'total_harga' => 'decimal:2',
         'tanggal' => 'date',
         'harga_sudah_diisi' => 'boolean'

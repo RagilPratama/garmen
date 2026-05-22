@@ -12,10 +12,16 @@ class SuratJalanGarmen extends Model
         'no_surat_jalan',
         'tanggal',
         'keterangan',
+        'marker_approved',
+        'pola_approved',
+        'superadmin_allow_print',
     ];
 
     protected $casts = [
         'tanggal' => 'date',
+        'marker_approved' => 'boolean',
+        'pola_approved' => 'boolean',
+        'superadmin_allow_print' => 'boolean',
     ];
 
     public function items()

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\SuratJalanGarmen;
 use App\Models\SuratJalanGarmenItem;
 use App\Models\BarcodeBahan;
+use App\Models\BahanKeluar;
+use App\Models\BahanMasuk;
 use App\Models\StokBahan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -64,7 +66,11 @@ class SuratJalanGarmenController extends Controller
         $suratJalan = SuratJalanGarmen::with('items')->findOrFail($id);
 
         if (request()->wantsJson()) {
-            return response()->json($suratJalan);
+            return response()->json([
+                'success' => true,
+                'data' => $suratJalan,
+                'can_print' => $this->canPrintSuratJalan($suratJalan),
+            ]);
         }
 
         return Inertia::render('SuratJalanGarmen/Show', [
@@ -72,22 +78,118 @@ class SuratJalanGarmenController extends Controller
         ]);
     }
 
+    public function updateApproval(Request $request, $id)
+    {
+        $request->validate([
+            'marker_approved' => 'required|boolean',
+            'pola_approved' => 'required|boolean',
+            'superadmin_allow_print' => 'required|boolean',
+        ]);
+
+        $suratJalan = SuratJalanGarmen::findOrFail($id);
+
+        if (!auth()->user()->isAdminGudang() && !auth()->user()->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $suratJalan->marker_approved = $request->boolean('marker_approved');
+        $suratJalan->pola_approved = $request->boolean('pola_approved');
+        if (auth()->user()->isSuperAdmin()) {
+            $suratJalan->superadmin_allow_print = $request->boolean('superadmin_allow_print');
+        }
+        $suratJalan->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => $suratJalan,
+        ]);
+    }
+
+    private function canPrintSuratJalan(SuratJalanGarmen $suratJalan): bool
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return false;
+        }
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($user->isAdminGudang()) {
+            return $suratJalan->superadmin_allow_print || ($suratJalan->marker_approved && $suratJalan->pola_approved);
+        }
+
+        return false;
+    }
+
     public function destroy($id)
     {
         $suratJalan = SuratJalanGarmen::with('items')->findOrFail($id);
 
         DB::transaction(function () use ($suratJalan) {
-            // Kembalikan stok
+            $this->rollbackBahanKeluarForSuratJalan($suratJalan);
+            $this->rollbackBahanMasukForSuratJalan($suratJalan);
+
+            // Kembalikan stok ke gudang dan hapus item garmen
             foreach ($suratJalan->items as $item) {
-                StokBahan::where('kode_bahan', $item->kode_bahan)->update([
-                    'quantity' => DB::raw("quantity + {$item->quantity}"),
-                ]);
+                DB::statement(
+                    "INSERT INTO stok_bahan (kode_bahan, quantity, created_at, updated_at)
+                    VALUES (?, ?, NOW(), NOW())
+                    ON DUPLICATE KEY UPDATE
+                        quantity = quantity + VALUES(quantity),
+                        updated_at = NOW()",
+                    [$item->kode_bahan, $item->quantity]
+                );
+
+                $item->delete();
             }
 
             $suratJalan->delete();
         });
 
         return redirect()->route('surat-jalan-garmen.index')->with('message', 'Surat jalan berhasil dihapus.');
+    }
+
+    private function rollbackBahanMasukForSuratJalan(SuratJalanGarmen $suratJalan): void
+    {
+        $items = BahanMasuk::where('no_surat_jalan', $suratJalan->no_surat_jalan)->get();
+        if ($items->isEmpty()) {
+            return;
+        }
+
+        foreach ($items as $item) {
+            DB::statement(
+                "UPDATE stok_bahan
+                SET quantity = GREATEST(0, quantity - ?), updated_at = NOW()
+                WHERE kode_bahan = ?",
+                [$item->yard, $item->kode_bahan]
+            );
+        }
+
+        BahanMasuk::whereIn('id', $items->pluck('id'))->delete();
+    }
+
+    private function rollbackBahanKeluarForSuratJalan(SuratJalanGarmen $suratJalan): void
+    {
+        $items = BahanKeluar::where('no_surat_jalan', $suratJalan->no_surat_jalan)->get();
+        if ($items->isEmpty()) {
+            return;
+        }
+
+        foreach ($items as $item) {
+            DB::statement(
+                "INSERT INTO stok_bahan (kode_bahan, quantity, created_at, updated_at)
+                VALUES (?, ?, NOW(), NOW())
+                ON DUPLICATE KEY UPDATE
+                    quantity = quantity + VALUES(quantity),
+                    updated_at = NOW()",
+                [$item->kode_bahan, $item->yard]
+            );
+        }
+
+        BahanKeluar::whereIn('id', $items->pluck('id'))->delete();
     }
 
     /**
@@ -98,7 +200,6 @@ class SuratJalanGarmenController extends Controller
         $request->validate([
             'barcode_code' => 'required|string',
             'surat_jalan_id' => 'nullable|integer',
-            'harga_keluar' => 'nullable|numeric|min:0',
         ]);
 
         $barcode = BarcodeBahan::where('barcode_code', $request->barcode_code)
@@ -121,12 +222,13 @@ class SuratJalanGarmenController extends Controller
             ], 422);
         }
 
-        // Jika ada surat_jalan_id, langsung simpan ke database
+        // Jika ada surat_jalan_id, langsung simpan ke database (tanpa harga keluar)
         if ($request->surat_jalan_id) {
             $suratJalan = SuratJalanGarmen::findOrFail($request->surat_jalan_id);
-            $hargaKeluar = (float) ($request->harga_keluar ?? $barcode->rp_per_yard);
 
-            $item = DB::transaction(function () use ($suratJalan, $barcode, $hargaKeluar) {
+            $item = DB::transaction(function () use ($suratJalan, $barcode) {
+                $hargaKeluar = $barcode->harga_keluar ?? 0;
+
                 $item = SuratJalanGarmenItem::create([
                     'surat_jalan_garmen_id' => $suratJalan->id,
                     'barcode_bahan_id' => $barcode->id,
@@ -154,7 +256,7 @@ class SuratJalanGarmenController extends Controller
             ]);
         }
 
-        // Return data barcode untuk preview (termasuk harga masuk sebagai default)
+        // Return data barcode untuk preview
         return response()->json([
             'success' => true,
             'data' => $barcode,

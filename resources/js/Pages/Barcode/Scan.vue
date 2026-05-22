@@ -252,6 +252,21 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Harga Keluar per Yard
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    :value="formatInputPrice(completeDataForm.harga_keluar)"
+                                    @input="handleHargaKeluarInput"
+                                    type="text"
+                                    inputmode="numeric"
+                                    required
+                                    placeholder="75.000"
+                                    class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
                                     No. Surat Jalan
                                     <span class="text-red-500">*</span>
                                 </label>
@@ -262,6 +277,9 @@
                                     searchPlaceholder="Cari surat jalan..."
                                 />
                             </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     Tanggal Masuk Barang
@@ -276,10 +294,14 @@
                             </div>
                         </div>
 
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 grid gap-3">
                             <div class="flex justify-between items-center">
-                                <span class="text-sm font-medium text-blue-900">Total Harga:</span>
+                                <span class="text-sm font-medium text-blue-900">Total Harga Masuk:</span>
                                 <span class="text-lg font-bold text-blue-900">{{ formatRupiah(totalHargaComplete) }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-blue-900">Total Harga Keluar:</span>
+                                <span class="text-lg font-bold text-blue-900">{{ formatRupiah(totalHargaKeluar) }}</span>
                             </div>
                         </div>
 
@@ -467,6 +489,7 @@ const completeDataForm = ref({
     nama_bahan: '',
     quantity: 0,
     rp_per_yard: 0,
+    harga_keluar: 0,
     no_surat_jalan: '',
     tanggal_masuk: new Date().toISOString().split('T')[0],
 });
@@ -491,6 +514,10 @@ const totalHarga = computed(() => {
 
 const totalHargaComplete = computed(() => {
     return (completeDataForm.value.quantity || 0) * (completeDataForm.value.rp_per_yard || 0);
+});
+
+const totalHargaKeluar = computed(() => {
+    return (completeDataForm.value.quantity || 0) * (completeDataForm.value.harga_keluar || 0);
 });
 
 const startCamera = async () => {
@@ -677,18 +704,19 @@ const onScanError = (errorMessage) => {
 const parseNumeric = (value) => {
     if (typeof value === 'number') return value;
     if (!value) return 0;
-    const cleaned = String(value).replace(/[^\d]/g, '');
-    return parseInt(cleaned) || 0;
+    const normalized = String(value).trim().replace(/\./g, '').replace(/,/g, '.');
+    const cleaned = normalized.replace(/[^0-9.\-]/g, '');
+    return parseFloat(cleaned) || 0;
 };
 
 const formatInputPrice = (value) => {
-    if (!value && value !== 0) return '';
-    if (typeof value === 'number') {
-        return new Intl.NumberFormat('id-ID').format(value);
-    }
-    const num = parseNumeric(value);
-    if (!num) return '';
-    return new Intl.NumberFormat('id-ID').format(num);
+    if (value === null || value === undefined || value === '') return '';
+    const num = typeof value === 'number' ? value : parseNumeric(value);
+    if (Number.isNaN(num) || num === 0) return '';
+    return new Intl.NumberFormat('id-ID', {
+        maximumFractionDigits: 2,
+        minimumFractionDigits: 0,
+    }).format(num);
 };
 
 const handlePriceInput = (e) => {
@@ -699,6 +727,24 @@ const handlePriceInput = (e) => {
 
     const numericValue = parseNumeric(input.value);
     completeDataForm.value.rp_per_yard = numericValue;
+
+    const formattedValue = formatInputPrice(numericValue);
+    input.value = formattedValue;
+
+    const newLength = formattedValue.length;
+    const diff = newLength - oldLength;
+    const newCursorPos = Math.max(0, cursorPos + diff);
+    input.setSelectionRange(newCursorPos, newCursorPos);
+};
+
+const handleHargaKeluarInput = (e) => {
+    const input = e.target;
+    const cursorPos = input.selectionStart;
+    const oldValue = input.value;
+    const oldLength = oldValue.length;
+
+    const numericValue = parseNumeric(input.value);
+    completeDataForm.value.harga_keluar = numericValue;
 
     const formattedValue = formatInputPrice(numericValue);
     input.value = formattedValue;
@@ -757,6 +803,7 @@ const submitCompleteData = async () => {
         !completeDataForm.value.nama_bahan ||
         !completeDataForm.value.quantity ||
         !completeDataForm.value.rp_per_yard ||
+        !completeDataForm.value.harga_keluar ||
         !completeDataForm.value.no_surat_jalan ||
         !completeDataForm.value.tanggal_masuk ||
         !barcodeData.value
@@ -785,6 +832,7 @@ const submitCompleteData = async () => {
                 quantity: completeDataForm.value.quantity,
                 satuan: 'yard',
                 rp_per_yard: completeDataForm.value.rp_per_yard,
+                harga_keluar: completeDataForm.value.harga_keluar,
                 no_surat_jalan: completeDataForm.value.no_surat_jalan,
                 tanggal_masuk: completeDataForm.value.tanggal_masuk,
             }),
@@ -840,6 +888,7 @@ const restartCamera = async () => {
         nama_bahan: '',
         quantity: 0,
         rp_per_yard: 0,
+        harga_keluar: 0,
         no_surat_jalan: '',
         tanggal_masuk: new Date().toISOString().split('T')[0],
     };
@@ -859,6 +908,7 @@ const reset = () => {
         nama_bahan: '',
         quantity: 0,
         rp_per_yard: 0,
+        harga_keluar: 0,
         no_surat_jalan: '',
         tanggal_masuk: new Date().toISOString().split('T')[0],
     };

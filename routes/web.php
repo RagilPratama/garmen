@@ -124,6 +124,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/surat-jalan-garmen/scan', [SuratJalanGarmenController::class, 'scanBarcode'])->name('surat-jalan-garmen.scan');
     Route::post('/surat-jalan-garmen', [SuratJalanGarmenController::class, 'store'])->name('surat-jalan-garmen.store');
     Route::get('/surat-jalan-garmen/{id}', [SuratJalanGarmenController::class, 'show'])->name('surat-jalan-garmen.show');
+    Route::put('/surat-jalan-garmen/{id}/approval', [SuratJalanGarmenController::class, 'updateApproval'])->name('surat-jalan-garmen.update-approval');
     Route::delete('/surat-jalan-garmen/{id}', [SuratJalanGarmenController::class, 'destroy'])->name('surat-jalan-garmen.destroy');
     Route::delete('/surat-jalan-garmen/{id}/item/{itemId}', [SuratJalanGarmenController::class, 'removeItem'])->name('surat-jalan-garmen.remove-item');
     Route::put('/surat-jalan-garmen/{id}/item/{itemId}/harga', [SuratJalanGarmenController::class, 'updateItemHarga'])->name('surat-jalan-garmen.update-item-harga');
