@@ -38,7 +38,7 @@ class UserController extends Controller
             'filters' => $request->only(['search', 'role', 'per_page']),
             'roles' => [
                 ['value' => User::ROLE_SUPERADMIN, 'label' => 'Super Admin'],
-                ['value' => User::ROLE_ADMIN_GUDANG, 'label' => 'Admin Gudang'],
+                ['value' => User::ROLE_ADMIN_GUDANG, 'label' => 'Admin Garmen'],
                 ['value' => User::ROLE_ADMIN_KANTOR, 'label' => 'Admin Kantor'],
                 ['value' => User::ROLE_ADMIN_JOMEI, 'label' => 'Admin Jomei'],
                 ['value' => User::ROLE_ADMIN_KAMIKO, 'label' => 'Admin Kamiko'],

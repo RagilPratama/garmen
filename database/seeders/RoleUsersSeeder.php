@@ -22,8 +22,8 @@ class RoleUsersSeeder extends Seeder
                 'toko_id' => null,
             ],
             [
-                'name' => 'Admin Gudang',
-                'email' => 'gudang@garmen.com',
+                'name' => 'Admin Garmen',
+                'email' => 'admingarmen@garmen.com',
                 'password' => Hash::make('password'),
                 'role' => User::ROLE_ADMIN_GUDANG,
                 'toko_id' => null,
@@ -63,7 +63,7 @@ class RoleUsersSeeder extends Seeder
         $this->command->info('Login credentials:');
         $this->command->info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         $this->command->info('Super Admin    : superadmin@garmen.com / password');
-        $this->command->info('Admin Gudang   : gudang@garmen.com / password');
+        $this->command->info('Admin Garmen   : admingarmen@garmen.com / password');
         $this->command->info('Admin Kantor   : kantor@garmen.com / password');
         $this->command->info('Admin Jomei    : jomei@garmen.com / password');
         $this->command->info('Admin Kamiko   : kamiko@garmen.com / password');

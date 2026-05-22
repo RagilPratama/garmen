@@ -196,7 +196,7 @@ const submit = () => {
 const getRoleLabel = (role) => {
     const roleMap = {
         superadmin: 'Super Admin',
-        admingudang: 'Admin Gudang',
+        admingarmen: 'Admin Garmen',
         adminkantor: 'Admin Kantor',
         adminjomei: 'Admin Jomei',
         adminkamiko: 'Admin Kamiko',
@@ -207,7 +207,7 @@ const getRoleLabel = (role) => {
 const getRoleBadgeClass = (role) => {
     const classMap = {
         superadmin: 'bg-purple-100 text-purple-800',
-        admingudang: 'bg-blue-100 text-blue-800',
+        admingarmen: 'bg-blue-100 text-blue-800',
         adminkantor: 'bg-green-100 text-green-800',
         adminjomei: 'bg-amber-100 text-amber-800',
         adminkamiko: 'bg-orange-100 text-orange-800',

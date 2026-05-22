@@ -13,7 +13,7 @@
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <h2 class="text-sm font-semibold text-gray-800">Persetujuan Marker & Pola</h2>
-                        <p class="text-xs text-gray-500">Admin gudang harus menyetujui kedua status sebelum mencetak surat jalan.</p>
+                        <p class="text-xs text-gray-500">Admin kantor harus menyetujui kedua status sebelum mencetak surat jalan.</p>
                     </div>
                     <button
                         @click="printSuratJalan"
@@ -57,10 +57,10 @@
                     </label>
                 </div>
 
-                <p v-if="isAdminGudang && approval.superadmin_allow_print" class="mt-3 text-sm text-emerald-700">
+                <p v-if="isAdminKantor && approval.superadmin_allow_print" class="mt-3 text-sm text-emerald-700">
                     Superadmin telah mengizinkan cetak tanpa marker/pola.
                 </p>
-                <p v-else-if="isAdminGudang && !canPrint" class="mt-3 text-sm text-red-600">
+                <p v-else-if="isAdminKantor && !canPrint" class="mt-3 text-sm text-red-600">
                     Anda harus menyetujui marker dan pola agar dapat mencetak surat jalan.
                 </p>
                 <p v-else-if="isSuperAdmin && !canPrint" class="mt-3 text-sm text-emerald-600">
@@ -287,11 +287,11 @@ const approval = ref({
 const approvalSaving = ref(false);
 
 const isSuperAdmin = computed(() => page.props.auth.user?.role === 'superadmin');
-const isAdminGudang = computed(() => page.props.auth.user?.role === 'admingudang');
-const canEditApproval = computed(() => isSuperAdmin.value || isAdminGudang.value);
+const isAdminKantor = computed(() => page.props.auth.user?.role === 'adminkantor');
+const canEditApproval = computed(() => isSuperAdmin.value || isAdminKantor.value);
 const canPrint = computed(
     () => isSuperAdmin.value ||
-        (isAdminGudang.value && (approval.value.superadmin_allow_print || (approval.value.marker_approved && approval.value.pola_approved)))
+        (isAdminKantor.value && (approval.value.superadmin_allow_print || (approval.value.marker_approved && approval.value.pola_approved)))
 );
 
 let Html5Qrcode = null;

@@ -177,7 +177,7 @@ const userRole = computed(() => {
     const role = page.props.auth?.user?.role;
     const roleNames = {
         superadmin: 'Super Admin',
-        admingudang: 'Admin Gudang',
+        admingarmen: 'Admin Garmen',
         adminkantor: 'Admin Kantor',
         adminjomei: 'Admin Jomei',
         adminkamiko: 'Admin Kamiko',

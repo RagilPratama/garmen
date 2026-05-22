@@ -20,7 +20,7 @@ class User extends Authenticatable
 
     // Role constants
     const ROLE_SUPERADMIN = 'superadmin';
-    const ROLE_ADMIN_GUDANG = 'admingudang';
+    const ROLE_ADMIN_GUDANG = 'admingarmen';
     const ROLE_ADMIN_KANTOR = 'adminkantor';
     const ROLE_ADMIN_JOMEI = 'adminjomei';
     const ROLE_ADMIN_KAMIKO = 'adminkamiko';
@@ -103,7 +103,7 @@ class User extends Authenticatable
     {
         return match($this->role) {
             self::ROLE_SUPERADMIN => 'Super Admin',
-            self::ROLE_ADMIN_GUDANG => 'Admin Gudang',
+            self::ROLE_ADMIN_GUDANG => 'Admin Garmen',
             self::ROLE_ADMIN_KANTOR => 'Admin Kantor',
             self::ROLE_ADMIN_JOMEI => 'Admin Jomei',
             self::ROLE_ADMIN_KAMIKO => 'Admin Kamiko',

@@ -1,7 +1,7 @@
 Login credentials:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Super Admin : superadmin@garmen.com / password
-Admin Gudang : gudang@garmen.com / password
+Admin Garmen : admingarmen@garmen.com / password
 Admin Kantor : kantor@garmen.com / password
 Admin Jomei : jomei@garmen.com / password
 Admin Kamiko : kamiko@garmen.com / password

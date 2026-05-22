@@ -88,7 +88,7 @@ class SuratJalanGarmenController extends Controller
 
         $suratJalan = SuratJalanGarmen::findOrFail($id);
 
-        if (!auth()->user()->isAdminGudang() && !auth()->user()->isSuperAdmin()) {
+        if (!auth()->user()->isAdminKantor() && !auth()->user()->isSuperAdmin()) {
             abort(403);
         }
 
@@ -117,7 +117,7 @@ class SuratJalanGarmenController extends Controller
             return true;
         }
 
-        if ($user->isAdminGudang()) {
+        if ($user->isAdminKantor()) {
             return $suratJalan->superadmin_allow_print || ($suratJalan->marker_approved && $suratJalan->pola_approved);
         }
 

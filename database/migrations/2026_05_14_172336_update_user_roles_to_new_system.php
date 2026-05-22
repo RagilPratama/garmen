@@ -17,11 +17,11 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->enum('role', [
                 'superadmin',
-                'admingudang',
+                    'admingarmen',
                 'adminkantor',
                 'adminjomei',
                 'adminkamiko'
-            ])->default('admingudang')->after('password');
+            ])->default('admingarmen')->after('password');
         });
 
         // Update existing users
