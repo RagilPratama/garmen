@@ -37,6 +37,10 @@ class SuratJalanMasukController extends Controller
 
     public function create()
     {
+        if (auth()->user()?->role === 'admingarmen') {
+            abort(403);
+        }
+
         return Inertia::render('SuratJalanMasuk/Create', [
             'nextSuratJalan' => $this->generateNextNumber(),
         ]);
@@ -44,6 +48,10 @@ class SuratJalanMasukController extends Controller
 
     public function store(Request $request)
     {
+        if (auth()->user()?->role === 'admingarmen') {
+            abort(403);
+        }
+
         $request->validate([
             'no_surat_jalan' => 'required|string|max:100|unique:surat_jalan_masuk,no_surat_jalan',
             'tanggal' => 'required|date',
@@ -62,6 +70,10 @@ class SuratJalanMasukController extends Controller
 
     public function destroy($id)
     {
+        if (auth()->user()?->role === 'admingarmen') {
+            abort(403);
+        }
+
         SuratJalanMasuk::findOrFail($id)->delete();
         return redirect()->route('surat-jalan-masuk.index')->with('message', 'Surat jalan masuk berhasil dihapus.');
     }

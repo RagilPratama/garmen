@@ -187,6 +187,7 @@ const userRole = computed(() => {
 
 const isAdmin = computed(() => page.props.auth?.user?.is_admin ?? false);
 const isToko = computed(() => page.props.auth?.user?.is_toko ?? false);
+const isAdminGarmen = computed(() => page.props.auth?.user?.role === 'admingarmen');
 
 // Filter menu berdasarkan role
 const filteredNavItems = computed(() => {
@@ -195,8 +196,15 @@ const filteredNavItems = computed(() => {
     if (userRole === 'superadmin') {
         // Super Admin bisa akses semua menu
         return navItems;
+    } else if (isAdminGarmen.value) {
+        return navItems.filter((item) => {
+            if (item.type === 'header') {
+                return item.label === 'Inventori' || item.label === 'Bahan';
+            }
+            return item.name === 'surat-jalan-masuk' || item.name === 'stok-bahan-garmen';
+        });
     } else if (isAdmin.value) {
-        // Admin Gudang & Kantor bisa akses semua menu kecuali Pengeluaran Toko dan Manajemen User
+        // Admin Kantor bisa akses semua menu kecuali Pengeluaran Toko dan Manajemen User
         return navItems.filter((item) => item.name !== 'pengeluaran-toko' && item.name !== 'users');
     } else if (isToko.value) {
         // User toko hanya bisa akses Dashboard dan Penjualan (Jual Toko, Pengeluaran Toko & Kas Toko)

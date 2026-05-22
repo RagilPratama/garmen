@@ -1,5 +1,14 @@
 <template>
-    <DataTable title="Surat Jalan Bahan Masuk" :data="data" :columns="columns" basePath="/surat-jalan-masuk" @open-create="goCreate" customActions>
+    <DataTable
+        title="Surat Jalan Bahan Masuk"
+        :data="data"
+        :columns="columns"
+        basePath="/surat-jalan-masuk"
+        :hide-create="isAdminGarmen"
+        :hide-actions="isAdminGarmen"
+        @open-create="goCreate"
+        customActions
+    >
         <template #cell-no_surat_jalan="{ item }">
             <button @click="showDetail(item.no_surat_jalan)" class="text-amber-600 hover:text-amber-700 font-semibold hover:underline underline-offset-2 transition font-mono">
                 {{ item.no_surat_jalan }}
@@ -18,7 +27,7 @@
             <span class="font-semibold text-gray-800">{{ formatYard(item.total_qty) }} yard</span>
         </template>
 
-        <template #cell-total_harga="{ item }">
+        <template #cell-total_harga="{ item }" v-if="!isAdminGarmen">
             <span class="font-semibold text-gray-800">{{ formatRupiah(item.total_harga) }}</span>
         </template>
 
@@ -80,9 +89,9 @@
                                 <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Kode Bahan</th>
                                 <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Nama Bahan</th>
                                 <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Supplier</th>
-                                <th class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Qty</th>
-                                <th class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Harga/Yard</th>
-                                <th class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Total</th>
+                                        <th class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Qty</th>
+                                <th v-if="!isAdminGarmen" class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Harga/Yard</th>
+                                <th v-if="!isAdminGarmen" class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Total</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
@@ -92,8 +101,8 @@
                                 <td class="px-4 py-2 text-gray-600">{{ item.nama_bahan }}</td>
                                 <td class="px-4 py-2 text-gray-600">{{ item.supplier }}</td>
                                 <td class="px-4 py-2 text-right font-semibold text-gray-800">{{ formatYard(item.quantity) }} {{ item.satuan ?? 'yard' }}</td>
-                                <td class="px-4 py-2 text-right text-gray-700">{{ formatRupiah(item.rp_per_yard) }}</td>
-                                <td class="px-4 py-2 text-right font-semibold text-gray-800">{{ formatRupiah(item.total_harga) }}</td>
+                                <td v-if="!isAdminGarmen" class="px-4 py-2 text-right text-gray-700">{{ formatRupiah(item.rp_per_yard) }}</td>
+                                <td v-if="!isAdminGarmen" class="px-4 py-2 text-right font-semibold text-gray-800">{{ formatRupiah(item.total_harga) }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -111,21 +120,27 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { router, usePage } from '@inertiajs/vue3';
 import DataTable from '@/Components/DataTable.vue';
 import Swal from 'sweetalert2';
 
 defineProps({ data: Object, nextSuratJalan: String });
 
-const columns = [
-    { key: 'no_surat_jalan', label: 'No. Surat Jalan' },
-    { key: 'tanggal', label: 'Tanggal' },
-    { key: 'jumlah_item', label: 'Jumlah Item' },
-    { key: 'total_qty', label: 'Total Qty' },
-    { key: 'total_harga', label: 'Total Harga' },
-    { key: 'keterangan', label: 'Keterangan' },
-];
+const page = usePage();
+const isAdminGarmen = computed(() => page.props.auth.user?.role === 'admingarmen');
+
+const columns = computed(() => {
+    const base = [
+        { key: 'no_surat_jalan', label: 'No. Surat Jalan' },
+        { key: 'tanggal', label: 'Tanggal' },
+        { key: 'jumlah_item', label: 'Jumlah Item' },
+        { key: 'total_qty', label: 'Total Qty' },
+        { key: 'total_harga', label: 'Total Harga' },
+        { key: 'keterangan', label: 'Keterangan' },
+    ];
+    return isAdminGarmen.value ? base.filter((col) => col.key !== 'total_harga') : base;
+});
 
 const detailOpen = ref(false);
 const detailLoading = ref(false);
