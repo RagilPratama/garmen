@@ -194,8 +194,11 @@ const filteredNavItems = computed(() => {
     const userRole = page.props.auth?.user?.role;
 
     if (userRole === 'superadmin') {
-        // Super Admin bisa akses semua menu
+        // Super Admin bisa akses semua menu yang AKTIF (tidak di-comment)
         return navItems;
+    } else if (userRole === 'adminkantor') {
+        // Admin Kantor bisa akses semua menu AKTIF kecuali Manajemen User
+        return navItems.filter((item) => item.name !== 'users');
     } else if (isAdminGarmen.value) {
         return navItems.filter((item) => {
             if (item.type === 'header') {
@@ -203,9 +206,6 @@ const filteredNavItems = computed(() => {
             }
             return item.name === 'surat-jalan-masuk' || item.name === 'stok-bahan-garmen';
         });
-    } else if (isAdmin.value) {
-        // Admin Kantor bisa akses semua menu kecuali Pengeluaran Toko dan Manajemen User
-        return navItems.filter((item) => item.name !== 'pengeluaran-toko' && item.name !== 'users');
     } else if (isToko.value) {
         // User toko hanya bisa akses Dashboard dan Penjualan (Jual Toko, Pengeluaran Toko & Kas Toko)
         return navItems.filter((item) => {
@@ -451,7 +451,6 @@ const navItems = [
     { type: 'header', label: 'Inventori' },
     { type: 'link', name: 'surat-jalan-masuk', label: 'Surat Jalan Masuk', href: '/surat-jalan-masuk', icon: IconTruck },
     { type: 'link', name: 'surat-jalan-garmen', label: 'Surat Jalan Garmen', href: '/surat-jalan-garmen', icon: IconTruck },
-    // { type: 'link', name: 'stok-barang', label: 'Stok Barang', href: '/stok-barang', icon: IconWarehouse },
     { type: 'link', name: 'barcode', label: 'Barcode Generator', href: '/barcode', icon: IconBox },
     { type: 'link', name: 'barcode-list', label: 'List Barcode', href: '/barcode/list', icon: IconBox },
     { type: 'header', label: 'Bahan' },
@@ -460,7 +459,8 @@ const navItems = [
     { type: 'link', name: 'bahan-masuk', label: 'Bahan Masuk', href: '/bahan-masuk', icon: IconBox },
     { type: 'link', name: 'bahan-keluar', label: 'Bahan Keluar', href: '/bahan-keluar', icon: IconArrowOut },
     { type: 'link', name: 'pembayaran-supplier', label: 'Pembayaran Supplier', href: '/pembayaran-supplier', icon: IconCash },
-    // Fokus Stock Dulu
+    // ==================== MENU LAINNYA (COMMENTED SEMENTARA) ====================
+    // { type: 'link', name: 'stok-barang', label: 'Stok Barang', href: '/stok-barang', icon: IconWarehouse },
     // { type: 'header', label: 'Produksi' },
     // { type: 'link', name: 'tracking-po', label: 'Tracking PO', href: '/tracking-po', icon: IconMap },
     // { type: 'link', name: 'bahan-proses-potong', label: 'Proses Potong', href: '/bahan-proses-potong', icon: IconScissors },
