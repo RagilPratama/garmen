@@ -292,6 +292,15 @@
                                     class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-white"
                                 />
                             </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Kepemilikan</label>
+                                <SearchableSelect
+                                    v-model="completeDataForm.kepemilikan_id"
+                                    :options="kepemilikanOptions"
+                                    placeholder="-- Pilih Kepemilikan --"
+                                    searchPlaceholder="Cari kepemilikan..."
+                                />
+                            </div>
                         </div>
 
                         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 grid gap-3">
@@ -404,6 +413,7 @@ const props = defineProps({
     suppliers: Array,
     masterBahan: Array,
     suratJalanMasuk: Array,
+    kepemilikans: Array,
 });
 
 // Computed supplier options for SearchableSelect
@@ -432,6 +442,16 @@ const suratJalanOptions = computed(() => {
         props.suratJalanMasuk?.map((sj) => ({
             value: sj.no_surat_jalan,
             label: sj.no_surat_jalan,
+        })) || []
+    );
+});
+
+// Computed kepemilikan options for SearchableSelect
+const kepemilikanOptions = computed(() => {
+    return (
+        props.kepemilikans?.map((k) => ({
+            value: k.id,
+            label: k.nama_kepemilikan,
         })) || []
     );
 });
@@ -492,6 +512,7 @@ const completeDataForm = ref({
     harga_keluar: 0,
     no_surat_jalan: '',
     tanggal_masuk: new Date().toISOString().split('T')[0],
+    kepemilikan_id: null,
 });
 const loading = ref(false);
 const saving = ref(false);
@@ -835,6 +856,7 @@ const submitCompleteData = async () => {
                 harga_keluar: completeDataForm.value.harga_keluar,
                 no_surat_jalan: completeDataForm.value.no_surat_jalan,
                 tanggal_masuk: completeDataForm.value.tanggal_masuk,
+                kepemilikan_id: completeDataForm.value.kepemilikan_id,
             }),
         });
 
@@ -891,6 +913,7 @@ const restartCamera = async () => {
         harga_keluar: 0,
         no_surat_jalan: '',
         tanggal_masuk: new Date().toISOString().split('T')[0],
+        kepemilikan_id: null,
     };
     errorMessage.value = '';
     scanInput.value = '';
@@ -911,6 +934,7 @@ const reset = () => {
         harga_keluar: 0,
         no_surat_jalan: '',
         tanggal_masuk: new Date().toISOString().split('T')[0],
+        kepemilikan_id: null,
     };
     errorMessage.value = '';
 

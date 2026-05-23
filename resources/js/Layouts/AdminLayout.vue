@@ -446,6 +446,7 @@ const navItems = [
     { type: 'link', name: 'users', label: 'Manajemen User', href: '/users', icon: IconUsers },
     { type: 'link', name: 'master-model', label: 'Master Model', href: '/master-model', icon: IconUsers },
     { type: 'link', name: 'master-bahan', label: 'Master Bahan', href: '/master-bahan', icon: IconBox },
+    { type: 'link', name: 'master-kepemilikan', label: 'Master Kepemilikan', href: '/master-kepemilikan', icon: IconBox },
     { type: 'link', name: 'supplier', label: 'Supplier', href: '/supplier', icon: IconUsers },
     { type: 'link', name: 'rekening', label: 'Rekening', href: '/rekening', icon: IconBank },
     { type: 'header', label: 'Inventori' },

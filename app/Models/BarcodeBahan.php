@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class BarcodeBahan extends Model
 {
     protected $table = 'barcode_bahan';
-    
+
     protected $fillable = [
         'barcode_code',
         'no_surat_jalan',
@@ -20,7 +20,8 @@ class BarcodeBahan extends Model
         'harga_keluar',
         'total_harga',
         'tanggal',
-        'harga_sudah_diisi'
+        'harga_sudah_diisi',
+        'kepemilikan_id',
     ];
 
     protected $casts = [
@@ -29,11 +30,16 @@ class BarcodeBahan extends Model
         'harga_keluar' => 'decimal:2',
         'total_harga' => 'decimal:2',
         'tanggal' => 'date',
-        'harga_sudah_diisi' => 'boolean'
+        'harga_sudah_diisi' => 'boolean',
     ];
 
     public function suratJalanGarmenItem()
     {
         return $this->hasOne(SuratJalanGarmenItem::class, 'barcode_bahan_id');
+    }
+
+    public function kepemilikan()
+    {
+        return $this->belongsTo(MasterKepemilikan::class, 'kepemilikan_id');
     }
 }

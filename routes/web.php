@@ -35,6 +35,7 @@ use App\Http\Controllers\ImportProsesJualController;
 use App\Http\Controllers\BarcodeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\MasterBahanController;
+use App\Http\Controllers\MasterKepemilikanController;
 use App\Http\Controllers\SuratJalanGarmenController;
 use App\Http\Controllers\SuratJalanMasukController;
 use App\Http\Controllers\PembayaranSupplierController;
@@ -44,7 +45,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login.show');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
+Route::post('/logout', [AuthController::class, 'logout'])
+    ->name('logout')
+    ->middleware('auth');
 
 // Protected routes
 Route::middleware('auth')->group(function () {
@@ -52,9 +55,10 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('master-model', MasterModelController::class)->except(['show', 'create', 'edit']);
     Route::resource('master-bahan', MasterBahanController::class)->except(['show', 'create', 'edit']);
+    Route::resource('master-kepemilikan', MasterKepemilikanController::class)->except(['show', 'create', 'edit']);
     Route::resource('supplier', SupplierController::class)->except(['show', 'create', 'edit']);
     Route::resource('rekening', RekeningController::class)->except(['show', 'create', 'edit']);
-    
+
     // User Management (Super Admin only)
     Route::middleware('superadmin')->group(function () {
         Route::resource('users', UserController::class)->except(['show', 'create', 'edit']);
@@ -74,13 +78,13 @@ Route::middleware('auth')->group(function () {
     Route::resource('barang-masuk-kantor', BarangMasukKantorController::class)->except(['show']);
     Route::resource('barang-kirim-toko', BarangKirimTokoController::class)->except(['show']);
     Route::resource('proses-jual', ProsesJualController::class)->except(['show', 'create', 'edit']);
-    
+
     // Import Proses Jual
     Route::get('/import/proses-jual', [ImportProsesJualController::class, 'showForm'])->name('import.proses-jual.form');
     Route::post('/import/proses-jual', [ImportProsesJualController::class, 'import'])->name('import.proses-jual.store');
     Route::get('/import/proses-jual/template', [ImportProsesJualController::class, 'downloadTemplate'])->name('import.proses-jual.template');
     Route::get('/import/proses-jual/export-models', [ImportProsesJualController::class, 'exportModels'])->name('import.proses-jual.export-models');
-    
+
     Route::resource('jual-gudang', JualGudangController::class)->except(['show', 'create', 'edit']);
     Route::put('/jual-gudang-nota-status', [JualGudangController::class, 'updateNotaStatus'])->name('jual-gudang.update-nota-status');
     Route::put('/proses-jual-nota-status', [ProsesJualController::class, 'updateNotaStatus'])->name('proses-jual.update-nota-status');
@@ -136,10 +140,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/laporan-penjualan/export-data', [LaporanPenjualanController::class, 'exportData'])->name('laporan-penjualan.export-data');
     Route::get('/laporan-model-terjual', [LaporanModelTerjualController::class, 'index'])->name('laporan-model-terjual.index');
     Route::get('/laporan-hpp', [LaporanHppController::class, 'index'])->name('laporan-hpp.index');
-    
+
     // Pengeluaran Toko
     Route::resource('pengeluaran-toko', PengeluaranTokoController::class)->except(['show', 'create', 'edit']);
-    
+
     // Kas Toko
     Route::get('/kas-toko', [KasTokoController::class, 'index'])->name('kas-toko.index');
     Route::post('/kas-toko', [KasTokoController::class, 'store'])->name('kas-toko.store');
@@ -147,13 +151,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/kas-toko/transfer-to-gudang', [KasTokoController::class, 'transferToGudang'])->name('kas-toko.transfer-to-gudang');
     Route::delete('/kas-toko/{kasToko}', [KasTokoController::class, 'destroy'])->name('kas-toko.destroy');
     Route::get('/kas-toko/laporan', [KasTokoController::class, 'laporan'])->name('kas-toko.laporan');
-    
+
     // Kas Gudang
     Route::get('/kas-gudang', [KasGudangController::class, 'index'])->name('kas-gudang.index');
     Route::post('/kas-gudang', [KasGudangController::class, 'store'])->name('kas-gudang.store');
     Route::post('/kas-gudang/transfer', [KasGudangController::class, 'transfer'])->name('kas-gudang.transfer');
     Route::delete('/kas-gudang/{kasGudang}', [KasGudangController::class, 'destroy'])->name('kas-gudang.destroy');
-    
+
     // Kas Garmen
     Route::get('/kas-garmen', [KasGarmenController::class, 'index'])->name('kas-garmen.index');
     Route::post('/kas-garmen', [KasGarmenController::class, 'store'])->name('kas-garmen.store');
@@ -161,7 +165,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/kas-garmen/{kasGarmen}', [KasGarmenController::class, 'destroy'])->name('kas-garmen.destroy');
     // Cash account management (gudang & garmen)
     Route::resource('cash-accounts', \App\Http\Controllers\CashAccountController::class)->except(['show', 'create', 'edit']);
-    
+
     // API endpoint untuk get stok toko
     Route::get('/api/stok-toko/{tokoId}', [ProsesJualController::class, 'getStokToko']);
 });

@@ -12,7 +12,7 @@ class BarcodeController extends Controller
     public function index()
     {
         $suppliers = Supplier::orderBy('nama')->get(['id', 'nama']);
-        
+
         // Get bahan history grouped by supplier
         $bahanHistory = \DB::table('bahan_masuk')
             ->select('supplier', 'kode_bahan', 'nama_bahan', 'rp_per_yard')
@@ -27,21 +27,19 @@ class BarcodeController extends Controller
             });
 
         // Get barcode yang belum lengkap (belum diisi harga/supplier)
-        $belumLengkap = BarcodeBahan::where('harga_sudah_diisi', false)
-            ->orderBy('created_at', 'desc')
-            ->get();
-        
+        $belumLengkap = BarcodeBahan::where('harga_sudah_diisi', false)->orderBy('created_at', 'desc')->get();
+
         return Inertia::render('Barcode/Index', [
             'suppliers' => $suppliers,
             'bahanHistory' => $bahanHistory,
-            'belumLengkap' => $belumLengkap
+            'belumLengkap' => $belumLengkap,
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'tanggal' => 'required|date'
+            'tanggal' => 'required|date',
         ]);
 
         try {
@@ -70,15 +68,18 @@ class BarcodeController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Barcode berhasil disimpan',
-                'data' => $barcode
+                'data' => $barcode,
             ]);
         } catch (\Exception $e) {
             \Log::error('Error creating barcode: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal membuat barcode: ' . $e->getMessage()
-            ], 500);
+
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Gagal membuat barcode: ' . $e->getMessage(),
+                ],
+                500,
+            );
         }
     }
 
@@ -89,8 +90,7 @@ class BarcodeController extends Controller
     private function generateKodeBahan()
     {
         // Get the latest barcode_code (not kode_bahan)
-        $latestBarcode = BarcodeBahan::orderBy('barcode_code', 'desc')
-            ->first();
+        $latestBarcode = BarcodeBahan::orderBy('barcode_code', 'desc')->first();
 
         if (!$latestBarcode || !$latestBarcode->barcode_code) {
             // First code
@@ -98,18 +98,18 @@ class BarcodeController extends Controller
         }
 
         $lastCode = $latestBarcode->barcode_code;
-        
+
         // Extract letter and number
         // Format: A0001 (1 letter + 4 digits)
         preg_match('/^([A-Z])(\d{4})$/', $lastCode, $matches);
-        
+
         if (!$matches) {
             // If format doesn't match, start from A0001
             return 'A0001';
         }
 
         $letter = $matches[1];
-        $number = (int)$matches[2];
+        $number = (int) $matches[2];
 
         // Increment number
         $number++;
@@ -118,7 +118,7 @@ class BarcodeController extends Controller
         if ($number > 9999) {
             $number = 1;
             $letter = chr(ord($letter) + 1);
-            
+
             // If letter exceeds Z, start over from A (or throw error)
             if ($letter > 'Z') {
                 throw new \Exception('Kode bahan sudah mencapai batas maksimum (Z9999). Silakan hubungi administrator.');
@@ -126,11 +126,11 @@ class BarcodeController extends Controller
         }
 
         $newCode = $letter . str_pad($number, 4, '0', STR_PAD_LEFT);
-        
+
         // Double check if code already exists (safety check)
         $maxRetries = 10;
         $retryCount = 0;
-        
+
         while (BarcodeBahan::where('barcode_code', $newCode)->exists() && $retryCount < $maxRetries) {
             // If exists, increment again
             $number++;
@@ -144,7 +144,7 @@ class BarcodeController extends Controller
             $newCode = $letter . str_pad($number, 4, '0', STR_PAD_LEFT);
             $retryCount++;
         }
-        
+
         if ($retryCount >= $maxRetries) {
             throw new \Exception('Gagal generate kode unik setelah ' . $maxRetries . ' percobaan');
         }
@@ -157,17 +157,19 @@ class BarcodeController extends Controller
         $suppliers = Supplier::orderBy('nama')->get(['id', 'nama']);
         $masterBahan = \App\Models\MasterBahan::orderBy('nama_bahan')->get(['id', 'nama_bahan']);
         $suratJalanMasuk = \App\Models\SuratJalanMasuk::orderByDesc('tanggal')->get(['id', 'no_surat_jalan']);
-        
+        $kepemilikans = \App\Models\MasterKepemilikan::orderBy('nama_kepemilikan')->get(['id', 'nama_kepemilikan']);
+
         return Inertia::render('Barcode/Scan', [
             'suppliers' => $suppliers,
             'masterBahan' => $masterBahan,
             'suratJalanMasuk' => $suratJalanMasuk,
+            'kepemilikans' => $kepemilikans,
         ]);
     }
 
     public function list(Request $request)
     {
-        $query = BarcodeBahan::query();
+        $query = BarcodeBahan::with('kepemilikan');
 
         // Filter by status
         if ($request->has('status')) {
@@ -186,22 +188,40 @@ class BarcodeController extends Controller
         // Search
         if ($request->has('search') && $request->search) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('barcode_code', 'like', "%{$search}%")
-                  ->orWhere('kode_bahan', 'like', "%{$search}%")
-                  ->orWhere('nama_bahan', 'like', "%{$search}%");
+                    ->orWhere('kode_bahan', 'like', "%{$search}%")
+                    ->orWhere('nama_bahan', 'like', "%{$search}%");
             });
         }
 
-        $barcodes = $query->orderBy('created_at', 'desc')->paginate(20);
-        
+        $barcodes = $query->orderBy('created_at', 'desc')->paginate(20)->through(
+            fn($item) => [
+                'id' => $item->id,
+                'barcode_code' => $item->barcode_code,
+                'kode_bahan' => $item->kode_bahan,
+                'nama_bahan' => $item->nama_bahan,
+                'supplier' => $item->supplier,
+                'quantity' => $item->quantity,
+                'satuan' => $item->satuan,
+                'rp_per_yard' => $item->rp_per_yard,
+                'harga_keluar' => $item->harga_keluar,
+                'total_harga' => $item->total_harga,
+                'no_surat_jalan' => $item->no_surat_jalan,
+                'tanggal' => $item->tanggal,
+                'harga_sudah_diisi' => $item->harga_sudah_diisi,
+                'kepemilikan' => $item->kepemilikan
+                    ? [
+                        'id' => $item->kepemilikan->id,
+                        'nama_kepemilikan' => $item->kepemilikan->nama_kepemilikan,
+                    ]
+                    : null,
+                'created_at' => $item->created_at,
+            ],
+        );
+
         // Get unique suppliers for filter (exclude null/empty)
-        $suppliers = BarcodeBahan::select('supplier')
-            ->whereNotNull('supplier')
-            ->where('supplier', '!=', '')
-            ->distinct()
-            ->orderBy('supplier')
-            ->pluck('supplier');
+        $suppliers = BarcodeBahan::select('supplier')->whereNotNull('supplier')->where('supplier', '!=', '')->distinct()->orderBy('supplier')->pluck('supplier');
 
         // Statistics
         $stats = [
@@ -214,39 +234,42 @@ class BarcodeController extends Controller
             'barcodes' => $barcodes,
             'suppliers' => $suppliers,
             'stats' => $stats,
-            'filters' => $request->only(['status', 'supplier', 'search'])
+            'filters' => $request->only(['status', 'supplier', 'search']),
         ]);
     }
 
     public function findByCode(Request $request)
     {
         $request->validate([
-            'barcode_code' => 'required|string'
+            'barcode_code' => 'required|string',
         ]);
 
         $barcode = BarcodeBahan::where('barcode_code', $request->barcode_code)->first();
 
         if (!$barcode) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Barcode tidak ditemukan'
-            ], 404);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Barcode tidak ditemukan',
+                ],
+                404,
+            );
         }
 
         return response()->json([
             'success' => true,
-            'data' => $barcode
+            'data' => $barcode,
         ]);
     }
 
     public function updatePrice(Request $request, $id)
     {
         $validated = $request->validate([
-            'rp_per_yard' => 'required|numeric|min:0'
+            'rp_per_yard' => 'required|numeric|min:0',
         ]);
 
         $barcode = BarcodeBahan::findOrFail($id);
-        
+
         $barcode->rp_per_yard = $validated['rp_per_yard'];
         $barcode->total_harga = $barcode->quantity * $validated['rp_per_yard'];
         $barcode->harga_sudah_diisi = true;
@@ -255,7 +278,7 @@ class BarcodeController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Harga berhasil diupdate',
-            'data' => $barcode
+            'data' => $barcode,
         ]);
     }
 
@@ -270,6 +293,7 @@ class BarcodeController extends Controller
             'harga_keluar' => 'required|numeric|min:0',
             'no_surat_jalan' => 'required|string',
             'tanggal_masuk' => 'required|date',
+            'kepemilikan_id' => 'nullable|exists:master_kepemilikans,id',
         ]);
 
         $barcode = BarcodeBahan::findOrFail($id);
@@ -277,7 +301,7 @@ class BarcodeController extends Controller
         // Cek apakah sudah pernah diisi sebelumnya (untuk menghindari double stok)
         $sudahDiisiSebelumnya = $barcode->harga_sudah_diisi;
         $qtyLama = (float) $barcode->quantity;
-        
+
         // Update all fields
         $barcode->supplier = $validated['supplier'];
         $barcode->nama_bahan = $validated['nama_bahan'];
@@ -287,6 +311,7 @@ class BarcodeController extends Controller
         $barcode->harga_keluar = $validated['harga_keluar'];
         $barcode->no_surat_jalan = $validated['no_surat_jalan'];
         $barcode->tanggal = $validated['tanggal_masuk'];
+        $barcode->kepemilikan_id = $validated['kepemilikan_id'] ?? null;
         $barcode->total_harga = $validated['quantity'] * $validated['rp_per_yard'];
         $barcode->harga_sudah_diisi = true;
         $barcode->save();
@@ -299,29 +324,34 @@ class BarcodeController extends Controller
             // Jika sudah pernah diisi, hitung selisih qty untuk update stok
             $selisih = $qty - $qtyLama;
             if ($selisih != 0) {
-                \DB::statement("
+                \DB::statement(
+                    "
                     UPDATE stok_bahan
                     SET quantity = GREATEST(0, quantity + ?),
                         updated_at = NOW()
                     WHERE kode_bahan = ?
-                ", [$selisih, $kodeBahan]);
+                ",
+                    [$selisih, $kodeBahan],
+                );
             }
         } else {
             // Pertama kali diisi — tambahkan ke stok bahan (INSERT or UPDATE)
-            \DB::statement("
+            \DB::statement(
+                "
                 INSERT INTO stok_bahan (kode_bahan, quantity, created_at, updated_at)
                 VALUES (?, ?, NOW(), NOW())
                 ON DUPLICATE KEY UPDATE
                     quantity = quantity + ?,
                     updated_at = NOW()
-            ", [$kodeBahan, $qty, $qty]);
+            ",
+                [$kodeBahan, $qty, $qty],
+            );
         }
 
         return response()->json([
             'success' => true,
             'message' => 'Data lengkap berhasil disimpan',
-            'data' => $barcode
+            'data' => $barcode,
         ]);
     }
 }
-

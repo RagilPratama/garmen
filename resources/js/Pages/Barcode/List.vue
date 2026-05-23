@@ -132,6 +132,7 @@
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">No. Surat Jalan</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Nama Bahan</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Supplier</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Kepemilikan</th>
                                 <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Qty</th>
                                 <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Harga/Yard</th>
                                 <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Harga Keluar</th>
@@ -162,6 +163,12 @@
                                 </td>
                                 <td class="px-4 py-3">
                                     <span class="text-sm text-gray-600">{{ barcode.supplier }}</span>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span v-if="barcode.kepemilikan" class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700">
+                                        {{ barcode.kepemilikan.nama_kepemilikan }}
+                                    </span>
+                                    <span v-else class="text-xs text-gray-400">—</span>
                                 </td>
                                 <td class="px-4 py-3 text-right">
                                     <span class="text-sm font-medium text-gray-800">{{ barcode.quantity }} {{ barcode.satuan }}</span>
