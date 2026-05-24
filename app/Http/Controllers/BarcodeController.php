@@ -15,7 +15,7 @@ class BarcodeController extends Controller
 
         // Get bahan history grouped by supplier
         $bahanHistory = \DB::table('bahan_masuk')
-            ->select('supplier', 'kode_bahan', 'nama_bahan', 'rp_per_yard')
+            ->select('supplier', 'kode_bahan', 'nama_bahan', 'harga_satuan', 'satuan')
             ->whereNotNull('kode_bahan')
             ->whereNotNull('supplier')
             ->orderBy('tanggal', 'desc')
@@ -288,12 +288,12 @@ class BarcodeController extends Controller
             'supplier' => 'required|string',
             'nama_bahan' => 'required|string',
             'quantity' => 'required|numeric|min:0',
-            'satuan' => 'nullable|string',
+            'satuan' => 'required|in:yard,meter,kg',
             'rp_per_yard' => 'required|numeric|min:0',
             'harga_keluar' => 'required|numeric|min:0',
             'no_surat_jalan' => 'required|string',
             'tanggal_masuk' => 'required|date',
-            'kepemilikan_id' => 'nullable|exists:master_kepemilikans,id',
+            'kepemilikan_id' => 'required|exists:master_kepemilikans,id',
         ]);
 
         $barcode = BarcodeBahan::findOrFail($id);
@@ -306,7 +306,7 @@ class BarcodeController extends Controller
         $barcode->supplier = $validated['supplier'];
         $barcode->nama_bahan = $validated['nama_bahan'];
         $barcode->quantity = $validated['quantity'];
-        $barcode->satuan = $validated['satuan'] ?? 'yard';
+        $barcode->satuan = $validated['satuan'];
         $barcode->rp_per_yard = $validated['rp_per_yard'];
         $barcode->harga_keluar = $validated['harga_keluar'];
         $barcode->no_surat_jalan = $validated['no_surat_jalan'];

@@ -274,7 +274,7 @@
                                 <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Nama Bahan</th>
                                 <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Supplier</th>
                                 <th class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Qty</th>
-                                <th class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Harga/Yard</th>
+                                <th class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Harga/Satuan</th>
                                 <th class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Total</th>
                             </tr>
                         </thead>

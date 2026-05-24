@@ -11,7 +11,7 @@
         </template>
 
         <template #cell-items_sum_quantity="{ item }">
-            <span class="font-semibold text-gray-800">{{ formatYard(item.items_sum_quantity) }} yard</span>
+            <span class="font-semibold text-gray-800">{{ formatYard(item.items_sum_quantity) }}</span>
         </template>
 
         <template #cell-items_count="{ item }">
@@ -85,7 +85,7 @@
                         <tfoot class="bg-gray-50 border-t border-gray-200">
                             <tr>
                                 <td colspan="4" class="px-4 py-2 text-sm font-semibold text-gray-700 text-right">Total:</td>
-                                <td class="px-4 py-2 text-right text-sm font-bold text-gray-800">{{ formatYard(detailTotal) }} yard</td>
+                                <td class="px-4 py-2 text-right text-sm font-bold text-gray-800">{{ formatYard(detailTotal) }}</td>
                                 <td></td>
                                 <td class="px-4 py-2 text-right text-sm font-bold text-gray-800">{{ formatRupiah(detailTotalHarga) }}</td>
                             </tr>

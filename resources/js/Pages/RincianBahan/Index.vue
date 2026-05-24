@@ -11,7 +11,7 @@
                     </div>
                     <div class="min-w-0 flex-1">
                         <p class="text-xs text-gray-400 truncate">{{ s.kode_bahan }}</p>
-                        <p class="font-bold text-gray-800 text-sm">{{ Number(s.total_yard).toLocaleString('id-ID') }} yard</p>
+                        <p class="font-bold text-gray-800 text-sm">{{ Number(s.total_quantity).toLocaleString('id-ID') }}</p>
                         <p class="text-xs font-medium" :class="tab === 'masuk' ? 'text-emerald-600' : 'text-rose-600'">
                             {{ formatRupiah(s.total_nilai) }}
                         </p>
@@ -124,8 +124,8 @@
                                     </span>
                                 </td>
                                 <td class="px-5 py-3 text-gray-600">{{ row.nama_bahan ?? '—' }}</td>
-                                <td class="px-5 py-3 text-right font-medium text-gray-700">{{ Number(row.yard).toLocaleString('id-ID') }}</td>
-                                <td class="px-5 py-3 text-right text-gray-600 text-xs">{{ formatRupiah(row.rp_per_yard) }}</td>
+                                <td class="px-5 py-3 text-right font-medium text-gray-700">{{ Number(row.quantity).toLocaleString('id-ID') }} {{ row.satuan }}</td>
+                                <td class="px-5 py-3 text-right text-gray-600 text-xs">{{ formatRupiah(row.harga_satuan) }}</td>
                                 <td class="px-5 py-3 text-right font-semibold text-emerald-700">{{ formatRupiah(row.total) }}</td>
                             </tr>
                             <tr v-if="!rows?.data?.length">
@@ -136,7 +136,7 @@
                         <tfoot v-if="rows?.data?.length">
                             <tr class="bg-emerald-50 border-t border-emerald-100">
                                 <td colspan="6" class="px-5 py-3 text-xs font-semibold text-emerald-700">Subtotal halaman ini</td>
-                                <td class="px-5 py-3 text-right text-xs font-bold text-emerald-700">{{ Number(rows.data.reduce((s, r) => s + Number(r.yard), 0)).toLocaleString('id-ID') }} yard</td>
+                                <td class="px-5 py-3 text-right text-xs font-bold text-emerald-700">{{ Number(rows.data.reduce((s, r) => s + Number(r.quantity), 0)).toLocaleString('id-ID') }}</td>
                                 <td class="px-5 py-3"></td>
                                 <td class="px-5 py-3 text-right text-xs font-bold text-emerald-700">
                                     {{ formatRupiah(rows.data.reduce((s, r) => s + Number(r.total), 0)) }}
@@ -174,9 +174,9 @@
                                         {{ row.kode_bahan }}
                                     </span>
                                 </td>
-                                <td class="px-5 py-3 text-right font-medium text-gray-700">{{ Number(row.yard).toLocaleString('id-ID') }}</td>
-                                <td class="px-5 py-3 text-right text-gray-600 text-xs">{{ formatRupiah(row.rp_per_yard) }}</td>
-                                <td class="px-5 py-3 text-right font-semibold text-rose-700">{{ formatRupiah(row.total) }}</td>
+                                <td class="px-5 py-3 text-right font-medium text-gray-700">{{ Number(row.quantity).toLocaleString('id-ID') }} {{ row.satuan }}</td>
+                                <td class="px-5 py-3 text-right text-gray-600 text-xs">{{ formatRupiah(row.harga_satuan) }}</td>
+                                <td class="px-5 py-3 text-right font-semibold text-rose-700">{{ formatRupiah(row.total_harga) }}</td>
                             </tr>
                             <tr v-if="!rows?.data?.length">
                                 <td colspan="7" class="px-4 py-16 text-center text-sm text-gray-400">Belum ada data</td>
@@ -185,10 +185,10 @@
                         <tfoot v-if="rows?.data?.length">
                             <tr class="bg-rose-50 border-t border-rose-100">
                                 <td colspan="4" class="px-5 py-3 text-xs font-semibold text-rose-700">Subtotal halaman ini</td>
-                                <td class="px-5 py-3 text-right text-xs font-bold text-rose-700">{{ Number(rows.data.reduce((s, r) => s + Number(r.yard), 0)).toLocaleString('id-ID') }} yard</td>
+                                <td class="px-5 py-3 text-right text-xs font-bold text-rose-700">{{ Number(rows.data.reduce((s, r) => s + Number(r.quantity), 0)).toLocaleString('id-ID') }}</td>
                                 <td class="px-5 py-3"></td>
                                 <td class="px-5 py-3 text-right text-xs font-bold text-rose-700">
-                                    {{ formatRupiah(rows.data.reduce((s, r) => s + Number(r.total), 0)) }}
+                                    {{ formatRupiah(rows.data.reduce((s, r) => s + Number(r.total_harga), 0)) }}
                                 </td>
                             </tr>
                         </tfoot>

@@ -9,9 +9,7 @@ class BahanKeluar extends Model
 {
     protected $table = 'bahan_keluar';
 
-    protected $fillable = [
-        'tanggal', 'no_surat_jalan', 'kode_bahan', 'yard', 'rp_per_yard', 'total',
-    ];
+    protected $fillable = ['tanggal', 'no_surat_jalan', 'kode_bahan', 'quantity', 'satuan', 'harga_satuan', 'total_harga'];
 
     protected $casts = [
         'tanggal' => 'date',

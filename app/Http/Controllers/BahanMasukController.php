@@ -18,19 +18,23 @@ class BahanMasukController extends Controller
     use GeneratesSuratJalan;
     public function index()
     {
-        $search  = request('search');
+        $search = request('search');
         $namaBahan = request('nama_bahan');
         $supplier = request('supplier');
         $status = request('status');
 
         // Bahan masuk = SEMUA barcode yang sudah lengkap (history tracking)
         $query = \App\Models\BarcodeBahan::where('harga_sudah_diisi', true)
-            ->when($search, fn($q) => $q->where(fn($q) => $q
-                ->where('kode_bahan', 'like', "%{$search}%")
-                ->orWhere('nama_bahan', 'like', "%{$search}%")
-                ->orWhere('supplier', 'like', "%{$search}%")
-                ->orWhere('no_surat_jalan', 'like', "%{$search}%")
-            ))
+            ->when(
+                $search,
+                fn($q) => $q->where(
+                    fn($q) => $q
+                        ->where('kode_bahan', 'like', "%{$search}%")
+                        ->orWhere('nama_bahan', 'like', "%{$search}%")
+                        ->orWhere('supplier', 'like', "%{$search}%")
+                        ->orWhere('no_surat_jalan', 'like', "%{$search}%"),
+                ),
+            )
             ->when($namaBahan, fn($q) => $q->where('nama_bahan', $namaBahan))
             ->when($supplier, fn($q) => $q->where('supplier', $supplier))
             ->when($status === 'gudang', fn($q) => $q->whereDoesntHave('suratJalanGarmenItem'))
@@ -57,17 +61,12 @@ class BahanMasukController extends Controller
             ->pluck('supplier');
 
         // Daftar nama bahan unik untuk filter
-        $namaBahanOptions = \App\Models\BarcodeBahan::where('harga_sudah_diisi', true)
-            ->whereNotNull('nama_bahan')
-            ->select('nama_bahan')
-            ->distinct()
-            ->orderBy('nama_bahan')
-            ->pluck('nama_bahan');
+        $namaBahanOptions = \App\Models\BarcodeBahan::where('harga_sudah_diisi', true)->whereNotNull('nama_bahan')->select('nama_bahan')->distinct()->orderBy('nama_bahan')->pluck('nama_bahan');
 
         return Inertia::render('BahanMasuk/Index', [
-            'data'              => $query,
-            'supplierOptions'   => $supplierOptions,
-            'namaBahanOptions'  => $namaBahanOptions,
+            'data' => $query,
+            'supplierOptions' => $supplierOptions,
+            'namaBahanOptions' => $namaBahanOptions,
             'filters' => [
                 'search' => $search,
                 'nama_bahan' => $namaBahan,
@@ -85,33 +84,35 @@ class BahanMasukController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'tanggal'              => 'required|date',
-            'no_surat_jalan'       => 'nullable|string|max:100',
-            'supplier'             => 'required|string|max:200',
-            'items'                => 'required|array|min:1',
-            'items.*.kode_bahan'   => 'required|string|max:100',
-            'items.*.nama_bahan'   => 'nullable|string|max:200',
-            'items.*.yard'         => 'required|numeric|min:0',
-            'items.*.rp_per_yard'  => 'required|numeric|min:0',
+            'tanggal' => 'required|date',
+            'no_surat_jalan' => 'nullable|string|max:100',
+            'supplier' => 'required|string|max:200',
+            'items' => 'required|array|min:1',
+            'items.*.kode_bahan' => 'required|string|max:100',
+            'items.*.nama_bahan' => 'nullable|string|max:200',
+            'items.*.quantity' => 'required|numeric|min:0',
+            'items.*.satuan' => 'required|in:yard,meter,kg',
+            'items.*.harga_satuan' => 'required|numeric|min:0',
         ]);
 
-        $noNota     = $this->nextCode(BahanMasuk::class, 'no_nota', 'NT-');
+        $noNota = $this->nextCode(BahanMasuk::class, 'no_nota', 'NT-');
         $stokDeltas = [];
 
         foreach ($validated['items'] as $item) {
             BahanMasuk::create([
-                'tanggal'        => $validated['tanggal'],
+                'tanggal' => $validated['tanggal'],
                 'no_surat_jalan' => $validated['no_surat_jalan'],
-                'no_nota'        => $noNota,
-                'supplier'       => $validated['supplier'],
-                'kode_bahan'     => $item['kode_bahan'],
-                'nama_bahan'     => $item['nama_bahan'] ?? null,
-                'yard'           => $item['yard'],
-                'rp_per_yard'    => $item['rp_per_yard'],
-                'total'          => $item['yard'] * $item['rp_per_yard'],
+                'no_nota' => $noNota,
+                'supplier' => $validated['supplier'],
+                'kode_bahan' => $item['kode_bahan'],
+                'nama_bahan' => $item['nama_bahan'] ?? null,
+                'quantity' => $item['quantity'],
+                'satuan' => $item['satuan'],
+                'harga_satuan' => $item['harga_satuan'],
+                'total_harga' => $item['quantity'] * $item['harga_satuan'],
             ]);
 
-            $stokDeltas[$item['kode_bahan']] = ($stokDeltas[$item['kode_bahan']] ?? 0) + $item['yard'];
+            $stokDeltas[$item['kode_bahan']] = ($stokDeltas[$item['kode_bahan']] ?? 0) + $item['quantity'];
         }
 
         $this->bulkAddStok($stokDeltas);
@@ -127,24 +128,23 @@ class BahanMasukController extends Controller
     public function update(Request $request, $bahanMasuk)
     {
         $validated = $request->validate([
-            'tanggal'              => 'required|date',
-            'no_surat_jalan'       => 'nullable|string|max:100',
-            'no_nota'              => 'nullable|string|max:100',
-            'supplier'             => 'required|string|max:200',
-            'items'                => 'required|array|min:1',
-            'items.*.kode_bahan'   => 'required|string|max:100',
-            'items.*.nama_bahan'   => 'nullable|string|max:200',
-            'items.*.yard'         => 'required|numeric|min:0',
-            'items.*.rp_per_yard'  => 'required|numeric|min:0',
+            'tanggal' => 'required|date',
+            'no_surat_jalan' => 'nullable|string|max:100',
+            'no_nota' => 'nullable|string|max:100',
+            'supplier' => 'required|string|max:200',
+            'items' => 'required|array|min:1',
+            'items.*.kode_bahan' => 'required|string|max:100',
+            'items.*.nama_bahan' => 'nullable|string|max:200',
+            'items.*.quantity' => 'required|numeric|min:0',
+            'items.*.satuan' => 'required|in:yard,meter,kg',
+            'items.*.harga_satuan' => 'required|numeric|min:0',
         ]);
 
         $existing = BahanMasuk::where('no_nota', $bahanMasuk)->get();
         if ($existing->isEmpty() && is_numeric($bahanMasuk)) {
             $row = BahanMasuk::find($bahanMasuk);
             if ($row) {
-                $existing = $row->no_nota
-                    ? BahanMasuk::where('no_nota', $row->no_nota)->get()
-                    : collect([$row]);
+                $existing = $row->no_nota ? BahanMasuk::where('no_nota', $row->no_nota)->get() : collect([$row]);
             }
         }
 
@@ -159,18 +159,19 @@ class BahanMasukController extends Controller
         $noNota = $validated['no_nota'] ?: $bahanMasuk;
         foreach ($validated['items'] as $item) {
             BahanMasuk::create([
-                'tanggal'        => $validated['tanggal'],
+                'tanggal' => $validated['tanggal'],
                 'no_surat_jalan' => $validated['no_surat_jalan'],
-                'no_nota'        => $noNota,
-                'supplier'       => $validated['supplier'],
-                'kode_bahan'     => $item['kode_bahan'],
-                'nama_bahan'     => $item['nama_bahan'] ?? null,
-                'yard'           => $item['yard'],
-                'rp_per_yard'    => $item['rp_per_yard'],
-                'total'          => $item['yard'] * $item['rp_per_yard'],
+                'no_nota' => $noNota,
+                'supplier' => $validated['supplier'],
+                'kode_bahan' => $item['kode_bahan'],
+                'nama_bahan' => $item['nama_bahan'] ?? null,
+                'quantity' => $item['quantity'],
+                'satuan' => $item['satuan'],
+                'harga_satuan' => $item['harga_satuan'],
+                'total_harga' => $item['quantity'] * $item['harga_satuan'],
             ]);
 
-            $stokDeltas[$item['kode_bahan']] = ($stokDeltas[$item['kode_bahan']] ?? 0) + $item['yard'];
+            $stokDeltas[$item['kode_bahan']] = ($stokDeltas[$item['kode_bahan']] ?? 0) + $item['quantity'];
         }
 
         $this->bulkAddStok($stokDeltas);
@@ -187,15 +188,13 @@ class BahanMasukController extends Controller
         if ($items->isEmpty() && is_numeric($bahanMasuk)) {
             $item = BahanMasuk::find($bahanMasuk);
             if ($item) {
-                $items = $item->no_nota
-                    ? BahanMasuk::where('no_nota', $item->no_nota)->get()
-                    : collect([$item]);
+                $items = $item->no_nota ? BahanMasuk::where('no_nota', $item->no_nota)->get() : collect([$item]);
             }
         }
 
         $stokDeltas = [];
         foreach ($items as $item) {
-            $stokDeltas[$item->kode_bahan] = ($stokDeltas[$item->kode_bahan] ?? 0) - $item->yard;
+            $stokDeltas[$item->kode_bahan] = ($stokDeltas[$item->kode_bahan] ?? 0) - $item->quantity;
         }
         BahanMasuk::whereIn('id', $items->pluck('id'))->delete();
         $this->bulkAddStok($stokDeltas);
@@ -211,12 +210,16 @@ class BahanMasukController extends Controller
         $status = request('status');
 
         return \App\Models\BarcodeBahan::where('harga_sudah_diisi', true)
-            ->when($search, fn($q) => $q->where(fn($q) => $q
-                ->where('kode_bahan', 'like', "%{$search}%")
-                ->orWhere('nama_bahan', 'like', "%{$search}%")
-                ->orWhere('supplier', 'like', "%{$search}%")
-                ->orWhere('no_surat_jalan', 'like', "%{$search}%")
-            ))
+            ->when(
+                $search,
+                fn($q) => $q->where(
+                    fn($q) => $q
+                        ->where('kode_bahan', 'like', "%{$search}%")
+                        ->orWhere('nama_bahan', 'like', "%{$search}%")
+                        ->orWhere('supplier', 'like', "%{$search}%")
+                        ->orWhere('no_surat_jalan', 'like', "%{$search}%"),
+                ),
+            )
             ->when($namaBahan, fn($q) => $q->where('nama_bahan', $namaBahan))
             ->when($supplier, fn($q) => $q->where('supplier', $supplier))
             ->when($status === 'gudang', fn($q) => $q->whereDoesntHave('suratJalanGarmenItem'))
@@ -244,19 +247,23 @@ class BahanMasukController extends Controller
 
         $row = 2;
         foreach ($data as $i => $item) {
-            $sheet->fromArray([
-                $i + 1,
-                $item->tanggal ? $item->tanggal->format('d/m/Y') : '-',
-                $item->no_surat_jalan,
-                $item->kode_bahan,
-                $item->nama_bahan,
-                $item->supplier,
-                (float) $item->quantity,
-                $item->satuan ?? 'yard',
-                (float) $item->rp_per_yard,
-                (float) $item->total_harga,
-                $item->lokasi,
-            ], null, "A{$row}");
+            $sheet->fromArray(
+                [
+                    $i + 1,
+                    $item->tanggal ? $item->tanggal->format('d/m/Y') : '-',
+                    $item->no_surat_jalan,
+                    $item->kode_bahan,
+                    $item->nama_bahan,
+                    $item->supplier,
+                    (float) $item->quantity,
+                    $item->satuan ?? 'yard',
+                    (float) $item->rp_per_yard,
+                    (float) $item->total_harga,
+                    $item->lokasi,
+                ],
+                null,
+                "A{$row}",
+            );
             $row++;
         }
 
@@ -298,23 +305,25 @@ class BahanMasukController extends Controller
 
         // MySQL: INSERT ... ON DUPLICATE KEY UPDATE
         $placeholders = [];
-        $bindings     = [];
+        $bindings = [];
 
         foreach ($deltas as $kode => $delta) {
             $placeholders[] = '(?, ?, NOW(), NOW())';
-            $bindings[]     = $kode;
-            $bindings[]     = (float) max(0, $delta);
+            $bindings[] = $kode;
+            $bindings[] = (float) max(0, $delta);
         }
 
         $values = implode(', ', $placeholders);
 
-        \DB::statement("
+        \DB::statement(
+            "
             INSERT INTO stok_bahan (kode_bahan, quantity, created_at, updated_at)
             VALUES {$values}
             ON DUPLICATE KEY UPDATE
                 quantity   = quantity + VALUES(quantity),
                 updated_at = NOW()
-        ", $bindings);
+        ",
+            $bindings,
+        );
     }
 }
-

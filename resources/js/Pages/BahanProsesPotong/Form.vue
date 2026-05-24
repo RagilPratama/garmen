@@ -16,7 +16,16 @@
                             <input v-model="form.tanggal_potong" type="date" v-bind="ip" />
                             <FieldError :error="form.errors.tanggal_potong" />
                         </FormField>
-                        <FormField label="Yard" required><input v-model="form.yard" type="number" min="0" v-bind="ip" /></FormField>
+                        <FormField label="Quantity" required><input v-model="form.quantity" type="number" min="0" step="0.01" v-bind="ip" /></FormField>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <FormField label="Satuan" required>
+                            <select v-model="form.satuan" v-bind="ip">
+                                <option value="yard">Yard</option>
+                                <option value="meter">Meter</option>
+                                <option value="kg">Kilogram (Kg)</option>
+                            </select>
+                        </FormField>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <FormField label="PO" required><input v-model="form.po" type="text" v-bind="ip" /></FormField>
@@ -47,7 +56,8 @@ const props = defineProps({ item: { type: Object, default: null } });
 const isEdit = computed(() => !!props.item);
 const form = useForm({
     tanggal_potong: props.item?.tanggal_potong?.split('T')[0] ?? '',
-    yard: props.item?.yard ?? '',
+    quantity: props.item?.quantity ?? '',
+    satuan: props.item?.satuan ?? 'yard',
     po: props.item?.po ?? '',
     model: props.item?.model ?? '',
     kode_bahan: props.item?.kode_bahan ?? '',

@@ -1,0 +1,127 @@
+{
+  // ===== FONT SETTINGS =====
+  "buffer_font_family": "Fira Code",
+  "buffer_font_size": 13,
+  "buffer_font_features": {
+    "calt": true
+  },
+  "ui_font_size": 13,
+
+  // ===== TERMINAL FONT =====
+  "terminal": {
+    "font_family": "Fira Code",
+    "font_size": 13,
+    "line_height": "comfortable"
+  },
+
+  // ===== THEME =====
+  "theme": {
+    "mode": "dark",
+    "light": "One Light",
+    "dark": "One Dark"
+  },
+
+  // ===== TAB & INDENTATION =====
+  "tab_size": 4,
+  "hard_tabs": false,
+  "preferred_line_length": 120,
+  "soft_wrap": "preferred_line_length",
+
+  // ===== AUTO-SAVE & FORMAT =====
+  "autosave": "on_focus_change",
+  "format_on_save": "on",
+  "formatter": "auto",
+
+  // ===== GIT SETTINGS =====
+  "git": {
+    "git_gutter": "tracked_files",
+    "inline_blame": {
+      "enabled": true
+    }
+  },
+
+  // ===== CURSOR =====
+  "cursor_blink": true,
+
+  // ===== BRACKET SETTINGS =====
+  "show_inline_completions": true,
+  "use_autoclose": true,
+
+  // ===== PRETTIER/FORMATTING (via Language Settings) =====
+  "languages": {
+    "Vue": {
+      "tab_size": 4,
+      "format_on_save": "on",
+      "formatter": "prettier",
+      "prettier": {
+        "printWidth": 120,
+        "singleAttributePerLine": false,
+        "bracketSameLine": true,
+        "htmlWhitespaceSensitivity": "ignore",
+        "vueIndentScriptAndStyle": false
+      }
+    },
+    "JavaScript": {
+      "tab_size": 4,
+      "format_on_save": "on",
+      "formatter": "prettier",
+      "prettier": {
+        "printWidth": 120,
+        "singleAttributePerLine": false
+      }
+    },
+    "TypeScript": {
+      "tab_size": 4,
+      "format_on_save": "on",
+      "formatter": "prettier"
+    },
+    "TSX": {
+      "tab_size": 4,
+      "format_on_save": "on",
+      "formatter": "prettier"
+    },
+    "JSON": {
+      "tab_size": 4,
+      "format_on_save": "on",
+      "formatter": "prettier"
+    },
+    "PHP": {
+      "tab_size": 4,
+      "format_on_save": "on"
+    }
+  },
+
+  // ===== LSP & DIAGNOSTICS =====
+  "lsp": {
+    "volar": {
+      "initialization_options": {
+        "vue": {
+          "hybridMode": false
+        }
+      }
+    }
+  },
+
+  // ===== UI SETTINGS =====
+  "scrollbar": {
+    "show": "always"
+  },
+  "vertical_scroll_margin": 3,
+  "relative_line_numbers": false,
+  "vim_mode": false,
+  "toolbar": {
+    "breadcrumbs": true,
+    "quick_actions": true
+  },
+
+  // ===== INLINE SUGGESTIONS =====
+  "features": {
+    "inline_completion_provider": "supermaven"
+  },
+
+  // ===== FILE TREE =====
+  "project_panel": {
+    "dock": "left",
+    "default_width": 280
+  }
+}

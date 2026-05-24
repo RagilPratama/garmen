@@ -216,10 +216,10 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Quantity (Yard)
+                                    Quantity
                                     <span class="text-red-500">*</span>
                                 </label>
                                 <input
@@ -234,7 +234,14 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Harga per Yard
+                                    Satuan
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <SearchableSelect v-model="completeDataForm.satuan" :options="satuanOptions" placeholder="-- Pilih Satuan --" searchPlaceholder="Cari satuan..." />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Harga per {{ completeDataForm.satuan || 'Satuan' }}
                                     <span class="text-red-500">*</span>
                                 </label>
                                 <input
@@ -252,7 +259,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Harga Keluar per Yard
+                                    Harga Keluar per {{ completeDataForm.satuan || 'Satuan' }}
                                     <span class="text-red-500">*</span>
                                 </label>
                                 <input
@@ -293,7 +300,10 @@
                                 />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Kepemilikan</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Kepemilikan
+                                    <span class="text-red-500">*</span>
+                                </label>
                                 <SearchableSelect
                                     v-model="completeDataForm.kepemilikan_id"
                                     :options="kepemilikanOptions"
@@ -456,6 +466,13 @@ const kepemilikanOptions = computed(() => {
     );
 });
 
+// Satuan options
+const satuanOptions = [
+    { value: 'yard', label: 'Yard' },
+    { value: 'meter', label: 'Meter' },
+    { value: 'kg', label: 'Kilogram (Kg)' },
+];
+
 // Dynamic import html5-qrcode
 let Html5Qrcode = null;
 let html5QrcodeLoaded = false;
@@ -508,6 +525,7 @@ const completeDataForm = ref({
     supplier: '',
     nama_bahan: '',
     quantity: 0,
+    satuan: 'yard',
     rp_per_yard: 0,
     harga_keluar: 0,
     no_surat_jalan: '',
@@ -827,12 +845,13 @@ const submitCompleteData = async () => {
         !completeDataForm.value.harga_keluar ||
         !completeDataForm.value.no_surat_jalan ||
         !completeDataForm.value.tanggal_masuk ||
+        !completeDataForm.value.kepemilikan_id ||
         !barcodeData.value
     ) {
         await Swal.fire({
             icon: 'warning',
             title: 'Data Tidak Lengkap',
-            text: 'Supplier, Nama Bahan, Quantity, Harga, No. Surat Jalan, dan Tanggal Masuk harus diisi!',
+            text: 'Semua field yang bertanda * (required) harus diisi termasuk Kepemilikan!',
             confirmButtonColor: '#f59e0b',
         });
         return;
@@ -851,7 +870,7 @@ const submitCompleteData = async () => {
                 supplier: completeDataForm.value.supplier,
                 nama_bahan: completeDataForm.value.nama_bahan,
                 quantity: completeDataForm.value.quantity,
-                satuan: 'yard',
+                satuan: completeDataForm.value.satuan,
                 rp_per_yard: completeDataForm.value.rp_per_yard,
                 harga_keluar: completeDataForm.value.harga_keluar,
                 no_surat_jalan: completeDataForm.value.no_surat_jalan,
@@ -909,6 +928,7 @@ const restartCamera = async () => {
         supplier: '',
         nama_bahan: '',
         quantity: 0,
+        satuan: 'yard',
         rp_per_yard: 0,
         harga_keluar: 0,
         no_surat_jalan: '',
@@ -930,6 +950,7 @@ const reset = () => {
         supplier: '',
         nama_bahan: '',
         quantity: 0,
+        satuan: 'yard',
         rp_per_yard: 0,
         harga_keluar: 0,
         no_surat_jalan: '',

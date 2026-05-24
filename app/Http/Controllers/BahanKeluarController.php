@@ -35,9 +35,7 @@ class BahanKeluarController extends Controller
     {
         $noSuratJalan = request('no_surat_jalan');
 
-        $suratJalan = \App\Models\SuratJalanGarmen::with('items')
-            ->where('no_surat_jalan', $noSuratJalan)
-            ->first();
+        $suratJalan = \App\Models\SuratJalanGarmen::with('items')->where('no_surat_jalan', $noSuratJalan)->first();
 
         if (!$suratJalan) {
             return response()->json(['error' => 'Surat jalan tidak ditemukan'], 404);
@@ -54,31 +52,33 @@ class BahanKeluarController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'tanggal'              => 'required|date',
-            'no_surat_jalan'       => 'nullable|string|max:100',
-            'items'                => 'required|array|min:1',
-            'items.*.kode_bahan'   => 'required|string|max:100',
-            'items.*.yard'         => 'required|numeric|min:0.01',
-            'items.*.rp_per_yard'  => 'required|numeric|min:0',
+            'tanggal' => 'required|date',
+            'no_surat_jalan' => 'nullable|string|max:100',
+            'items' => 'required|array|min:1',
+            'items.*.kode_bahan' => 'required|string|max:100',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.satuan' => 'required|in:yard,meter,kg',
+            'items.*.harga_satuan' => 'required|numeric|min:0',
         ]);
 
         $noSJ = $validated['no_surat_jalan'] ?: $this->nextSuratJalan(BahanKeluar::class, 'BK-');
 
         foreach ($validated['items'] as $item) {
-            $this->validateStok($item['kode_bahan'], $item['yard']);
+            $this->validateStok($item['kode_bahan'], $item['quantity']);
         }
 
         $stokDeltas = [];
         foreach ($validated['items'] as $item) {
             BahanKeluar::create([
-                'tanggal'        => $validated['tanggal'],
+                'tanggal' => $validated['tanggal'],
                 'no_surat_jalan' => $noSJ,
-                'kode_bahan'     => $item['kode_bahan'],
-                'yard'           => $item['yard'],
-                'rp_per_yard'    => $item['rp_per_yard'],
-                'total'          => $item['yard'] * $item['rp_per_yard'],
+                'kode_bahan' => $item['kode_bahan'],
+                'quantity' => $item['quantity'],
+                'satuan' => $item['satuan'],
+                'harga_satuan' => $item['harga_satuan'],
+                'total_harga' => $item['quantity'] * $item['harga_satuan'],
             ]);
-            $stokDeltas[$item['kode_bahan']] = ($stokDeltas[$item['kode_bahan']] ?? 0) + $item['yard'];
+            $stokDeltas[$item['kode_bahan']] = ($stokDeltas[$item['kode_bahan']] ?? 0) + $item['quantity'];
         }
 
         $this->bulkKurangiStok($stokDeltas);
@@ -94,51 +94,51 @@ class BahanKeluarController extends Controller
     public function update(Request $request, $bahanKeluar)
     {
         $validated = $request->validate([
-            'tanggal'              => 'required|date',
-            'no_surat_jalan'       => 'nullable|string|max:100',
-            'items'                => 'required|array|min:1',
-            'items.*.kode_bahan'   => 'required|string|max:100',
-            'items.*.yard'         => 'required|numeric|min:0.01',
-            'items.*.rp_per_yard'  => 'required|numeric|min:0',
+            'tanggal' => 'required|date',
+            'no_surat_jalan' => 'nullable|string|max:100',
+            'items' => 'required|array|min:1',
+            'items.*.kode_bahan' => 'required|string|max:100',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.satuan' => 'required|in:yard,meter,kg',
+            'items.*.harga_satuan' => 'required|numeric|min:0',
         ]);
 
         $existing = BahanKeluar::where('no_surat_jalan', $bahanKeluar)->get();
         if ($existing->isEmpty() && is_numeric($bahanKeluar)) {
             $row = BahanKeluar::find($bahanKeluar);
             if ($row) {
-                $existing = $row->no_surat_jalan
-                    ? BahanKeluar::where('no_surat_jalan', $row->no_surat_jalan)->get()
-                    : collect([$row]);
+                $existing = $row->no_surat_jalan ? BahanKeluar::where('no_surat_jalan', $row->no_surat_jalan)->get() : collect([$row]);
             }
         }
 
         // Reverse old stok deductions
         $stokDeltas = [];
         foreach ($existing as $item) {
-            $stokDeltas[$item->kode_bahan] = ($stokDeltas[$item->kode_bahan] ?? 0) - $item->yard;
+            $stokDeltas[$item->kode_bahan] = ($stokDeltas[$item->kode_bahan] ?? 0) - $item->quantity;
         }
         BahanKeluar::whereIn('id', $existing->pluck('id'))->delete();
 
         // Validate and create new items
         foreach ($validated['items'] as $item) {
             $alreadyRestored = $stokDeltas[$item['kode_bahan']] ?? 0;
-            $effectiveYard   = $item['yard'] + $alreadyRestored; // net additional need
-            if ($effectiveYard > 0) {
-                $this->validateStok($item['kode_bahan'], $effectiveYard);
+            $effectiveQuantity = $item['quantity'] + $alreadyRestored; // net additional need
+            if ($effectiveQuantity > 0) {
+                $this->validateStok($item['kode_bahan'], $effectiveQuantity);
             }
         }
 
         $noSJ = $validated['no_surat_jalan'] ?: $bahanKeluar;
         foreach ($validated['items'] as $item) {
             BahanKeluar::create([
-                'tanggal'        => $validated['tanggal'],
+                'tanggal' => $validated['tanggal'],
                 'no_surat_jalan' => $noSJ,
-                'kode_bahan'     => $item['kode_bahan'],
-                'yard'           => $item['yard'],
-                'rp_per_yard'    => $item['rp_per_yard'],
-                'total'          => $item['yard'] * $item['rp_per_yard'],
+                'kode_bahan' => $item['kode_bahan'],
+                'quantity' => $item['quantity'],
+                'satuan' => $item['satuan'],
+                'harga_satuan' => $item['harga_satuan'],
+                'total_harga' => $item['quantity'] * $item['harga_satuan'],
             ]);
-            $stokDeltas[$item['kode_bahan']] = ($stokDeltas[$item['kode_bahan']] ?? 0) + $item['yard'];
+            $stokDeltas[$item['kode_bahan']] = ($stokDeltas[$item['kode_bahan']] ?? 0) + $item['quantity'];
         }
 
         $this->bulkKurangiStok($stokDeltas);
@@ -152,15 +152,13 @@ class BahanKeluarController extends Controller
         if ($items->isEmpty() && is_numeric($bahanKeluar)) {
             $item = BahanKeluar::find($bahanKeluar);
             if ($item) {
-                $items = $item->no_surat_jalan
-                    ? BahanKeluar::where('no_surat_jalan', $item->no_surat_jalan)->get()
-                    : collect([$item]);
+                $items = $item->no_surat_jalan ? BahanKeluar::where('no_surat_jalan', $item->no_surat_jalan)->get() : collect([$item]);
             }
         }
 
         $stokDeltas = [];
         foreach ($items as $item) {
-            $stokDeltas[$item->kode_bahan] = ($stokDeltas[$item->kode_bahan] ?? 0) - $item->yard;
+            $stokDeltas[$item->kode_bahan] = ($stokDeltas[$item->kode_bahan] ?? 0) - $item->quantity;
         }
         BahanKeluar::whereIn('id', $items->pluck('id'))->delete();
         $this->bulkKurangiStok($stokDeltas);
@@ -168,13 +166,13 @@ class BahanKeluarController extends Controller
         return redirect()->route('bahan-keluar.index')->with('message', 'Data berhasil dihapus.');
     }
 
-    private function validateStok(string $kodeBahan, float $yard): void
+    private function validateStok(string $kodeBahan, float $quantity): void
     {
         $stok = StokBahan::where('kode_bahan', $kodeBahan)->first();
         $sisa = (float) ($stok?->quantity ?? 0);
-        if ($yard > $sisa) {
+        if ($quantity > $sisa) {
             throw ValidationException::withMessages([
-                'items' => "Stok tidak cukup untuk {$kodeBahan}. Sisa: {$sisa} yard.",
+                'items' => "Stok tidak cukup untuk {$kodeBahan}. Sisa: {$sisa}.",
             ]);
         }
     }
@@ -182,14 +180,18 @@ class BahanKeluarController extends Controller
     private function bulkKurangiStok(array $deltas): void
     {
         foreach ($deltas as $kode => $delta) {
-            if ($delta == 0) continue;
-            DB::statement("
+            if ($delta == 0) {
+                continue;
+            }
+            DB::statement(
+                "
                 UPDATE stok_bahan
                 SET quantity   = GREATEST(0, quantity - ?),
                     updated_at = NOW()
                 WHERE kode_bahan = ?
-            ", [$delta, $kode]);
+            ",
+                [$delta, $kode],
+            );
         }
     }
 }
-

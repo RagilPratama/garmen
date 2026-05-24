@@ -22,9 +22,23 @@
                         <input v-model="form.kode_bahan" type="text" placeholder="KB-001" v-bind="ip" />
                         <FieldError :error="form.errors.kode_bahan" />
                     </FormField>
-                    <FormField label="Yard" required>
-                        <input v-model="form.yard" type="number" min="0" v-bind="ip" />
-                        <FieldError :error="form.errors.yard" />
+                    <div class="grid grid-cols-2 gap-4">
+                        <FormField label="Quantity" required>
+                            <input v-model="form.quantity" type="number" step="0.01" min="0" v-bind="ip" />
+                            <FieldError :error="form.errors.quantity" />
+                        </FormField>
+                        <FormField label="Satuan" required>
+                            <select v-model="form.satuan" v-bind="ip">
+                                <option value="yard">Yard</option>
+                                <option value="meter">Meter</option>
+                                <option value="kg">Kilogram (kg)</option>
+                            </select>
+                            <FieldError :error="form.errors.satuan" />
+                        </FormField>
+                    </div>
+                    <FormField label="Harga Satuan" required>
+                        <input v-model="form.harga_satuan" type="number" step="0.01" min="0" v-bind="ip" />
+                        <FieldError :error="form.errors.harga_satuan" />
                     </FormField>
                     <div class="flex gap-3 pt-2">
                         <button type="submit" :disabled="form.processing" class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-70">
@@ -45,7 +59,14 @@ import FormField from '@/Components/FormField.vue';
 import FieldError from '@/Components/FieldError.vue';
 const props = defineProps({ item: { type: Object, default: null } });
 const isEdit = computed(() => !!props.item);
-const form = useForm({ tanggal: props.item?.tanggal?.split('T')[0] ?? '', no_surat_jalan: props.item?.no_surat_jalan ?? '', kode_bahan: props.item?.kode_bahan ?? '', yard: props.item?.yard ?? '' });
+const form = useForm({
+    tanggal: props.item?.tanggal?.split('T')[0] ?? '',
+    no_surat_jalan: props.item?.no_surat_jalan ?? '',
+    kode_bahan: props.item?.kode_bahan ?? '',
+    quantity: props.item?.quantity ?? '',
+    satuan: props.item?.satuan ?? 'yard',
+    harga_satuan: props.item?.harga_satuan ?? '',
+});
 const ip = { class: 'w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white' };
 const submit = () => {
     isEdit.value ? form.put(`/bahan-keluar/${props.item.id}`) : form.post('/bahan-keluar');
