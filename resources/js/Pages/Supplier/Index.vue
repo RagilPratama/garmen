@@ -59,7 +59,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import DataTable from '@/Components/DataTable.vue';
 import Modal from '@/Components/Modal.vue';
@@ -75,6 +75,15 @@ const columns = [
 const showModal = ref(false);
 const editItem = ref(null);
 const form = useForm({ nama: '', telepon: '', alamat: '' });
+
+// Reset form saat modal ditutup
+watch(showModal, (val) => {
+    if (!val) {
+        editItem.value = null;
+        form.reset();
+        form.clearErrors();
+    }
+});
 
 const openCreate = () => {
     editItem.value = null;
