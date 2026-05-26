@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BarcodeBahan;
 use App\Models\SuratJalanMasuk;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class SuratJalanMasukController extends Controller
@@ -74,8 +76,53 @@ class SuratJalanMasukController extends Controller
             abort(403);
         }
 
-        SuratJalanMasuk::findOrFail($id)->delete();
-        return redirect()->route('surat-jalan-masuk.index')->with('message', 'Surat jalan masuk berhasil dihapus.');
+        $suratJalan = SuratJalanMasuk::findOrFail($id);
+        $noSuratJalan = $suratJalan->no_surat_jalan;
+
+        DB::transaction(function () use ($suratJalan, $noSuratJalan) {
+            // Hanya barcode yang masih di gudang — stok sudah dikurangi saat dikirim ke garmen
+            $barcodesGudang = BarcodeBahan::where('no_surat_jalan', $noSuratJalan)
+                ->where('harga_sudah_diisi', true)
+                ->whereDoesntHave('suratJalanGarmenItem')
+                ->get();
+
+            foreach ($barcodesGudang as $barcode) {
+                DB::statement(
+                    '
+                    UPDATE stok_bahan
+                    SET quantity = GREATEST(0, quantity - ?),
+                        updated_at = NOW()
+                    WHERE kode_bahan = ?
+                ',
+                    [(float) $barcode->quantity, $barcode->kode_bahan],
+                );
+            }
+
+            // Reset barcode yang masih di gudang ke status belum lengkap
+            BarcodeBahan::where('no_surat_jalan', $noSuratJalan)
+                ->whereDoesntHave('suratJalanGarmenItem')
+                ->update([
+                    'no_surat_jalan' => null,
+                    'supplier' => null,
+                    'nama_bahan' => null,
+                    'quantity' => null,
+                    'satuan' => null,
+                    'kepemilikan_id' => null,
+                    'rp_per_yard' => null,
+                    'harga_keluar' => 0,
+                    'total_harga' => null,
+                    'harga_sudah_diisi' => false,
+                ]);
+
+            // Barcode yang sudah dikirim ke garmen: hapus referensi SJ masuk saja
+            BarcodeBahan::where('no_surat_jalan', $noSuratJalan)
+                ->whereHas('suratJalanGarmenItem')
+                ->update(['no_surat_jalan' => null]);
+
+            $suratJalan->delete();
+        });
+
+        return redirect()->route('surat-jalan-masuk.index')->with('message', 'Surat jalan masuk berhasil dihapus, stok dan barcode terkait di-reset.');
     }
 
     public function detail()
