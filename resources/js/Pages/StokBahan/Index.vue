@@ -87,6 +87,7 @@ const columns = [
     { key: 'kode_bahan', label: 'Kode Bahan' },
     { key: 'nama_bahan', label: 'Nama Bahan' },
     { key: 'supplier', label: 'Supplier' },
+    { key: 'pemilik', label: 'Kepemilikan' },
     { key: 'quantity', label: 'Qty' },
     { key: 'rp_per_yard', label: 'Harga/Satuan' },
     { key: 'total_harga', label: 'Total Harga' },

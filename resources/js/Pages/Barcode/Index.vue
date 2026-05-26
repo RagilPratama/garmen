@@ -68,7 +68,7 @@
 
                     <p class="text-xs text-gray-500 mt-4">
                         💡 Kode bahan akan di-generate otomatis dengan format:
-                        <span class="font-mono font-semibold text-amber-600">A0001, A0002, A0003, ...</span>
+                        <span class="font-mono font-semibold text-amber-600">C227, C228 ...</span>
                     </p>
                 </div>
             </div>

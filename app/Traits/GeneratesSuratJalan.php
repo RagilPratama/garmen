@@ -10,20 +10,42 @@ trait GeneratesSuratJalan
      */
     protected function nextSuratJalan(string $modelClass, string $prefix): string
     {
-        $n = $modelClass::where('no_surat_jalan', 'like', $prefix . '%')->count() + 1;
-        return $prefix . str_pad($n, 3, '0', STR_PAD_LEFT);
+        $latest = $modelClass::where('no_surat_jalan', 'like', $prefix . '%')
+            ->orderByRaw('CAST(SUBSTRING(no_surat_jalan, ' . (strlen($prefix) + 1) . ') AS UNSIGNED) DESC')
+            ->first();
+
+        if (!$latest) {
+            return $prefix . str_pad(1, 4, '0', STR_PAD_LEFT);
+        }
+
+        $lastCode = $latest->no_surat_jalan;
+        $numberPart = substr($lastCode, strlen($prefix));
+        $lastNumber = (int)$numberPart;
+        
+        // Keep original padding length
+        return $prefix . str_pad($lastNumber + 1, strlen($numberPart), '0', STR_PAD_LEFT);
     }
 
     /**
      * Generate the next sequential code for any column and prefix.
-     * Uses distinct count so multiple rows sharing the same code count as one.
+     * Uses latest number from DB + 1 with original padding.
      */
     protected function nextCode(string $modelClass, string $column, string $prefix): string
     {
-        $n = $modelClass::whereNotNull($column)
+        $latest = $modelClass::whereNotNull($column)
             ->where($column, 'like', $prefix . '%')
-            ->distinct()
-            ->count($column) + 1;
-        return $prefix . str_pad($n, 3, '0', STR_PAD_LEFT);
+            ->orderByRaw('CAST(SUBSTRING(' . $column . ', ' . (strlen($prefix) + 1) . ') AS UNSIGNED) DESC')
+            ->first();
+
+        if (!$latest) {
+            return $prefix . str_pad(1, 4, '0', STR_PAD_LEFT);
+        }
+
+        $lastCode = $latest->$column;
+        $numberPart = substr($lastCode, strlen($prefix));
+        $lastNumber = (int)$numberPart;
+
+        // Keep original padding length
+        return $prefix . str_pad($lastNumber + 1, strlen($numberPart), '0', STR_PAD_LEFT);
     }
 }

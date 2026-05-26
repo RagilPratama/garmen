@@ -107,64 +107,81 @@ class BarcodeController extends Controller
      */
     private function generateKodeBahan()
     {
-        // Get the latest barcode_code (not kode_bahan)
-        $latestBarcode = BarcodeBahan::orderBy('barcode_code', 'desc')->first();
+        // 1. Cari latest di BahanMasuk (Urutkan Huruf DESC, lalu Angka DESC)
+        $latestBahanMasuk = BahanMasuk::whereRaw("TRIM(kode_bahan) REGEXP '^[A-Z][0-9]+$'")
+            ->orderByRaw("SUBSTRING(TRIM(kode_bahan), 1, 1) DESC, CAST(SUBSTRING(TRIM(kode_bahan), 2) AS UNSIGNED) DESC")
+            ->first();
 
-        if (!$latestBarcode || !$latestBarcode->barcode_code) {
-            // First code
+        // 2. Cari latest di BarcodeBahan (Urutkan Huruf DESC, lalu Angka DESC)
+        $latestBarcode = BarcodeBahan::whereRaw("TRIM(barcode_code) REGEXP '^[A-Z][0-9]+$'")
+            ->orderByRaw("SUBSTRING(TRIM(barcode_code), 1, 1) DESC, CAST(SUBSTRING(TRIM(barcode_code), 2) AS UNSIGNED) DESC")
+            ->first();
+
+        $lastCode = null;
+        
+        // Pilih yang abjadnya paling tinggi, jika abjad sama pilih yang angkanya paling besar
+        $codeBM = $latestBahanMasuk ? trim($latestBahanMasuk->kode_bahan) : '';
+        $codeBC = $latestBarcode ? trim($latestBarcode->barcode_code) : '';
+
+        if ($codeBM && $codeBC) {
+            $letterBM = substr($codeBM, 0, 1);
+            $letterBC = substr($codeBC, 0, 1);
+            $numBM = (int)substr($codeBM, 1);
+            $numBC = (int)substr($codeBC, 1);
+
+            if ($letterBM > $letterBC || ($letterBM === $letterBC && $numBM >= $numBC)) {
+                $lastCode = $codeBM;
+            } else {
+                $lastCode = $codeBC;
+            }
+        } else {
+            $lastCode = $codeBM ?: $codeBC;
+        }
+
+        if (!$lastCode) {
             return 'A0001';
         }
 
-        $lastCode = $latestBarcode->barcode_code;
-
         // Extract letter and number
-        // Format: A0001 (1 letter + 4 digits)
-        preg_match('/^([A-Z])(\d{4})$/', $lastCode, $matches);
+        preg_match('/^([A-Z])(\d+)$/', $lastCode, $matches);
 
         if (!$matches) {
-            // If format doesn't match, start from A0001
             return 'A0001';
         }
 
         $letter = $matches[1];
-        $number = (int) $matches[2];
+        $numberString = $matches[2];
+        $number = (int) $numberString;
 
         // Increment number
         $number++;
 
-        // If number exceeds 9999, move to next letter
-        if ($number > 9999) {
+        // Keep original padding length (C226 -> C227)
+        $newCode = $letter . str_pad($number, strlen($numberString), '0', STR_PAD_LEFT);
+
+        // Move to next letter if overflow
+        $maxVal = (int)str_repeat('9', strlen($numberString));
+        if ($number > $maxVal) {
             $number = 1;
             $letter = chr(ord($letter) + 1);
 
-            // If letter exceeds Z, start over from A (or throw error)
             if ($letter > 'Z') {
-                throw new \Exception('Kode bahan sudah mencapai batas maksimum (Z9999). Silakan hubungi administrator.');
+                throw new \Exception('Kode bahan sudah mencapai batas maksimum.');
             }
+            $newCode = $letter . str_pad($number, strlen($numberString), '0', STR_PAD_LEFT);
         }
 
-        $newCode = $letter . str_pad($number, 4, '0', STR_PAD_LEFT);
-
-        // Double check if code already exists (safety check)
+        // Safety check unique
         $maxRetries = 10;
         $retryCount = 0;
-
-        while (BarcodeBahan::where('barcode_code', '=', $newCode, 'and')->exists() && $retryCount < $maxRetries) {
-            // If exists, increment again
+        while (BarcodeBahan::where('barcode_code', $newCode)->exists() && $retryCount < $maxRetries) {
             $number++;
-            if ($number > 9999) {
+            if ($number > $maxVal) {
                 $number = 1;
                 $letter = chr(ord($letter) + 1);
-                if ($letter > 'Z') {
-                    throw new \Exception('Kode bahan sudah mencapai batas maksimum (Z9999)');
-                }
             }
-            $newCode = $letter . str_pad($number, 4, '0', STR_PAD_LEFT);
+            $newCode = $letter . str_pad($number, strlen($numberString), '0', STR_PAD_LEFT);
             $retryCount++;
-        }
-
-        if ($retryCount >= $maxRetries) {
-            throw new \Exception('Gagal generate kode unik setelah ' . $maxRetries . ' percobaan');
         }
 
         return $newCode;
@@ -378,7 +395,7 @@ class BarcodeController extends Controller
                         'quantity' => $validated['quantity'],
                         'satuan' => $validated['satuan'],
                         'harga_satuan' => $validated['rp_per_yard'],
-                        'total_harga' => $validated['quantity'] * $validated['rp_per_yard'],
+                        'total' => $validated['quantity'] * $validated['rp_per_yard'],
                     ]);
                 }
             } else {
@@ -396,7 +413,7 @@ class BarcodeController extends Controller
                     'quantity' => $validated['quantity'],
                     'satuan' => $validated['satuan'],
                     'harga_satuan' => $validated['rp_per_yard'],
-                    'total_harga' => $validated['quantity'] * $validated['rp_per_yard'],
+                    'total' => $validated['quantity'] * $validated['rp_per_yard'],
                 ]);
             }
 

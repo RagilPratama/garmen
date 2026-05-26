@@ -117,6 +117,7 @@ class BahanMasukController extends Controller
         $stokDeltas = [];
 
         foreach ($validated['items'] as $item) {
+            $kodeBahan = trim($item['kode_bahan']);
             $masterBahanId = $item['master_bahan_id'] ?? $this->findMasterId('master_bahan', 'nama_bahan', $item['nama_bahan']);
             $masterKepemilikanId = $validated['master_kepemilikan_id'] ?? $this->findMasterId('master_kepemilikans', 'nama_kepemilikan', $validated['supplier']);
 
@@ -125,17 +126,25 @@ class BahanMasukController extends Controller
                 'no_surat_jalan' => $validated['no_surat_jalan'],
                 'no_nota' => $noNota,
                 'supplier' => $validated['supplier'],
-                'kode_bahan' => $item['kode_bahan'],
+                'kode_bahan' => $kodeBahan,
                 'nama_bahan' => $item['nama_bahan'] ?? null,
                 'master_bahan_id' => $masterBahanId,
                 'master_kepemilikan_id' => $masterKepemilikanId,
                 'quantity' => $item['quantity'],
                 'satuan' => $item['satuan'],
                 'harga_satuan' => $item['harga_satuan'],
-                'total_harga' => $item['quantity'] * $item['harga_satuan'],
+                'total' => $item['quantity'] * $item['harga_satuan'],
             ]);
 
-            $stokDeltas[$item['kode_bahan']] = ($stokDeltas[$item['kode_bahan']] ?? 0) + $item['quantity'];
+            $stokDeltas[$kodeBahan] = ($stokDeltas[$kodeBahan] ?? 0) + $item['quantity'];
+
+            // Tambahkan tracking lokasi ke gudang jika belum ada
+            DB::statement(
+                "INSERT INTO tracking_bahan (kode_bahan, lokasi, created_at, updated_at)
+                VALUES (?, 'gudang', NOW(), NOW())
+                ON DUPLICATE KEY UPDATE lokasi = VALUES(lokasi), updated_at = NOW()",
+                [$kodeBahan]
+            );
         }
 
         $this->bulkAddStok($stokDeltas);
@@ -181,20 +190,29 @@ class BahanMasukController extends Controller
         // Re-insert updated items and apply stok
         $noNota = $validated['no_nota'] ?: $bahanMasuk;
         foreach ($validated['items'] as $item) {
+            $kodeBahan = trim($item['kode_bahan']);
             BahanMasuk::create([
                 'tanggal' => $validated['tanggal'],
                 'no_surat_jalan' => $validated['no_surat_jalan'],
                 'no_nota' => $noNota,
                 'supplier' => $validated['supplier'],
-                'kode_bahan' => $item['kode_bahan'],
+                'kode_bahan' => $kodeBahan,
                 'nama_bahan' => $item['nama_bahan'] ?? null,
                 'quantity' => $item['quantity'],
                 'satuan' => $item['satuan'],
                 'harga_satuan' => $item['harga_satuan'],
-                'total_harga' => $item['quantity'] * $item['harga_satuan'],
+                'total' => $item['quantity'] * $item['harga_satuan'],
             ]);
 
-            $stokDeltas[$item['kode_bahan']] = ($stokDeltas[$item['kode_bahan']] ?? 0) + $item['quantity'];
+            $stokDeltas[$kodeBahan] = ($stokDeltas[$kodeBahan] ?? 0) + $item['quantity'];
+
+            // Tambahkan tracking lokasi ke gudang jika belum ada
+            DB::statement(
+                "INSERT INTO tracking_bahan (kode_bahan, lokasi, created_at, updated_at)
+                VALUES (?, 'gudang', NOW(), NOW())
+                ON DUPLICATE KEY UPDATE lokasi = VALUES(lokasi), updated_at = NOW()",
+                [$kodeBahan]
+            );
         }
 
         $this->bulkAddStok($stokDeltas);

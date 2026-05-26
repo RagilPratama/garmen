@@ -30,6 +30,7 @@ class StokBahanController extends Controller
                 $join->on('stok_bahan.kode_bahan', '=', 'latest_bahan.kode_bahan');
             })
             ->leftJoin('bahan_masuk as bm', 'bm.id', '=', 'latest_bahan.id')
+            ->leftJoin('master_kepemilikans as mk', 'mk.id', '=', 'bm.master_kepemilikan_id')
             ->where(function ($q) {
                 $q->whereNull('tb.lokasi')->orWhere('tb.lokasi', 'gudang');
             })
@@ -43,10 +44,12 @@ class StokBahanController extends Controller
                 'bm.no_surat_jalan',
                 'bm.nama_bahan',
                 'bm.supplier',
+                'mk.nama_kepemilikan as pemilik',
                 'bm.satuan',
                 'bm.harga_satuan as rp_per_yard',
                 DB::raw('COALESCE(stok_bahan.quantity, 0) * COALESCE(bm.harga_satuan, 0) as total_harga'),
             ])
+            ->orderByRaw('CASE WHEN bm.no_surat_jalan IS NOT NULL AND bm.no_surat_jalan != "" THEN 0 ELSE 1 END')
             ->orderBy('stok_bahan.kode_bahan');
     }
 
@@ -116,11 +119,11 @@ class StokBahanController extends Controller
         $sheet->setTitle('Stok Bahan Gudang');
 
         // Header
-        $headers = ['No', 'No. Surat Jalan', 'Kode Bahan', 'Nama Bahan', 'Supplier', 'Qty', 'Satuan', 'Harga/Yard', 'Total Harga'];
+        $headers = ['No', 'No. Surat Jalan', 'Kode Bahan', 'Nama Bahan', 'Supplier', 'Kepemilikan', 'Qty', 'Satuan', 'Harga/Yard', 'Total Harga'];
         $sheet->fromArray($headers, null, 'A1');
 
         // Style header
-        $sheet->getStyle('A1:I1')->getFont()->setBold(true);
+        $sheet->getStyle('A1:J1')->getFont()->setBold(true);
 
         // Data
         $row = 2;
@@ -131,6 +134,7 @@ class StokBahanController extends Controller
                 $item->kode_bahan,
                 $item->nama_bahan,
                 $item->supplier,
+                $item->pemilik,
                 (float) $item->quantity,
                 $item->satuan ?? 'yard',
                 (float) $item->rp_per_yard,
@@ -140,7 +144,7 @@ class StokBahanController extends Controller
         }
 
         // Auto width
-        foreach (range('A', 'I') as $col) {
+        foreach (range('A', 'J') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
