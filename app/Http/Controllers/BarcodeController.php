@@ -6,15 +6,17 @@ use App\Models\Supplier;
 use App\Models\BarcodeBahan;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class BarcodeController extends Controller
 {
     public function index()
     {
-        $suppliers = Supplier::orderBy('nama')->get(['id', 'nama']);
+        $suppliers = Supplier::orderBy('nama', 'asc')->get(['id', 'nama']);
 
         // Get bahan history grouped by supplier
-        $bahanHistory = \DB::table('bahan_masuk')
+        $bahanHistory = DB::table('bahan_masuk')
             ->select('supplier', 'kode_bahan', 'nama_bahan', 'harga_satuan', 'satuan')
             ->whereNotNull('kode_bahan')
             ->whereNotNull('supplier')
@@ -27,7 +29,7 @@ class BarcodeController extends Controller
             });
 
         // Get barcode yang belum lengkap (belum diisi harga/supplier)
-        $belumLengkap = BarcodeBahan::where('harga_sudah_diisi', false)->orderBy('created_at', 'desc')->get();
+        $belumLengkap = BarcodeBahan::where('harga_sudah_diisi', '=', false, 'and')->orderBy('created_at', 'desc')->get();
 
         return Inertia::render('Barcode/Index', [
             'suppliers' => $suppliers,
@@ -44,7 +46,7 @@ class BarcodeController extends Controller
 
         try {
             // Use database transaction
-            $barcode = \DB::transaction(function () use ($validated) {
+            $barcode = DB::transaction(function () use ($validated) {
                 // Generate kode_bahan (A0001, A0002, etc)
                 $kodeBahan = $this->generateKodeBahan();
 
@@ -62,7 +64,20 @@ class BarcodeController extends Controller
                 $validated['rp_per_yard'] = null;
                 $validated['total_harga'] = null;
 
-                return BarcodeBahan::create($validated);
+                $barcode = BarcodeBahan::create($validated);
+
+                DB::statement(
+                    "
+                    INSERT INTO tracking_bahan (kode_bahan, lokasi, created_at, updated_at)
+                    VALUES (?, 'gudang', NOW(), NOW())
+                    ON DUPLICATE KEY UPDATE
+                        lokasi = VALUES(lokasi),
+                        updated_at = NOW()
+                    ",
+                    [$kodeBahan],
+                );
+
+                return $barcode;
             });
 
             return response()->json([
@@ -71,7 +86,7 @@ class BarcodeController extends Controller
                 'data' => $barcode,
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error creating barcode: ' . $e->getMessage());
+            Log::error('Error creating barcode: ' . $e->getMessage());
 
             return response()->json(
                 [
@@ -131,7 +146,7 @@ class BarcodeController extends Controller
         $maxRetries = 10;
         $retryCount = 0;
 
-        while (BarcodeBahan::where('barcode_code', $newCode)->exists() && $retryCount < $maxRetries) {
+        while (BarcodeBahan::where('barcode_code', '=', $newCode, 'and')->exists() && $retryCount < $maxRetries) {
             // If exists, increment again
             $number++;
             if ($number > 9999) {
@@ -154,10 +169,10 @@ class BarcodeController extends Controller
 
     public function scan()
     {
-        $suppliers = Supplier::orderBy('nama')->get(['id', 'nama']);
-        $masterBahan = \App\Models\MasterBahan::orderBy('nama_bahan')->get(['id', 'nama_bahan']);
+        $suppliers = Supplier::orderBy('nama', 'asc')->get(['id', 'nama']);
+        $masterBahan = \App\Models\MasterBahan::orderBy('nama_bahan', 'asc')->get(['id', 'nama_bahan']);
         $suratJalanMasuk = \App\Models\SuratJalanMasuk::orderByDesc('tanggal')->get(['id', 'no_surat_jalan']);
-        $kepemilikans = \App\Models\MasterKepemilikan::orderBy('nama_kepemilikan')->get(['id', 'nama_kepemilikan']);
+        $kepemilikans = \App\Models\MasterKepemilikan::orderBy('nama_kepemilikan', 'asc')->get(['id', 'nama_kepemilikan']);
 
         return Inertia::render('Barcode/Scan', [
             'suppliers' => $suppliers,
@@ -221,13 +236,13 @@ class BarcodeController extends Controller
         );
 
         // Get unique suppliers for filter (exclude null/empty)
-        $suppliers = BarcodeBahan::select('supplier')->whereNotNull('supplier')->where('supplier', '!=', '')->distinct()->orderBy('supplier')->pluck('supplier');
+        $suppliers = BarcodeBahan::select('supplier')->whereNotNull('supplier')->where('supplier', '!=', '')->distinct()->orderBy('supplier', 'asc')->pluck('supplier');
 
         // Statistics
         $stats = [
-            'total' => BarcodeBahan::count(),
-            'sudah_harga' => BarcodeBahan::where('harga_sudah_diisi', true)->count(),
-            'belum_harga' => BarcodeBahan::where('harga_sudah_diisi', false)->count(),
+            'total' => BarcodeBahan::count('*'),
+            'sudah_harga' => BarcodeBahan::where('harga_sudah_diisi', '=', true, 'and')->count('*'),
+            'belum_harga' => BarcodeBahan::where('harga_sudah_diisi', '=', false, 'and')->count('*'),
         ];
 
         return Inertia::render('Barcode/List', [
@@ -244,7 +259,7 @@ class BarcodeController extends Controller
             'barcode_code' => 'required|string',
         ]);
 
-        $barcode = BarcodeBahan::where('barcode_code', $request->barcode_code)->first();
+        $barcode = BarcodeBahan::where('barcode_code', '=', $request->barcode_code, 'and')->first();
 
         if (!$barcode) {
             return response()->json(
@@ -324,7 +339,7 @@ class BarcodeController extends Controller
             // Jika sudah pernah diisi, hitung selisih qty untuk update stok
             $selisih = $qty - $qtyLama;
             if ($selisih != 0) {
-                \DB::statement(
+                DB::statement(
                     "
                     UPDATE stok_bahan
                     SET quantity = GREATEST(0, quantity + ?),
@@ -336,7 +351,7 @@ class BarcodeController extends Controller
             }
         } else {
             // Pertama kali diisi — tambahkan ke stok bahan (INSERT or UPDATE)
-            \DB::statement(
+            DB::statement(
                 "
                 INSERT INTO stok_bahan (kode_bahan, quantity, created_at, updated_at)
                 VALUES (?, ?, NOW(), NOW())
@@ -347,6 +362,17 @@ class BarcodeController extends Controller
                 [$kodeBahan, $qty, $qty],
             );
         }
+
+        DB::statement(
+            "
+            INSERT INTO tracking_bahan (kode_bahan, lokasi, created_at, updated_at)
+            VALUES (?, 'gudang', NOW(), NOW())
+            ON DUPLICATE KEY UPDATE
+                lokasi = VALUES(lokasi),
+                updated_at = NOW()
+            ",
+            [$kodeBahan],
+        );
 
         return response()->json([
             'success' => true,

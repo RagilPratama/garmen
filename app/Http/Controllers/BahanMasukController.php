@@ -8,6 +8,7 @@ use App\Models\Rekening;
 use App\Models\Supplier;
 use App\Traits\GeneratesSuratJalan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -24,7 +25,7 @@ class BahanMasukController extends Controller
         $status = request('status');
 
         // Bahan masuk = SEMUA barcode yang sudah lengkap (history tracking)
-        $query = \App\Models\BarcodeBahan::where('harga_sudah_diisi', true)
+        $query = \App\Models\BarcodeBahan::where('harga_sudah_diisi', '=', true, 'and')
             ->when(
                 $search,
                 fn($q) => $q->where(
@@ -35,8 +36,8 @@ class BahanMasukController extends Controller
                         ->orWhere('no_surat_jalan', 'like', "%{$search}%"),
                 ),
             )
-            ->when($namaBahan, fn($q) => $q->where('nama_bahan', $namaBahan))
-            ->when($supplier, fn($q) => $q->where('supplier', $supplier))
+            ->when($namaBahan, fn($q) => $q->where('nama_bahan', '=', $namaBahan, 'and'))
+            ->when($supplier, fn($q) => $q->where('supplier', '=', $supplier, 'and'))
             ->when($status === 'gudang', fn($q) => $q->whereDoesntHave('suratJalanGarmenItem'))
             ->when($status === 'garmen', fn($q) => $q->whereHas('suratJalanGarmenItem'))
             ->with('suratJalanGarmenItem.suratJalan')
@@ -52,16 +53,16 @@ class BahanMasukController extends Controller
         });
 
         // Daftar supplier unik untuk filter
-        $supplierOptions = \App\Models\BarcodeBahan::where('harga_sudah_diisi', true)
+        $supplierOptions = \App\Models\BarcodeBahan::where('harga_sudah_diisi', '=', true, 'and')
             ->whereNotNull('supplier')
             ->where('supplier', '!=', '')
             ->select('supplier')
             ->distinct()
-            ->orderBy('supplier')
+            ->orderBy('supplier', 'asc')
             ->pluck('supplier');
 
         // Daftar nama bahan unik untuk filter
-        $namaBahanOptions = \App\Models\BarcodeBahan::where('harga_sudah_diisi', true)->whereNotNull('nama_bahan')->select('nama_bahan')->distinct()->orderBy('nama_bahan')->pluck('nama_bahan');
+        $namaBahanOptions = \App\Models\BarcodeBahan::where('harga_sudah_diisi', '=', true, 'and')->whereNotNull('nama_bahan')->select('nama_bahan')->distinct()->orderBy('nama_bahan', 'asc')->pluck('nama_bahan');
 
         return Inertia::render('BahanMasuk/Index', [
             'data' => $query,
@@ -140,20 +141,20 @@ class BahanMasukController extends Controller
             'items.*.harga_satuan' => 'required|numeric|min:0',
         ]);
 
-        $existing = BahanMasuk::where('no_nota', $bahanMasuk)->get();
+        $existing = BahanMasuk::where('no_nota', '=', $bahanMasuk, 'and')->get();
         if ($existing->isEmpty() && is_numeric($bahanMasuk)) {
-            $row = BahanMasuk::find($bahanMasuk);
+            $row = BahanMasuk::find($bahanMasuk, ['*']);
             if ($row) {
-                $existing = $row->no_nota ? BahanMasuk::where('no_nota', $row->no_nota)->get() : collect([$row]);
+                $existing = $row->no_nota ? BahanMasuk::where('no_nota', '=', $row->no_nota, 'and')->get() : collect([$row]);
             }
         }
 
         // Reverse stok for all old items
         $stokDeltas = [];
         foreach ($existing as $item) {
-            $stokDeltas[$item->kode_bahan] = ($stokDeltas[$item->kode_bahan] ?? 0) - $item->yard;
+            $stokDeltas[$item->kode_bahan] = ($stokDeltas[$item->kode_bahan] ?? 0) - $item->quantity;
         }
-        BahanMasuk::whereIn('id', $existing->pluck('id'))->delete();
+        BahanMasuk::whereIn('id', $existing->pluck('id'), 'and', false)->delete();
 
         // Re-insert updated items and apply stok
         $noNota = $validated['no_nota'] ?: $bahanMasuk;
@@ -182,13 +183,13 @@ class BahanMasukController extends Controller
     public function destroy($bahanMasuk)
     {
         // $bahanMasuk is a no_nota string (from grouped rows)
-        $items = BahanMasuk::where('no_nota', $bahanMasuk)->get();
+        $items = BahanMasuk::where('no_nota', '=', $bahanMasuk, 'and')->get();
 
         // Fallback: if no_nota not found, try by ID
         if ($items->isEmpty() && is_numeric($bahanMasuk)) {
-            $item = BahanMasuk::find($bahanMasuk);
+            $item = BahanMasuk::find($bahanMasuk, ['*']);
             if ($item) {
-                $items = $item->no_nota ? BahanMasuk::where('no_nota', $item->no_nota)->get() : collect([$item]);
+                $items = $item->no_nota ? BahanMasuk::where('no_nota', '=', $item->no_nota, 'and')->get() : collect([$item]);
             }
         }
 
@@ -196,7 +197,7 @@ class BahanMasukController extends Controller
         foreach ($items as $item) {
             $stokDeltas[$item->kode_bahan] = ($stokDeltas[$item->kode_bahan] ?? 0) - $item->quantity;
         }
-        BahanMasuk::whereIn('id', $items->pluck('id'))->delete();
+        BahanMasuk::whereIn('id', $items->pluck('id'), 'and', false)->delete();
         $this->bulkAddStok($stokDeltas);
 
         return redirect()->route('bahan-masuk.index')->with('message', 'Data berhasil dihapus.');
@@ -209,7 +210,7 @@ class BahanMasukController extends Controller
         $supplier = request('supplier');
         $status = request('status');
 
-        return \App\Models\BarcodeBahan::where('harga_sudah_diisi', true)
+        return \App\Models\BarcodeBahan::where('harga_sudah_diisi', '=', true, 'and')
             ->when(
                 $search,
                 fn($q) => $q->where(
@@ -220,8 +221,8 @@ class BahanMasukController extends Controller
                         ->orWhere('no_surat_jalan', 'like', "%{$search}%"),
                 ),
             )
-            ->when($namaBahan, fn($q) => $q->where('nama_bahan', $namaBahan))
-            ->when($supplier, fn($q) => $q->where('supplier', $supplier))
+            ->when($namaBahan, fn($q) => $q->where('nama_bahan', '=', $namaBahan, 'and'))
+            ->when($supplier, fn($q) => $q->where('supplier', '=', $supplier, 'and'))
             ->when($status === 'gudang', fn($q) => $q->whereDoesntHave('suratJalanGarmenItem'))
             ->when($status === 'garmen', fn($q) => $q->whereHas('suratJalanGarmenItem'))
             ->with('suratJalanGarmenItem.suratJalan')
@@ -303,27 +304,17 @@ class BahanMasukController extends Controller
             return;
         }
 
-        // MySQL: INSERT ... ON DUPLICATE KEY UPDATE
-        $placeholders = [];
-        $bindings = [];
-
         foreach ($deltas as $kode => $delta) {
-            $placeholders[] = '(?, ?, NOW(), NOW())';
-            $bindings[] = $kode;
-            $bindings[] = (float) max(0, $delta);
+            DB::statement(
+                "
+                INSERT INTO stok_bahan (kode_bahan, quantity, created_at, updated_at)
+                VALUES (?, GREATEST(0, ?), NOW(), NOW())
+                ON DUPLICATE KEY UPDATE
+                    quantity   = GREATEST(0, quantity + ?),
+                    updated_at = NOW()
+                ",
+                [$kode, (float) $delta, (float) $delta],
+            );
         }
-
-        $values = implode(', ', $placeholders);
-
-        \DB::statement(
-            "
-            INSERT INTO stok_bahan (kode_bahan, quantity, created_at, updated_at)
-            VALUES {$values}
-            ON DUPLICATE KEY UPDATE
-                quantity   = quantity + VALUES(quantity),
-                updated_at = NOW()
-        ",
-            $bindings,
-        );
     }
 }
