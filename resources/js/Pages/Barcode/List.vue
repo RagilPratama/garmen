@@ -192,7 +192,7 @@
                                     <span v-else class="text-xs text-gray-400">-</span>
                                 </td>
                                 <td class="px-4 py-3 text-center">
-                                    <span v-if="barcode.harga_sudah_diisi" class="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full">
+                                    <span v-if="barcode.harga_sudah_diisi && barcode.rp_per_yard > 0" class="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                         </svg>
@@ -211,13 +211,14 @@
                                 <td class="px-4 py-3">
                                     <div class="flex items-center justify-center gap-2">
                                         <a
-                                            v-if="!barcode.harga_sudah_diisi"
                                             :href="`/barcode/scan?code=${barcode.barcode_code}`"
-                                            class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-medium rounded transition"
+                                            class="px-3 py-1.5 text-xs font-medium rounded transition"
+                                            :class="barcode.harga_sudah_diisi && barcode.rp_per_yard > 0 ? 'bg-amber-50 hover:bg-amber-100 text-amber-700' : 'bg-blue-50 hover:bg-blue-100 text-blue-700'"
                                         >
-                                            Lengkapi Data
+                                            {{ barcode.harga_sudah_diisi && barcode.rp_per_yard > 0 ? 'Ubah Data' : 'Lengkapi Data' }}
                                         </a>
-                                        <button @click="printBarcode(barcode)" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-medium rounded transition">Print</button>
+                                        <button @click="printBarcode(barcode)" class="px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-medium rounded transition">Print</button>
+                                        <button @click="deleteBarcode(barcode)" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-medium rounded transition">Hapus</button>
                                     </div>
                                 </td>
                             </tr>
@@ -264,6 +265,7 @@ import { ref, computed } from 'vue';
 import { router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
     barcodes: Object,
@@ -478,5 +480,29 @@ const printBarcode = (barcode) => {
     </html>
   `);
     printWindow.document.close();
+};
+
+const deleteBarcode = (barcode) => {
+    Swal.fire({
+        title: 'Apakah anda yakin?',
+        text: 'Data barcode ini akan dihapus dan stok gudang akan dikurangi.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.delete(`/barcode/${barcode.id}`, {
+                onSuccess: () => {
+                    Swal.fire('Terhapus!', 'Barcode berhasil dihapus.', 'success');
+                },
+                onError: (errors) => {
+                    Swal.fire('Gagal!', 'Terjadi kesalahan saat menghapus data.', 'error');
+                },
+            });
+        }
+    });
 };
 </script>

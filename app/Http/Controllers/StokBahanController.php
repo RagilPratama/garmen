@@ -19,34 +19,33 @@ class StokBahanController extends Controller
         $namaBahan = request('nama_bahan');
         $supplier = request('supplier');
 
-        $latestBarcodeSub = BarcodeBahan::query()
+        $latestBahanMasukSub = BahanMasuk::query()
             ->selectRaw('MAX(id) as id, kode_bahan', [])
-            ->where('harga_sudah_diisi', true)
             ->groupBy('kode_bahan');
 
         return StokBahan::query()
             ->where('stok_bahan.quantity', '>', 0)
             ->leftJoin('tracking_bahan as tb', 'tb.kode_bahan', '=', 'stok_bahan.kode_bahan')
-            ->leftJoinSub($latestBarcodeSub, 'latest_barcode', function ($join) {
-                $join->on('stok_bahan.kode_bahan', '=', 'latest_barcode.kode_bahan');
+            ->leftJoinSub($latestBahanMasukSub, 'latest_bahan', function ($join) {
+                $join->on('stok_bahan.kode_bahan', '=', 'latest_bahan.kode_bahan');
             })
-            ->leftJoin('barcode_bahan as bb', 'bb.id', '=', 'latest_barcode.id')
+            ->leftJoin('bahan_masuk as bm', 'bm.id', '=', 'latest_bahan.id')
             ->where(function ($q) {
                 $q->whereNull('tb.lokasi')->orWhere('tb.lokasi', 'gudang');
             })
             ->when($search, fn($q) => $q->where('stok_bahan.kode_bahan', 'like', "%{$search}%"))
-            ->when($namaBahan, fn($q) => $q->where('bb.nama_bahan', $namaBahan))
-            ->when($supplier, fn($q) => $q->where('bb.supplier', $supplier))
+            ->when($namaBahan, fn($q) => $q->where('bm.nama_bahan', $namaBahan))
+            ->when($supplier, fn($q) => $q->where('bm.supplier', $supplier))
             ->select([
                 'stok_bahan.id',
                 'stok_bahan.kode_bahan',
                 'stok_bahan.quantity',
-                'bb.no_surat_jalan',
-                'bb.nama_bahan',
-                'bb.supplier',
-                'bb.satuan',
-                'bb.rp_per_yard',
-                DB::raw('COALESCE(stok_bahan.quantity, 0) * COALESCE(bb.rp_per_yard, 0) as total_harga'),
+                'bm.no_surat_jalan',
+                'bm.nama_bahan',
+                'bm.supplier',
+                'bm.satuan',
+                'bm.harga_satuan as rp_per_yard',
+                DB::raw('COALESCE(stok_bahan.quantity, 0) * COALESCE(bm.harga_satuan, 0) as total_harga'),
             ])
             ->orderBy('stok_bahan.kode_bahan');
     }
@@ -57,45 +56,44 @@ class StokBahanController extends Controller
             ->paginate(20)
             ->appends(request()->query());
 
-        $latestBarcodeSub = BarcodeBahan::query()
+        $latestBahanMasukSub = BahanMasuk::query()
             ->selectRaw('MAX(id) as id, kode_bahan', [])
-            ->where('harga_sudah_diisi', true)
             ->groupBy('kode_bahan');
 
         // Daftar nama bahan unik untuk filter (hanya yang stoknya masih ada)
         $namaBahanOptions = DB::table('stok_bahan')
             ->where('stok_bahan.quantity', '>', 0)
             ->leftJoin('tracking_bahan as tb', 'tb.kode_bahan', '=', 'stok_bahan.kode_bahan')
-            ->leftJoinSub($latestBarcodeSub, 'latest_barcode', function ($join) {
-                $join->on('stok_bahan.kode_bahan', '=', 'latest_barcode.kode_bahan');
+            ->leftJoinSub($latestBahanMasukSub, 'latest_bahan', function ($join) {
+                $join->on('stok_bahan.kode_bahan', '=', 'latest_bahan.kode_bahan');
             })
-            ->leftJoin('barcode_bahan as bb', 'bb.id', '=', 'latest_barcode.id')
+            ->leftJoin('bahan_masuk as bm', 'bm.id', '=', 'latest_bahan.id')
             ->where(function ($q) {
                 $q->whereNull('tb.lokasi')->orWhere('tb.lokasi', 'gudang');
             })
-            ->whereNotNull('bb.nama_bahan')
-            ->select('bb.nama_bahan')
+            ->whereNotNull('bm.nama_bahan')
+            ->select('bm.nama_bahan')
             ->distinct()
-            ->orderBy('bb.nama_bahan')
-            ->pluck('bb.nama_bahan');
+            ->orderBy('bm.nama_bahan')
+            ->pluck('bm.nama_bahan');
 
         // Daftar supplier unik untuk filter (hanya yang stoknya masih ada)
         $supplierOptions = DB::table('stok_bahan')
             ->where('stok_bahan.quantity', '>', 0)
             ->leftJoin('tracking_bahan as tb', 'tb.kode_bahan', '=', 'stok_bahan.kode_bahan')
-            ->leftJoinSub($latestBarcodeSub, 'latest_barcode', function ($join) {
-                $join->on('stok_bahan.kode_bahan', '=', 'latest_barcode.kode_bahan');
+            ->leftJoinSub($latestBahanMasukSub, 'latest_bahan', function ($join) {
+                $join->on('stok_bahan.kode_bahan', '=', 'latest_bahan.kode_bahan');
             })
-            ->leftJoin('barcode_bahan as bb', 'bb.id', '=', 'latest_barcode.id')
+            ->leftJoin('bahan_masuk as bm', 'bm.id', '=', 'latest_bahan.id')
             ->where(function ($q) {
                 $q->whereNull('tb.lokasi')->orWhere('tb.lokasi', 'gudang');
             })
-            ->whereNotNull('bb.supplier')
-            ->where('bb.supplier', '!=', '')
-            ->select('bb.supplier')
+            ->whereNotNull('bm.supplier')
+            ->where('bm.supplier', '!=', '')
+            ->select('bm.supplier')
             ->distinct()
-            ->orderBy('bb.supplier')
-            ->pluck('bb.supplier');
+            ->orderBy('bm.supplier')
+            ->pluck('bm.supplier');
 
         return Inertia::render('StokBahan/Index', [
             'data' => $query,

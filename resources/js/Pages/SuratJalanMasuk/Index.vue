@@ -10,7 +10,7 @@
         customActions
     >
         <template #cell-no_surat_jalan="{ item }">
-            <button @click="showDetail(item.no_surat_jalan)" class="text-amber-600 hover:text-amber-700 font-semibold hover:underline underline-offset-2 transition font-mono">
+            <button @click="showDetail(item)" class="text-amber-600 hover:text-amber-700 font-semibold hover:underline underline-offset-2 transition font-mono">
                 {{ item.no_surat_jalan }}
             </button>
         </template>
@@ -32,7 +32,10 @@
         </template>
 
         <template #actions="{ item }">
-            <button @click="printSuratJalan(item)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors">
+            <button @click="showDetail(item)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors mr-2">
+                Detail
+            </button>
+            <button @click="printSuratJalan(item)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors mr-2">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                         stroke-linecap="round"
@@ -43,7 +46,7 @@
                 </svg>
                 Print
             </button>
-            <button @click="confirmDelete(item.id)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+            <button v-if="!isAdminGarmen" @click="confirmDelete(item.id)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                         stroke-linecap="round"
@@ -60,17 +63,19 @@
     <!-- Detail Modal -->
     <div v-if="detailOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="fixed inset-0 bg-black/50" @click="detailOpen = false"></div>
-        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
-            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
                 <div>
                     <h3 class="text-lg font-semibold text-gray-800">Detail Surat Jalan Masuk</h3>
                     <p class="text-sm text-gray-500 font-mono">{{ detailNoSJ }}</p>
                 </div>
-                <button @click="detailOpen = false" class="p-2 hover:bg-gray-100 rounded-lg transition">
-                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+                <div class="flex items-center gap-3">
+                    <button @click="detailOpen = false" class="p-2 hover:bg-gray-100 rounded-lg transition">
+                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <div class="flex-1 overflow-y-auto p-6">
@@ -89,7 +94,7 @@
                                 <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Kode Bahan</th>
                                 <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Nama Bahan</th>
                                 <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Supplier</th>
-                                        <th class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Qty</th>
+                                <th class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Qty</th>
                                 <th v-if="!isAdminGarmen" class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Harga/Yard</th>
                                 <th v-if="!isAdminGarmen" class="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Total</th>
                             </tr>
@@ -125,7 +130,10 @@ import { router, usePage } from '@inertiajs/vue3';
 import DataTable from '@/Components/DataTable.vue';
 import Swal from 'sweetalert2';
 
-defineProps({ data: Object, nextSuratJalan: String });
+const props = defineProps({
+    data: Object,
+    nextSuratJalan: String,
+});
 
 const page = usePage();
 const isAdminGarmen = computed(() => page.props.auth.user?.role === 'admingarmen');
@@ -146,19 +154,21 @@ const detailOpen = ref(false);
 const detailLoading = ref(false);
 const detailItems = ref([]);
 const detailNoSJ = ref('');
+const detailId = ref(null);
 
 const goCreate = () => {
     router.get('/surat-jalan-masuk/create');
 };
 
-const showDetail = async (noSJ) => {
-    detailNoSJ.value = noSJ;
+const showDetail = async (item) => {
+    detailNoSJ.value = item.no_surat_jalan;
+    detailId.value = item.id;
     detailOpen.value = true;
     detailLoading.value = true;
     detailItems.value = [];
 
     try {
-        const response = await fetch(`/surat-jalan-masuk/detail?no_surat_jalan=${encodeURIComponent(noSJ)}`, {
+        const response = await fetch(`/surat-jalan-masuk/detail?no_surat_jalan=${encodeURIComponent(item.no_surat_jalan)}`, {
             headers: { Accept: 'application/json' },
         });
         detailItems.value = await response.json();

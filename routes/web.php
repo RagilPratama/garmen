@@ -114,12 +114,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/stok-barang', [StokBarangController::class, 'index'])->name('stok-barang.index');
     Route::put('/stok-barang', [StokBarangController::class, 'update'])->name('stok-barang.update');
     Route::get('/barcode', [BarcodeController::class, 'index'])->name('barcode.index');
-    Route::post('/barcode', [BarcodeController::class, 'store'])->name('barcode.store');
     Route::get('/barcode/list', [BarcodeController::class, 'list'])->name('barcode.list');
+    Route::get('/barcode/scan-action', [BarcodeController::class, 'findByCode'])->name('barcode.scan-action');
+    Route::post('/barcode', [BarcodeController::class, 'store'])->name('barcode.store');
     Route::get('/barcode/scan', [BarcodeController::class, 'scan'])->name('barcode.scan');
     Route::post('/barcode/find', [BarcodeController::class, 'findByCode'])->name('barcode.find');
     Route::put('/barcode/{id}/price', [BarcodeController::class, 'updatePrice'])->name('barcode.updatePrice');
     Route::put('/barcode/{id}/complete', [BarcodeController::class, 'updateComplete'])->name('barcode.updateComplete');
+    Route::delete('/barcode/{id}', [BarcodeController::class, 'destroy'])->name('barcode.destroy');
     Route::get('/rincian-bahan', [RincianBahanController::class, 'index'])->name('rincian-bahan.index');
 
     // Surat Jalan Gudang → Garmen

@@ -196,8 +196,10 @@
                 </div>
 
                 <!-- Input Form for Complete Data -->
-                <div v-if="!barcodeData.harga_sudah_diisi" class="border-t border-gray-200 pt-6">
-                    <h3 class="text-sm font-semibold text-gray-800 mb-4">Lengkapi Data Bahan</h3>
+                <div v-if="barcodeData" class="border-t border-gray-200 pt-6">
+                    <h3 class="text-sm font-semibold text-gray-800 mb-4">
+                        {{ barcodeData.harga_sudah_diisi ? 'Ubah Data Bahan' : 'Lengkapi Data Bahan' }}
+                    </h3>
                     <form @submit.prevent="submitCompleteData" class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
@@ -413,7 +415,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onUnmounted, onMounted } from 'vue';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import Swal from 'sweetalert2';
@@ -538,6 +540,15 @@ const errorMessage = ref('');
 const cameraStarted = ref(false);
 
 let html5QrCode = null;
+
+onMounted(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (code) {
+        scanInput.value = code;
+        searchBarcode();
+    }
+});
 
 // Cleanup camera on unmount
 onUnmounted(() => {
@@ -825,6 +836,21 @@ const searchBarcode = async () => {
         if (result.success) {
             barcodeData.value = result.data;
             priceInput.value = result.data.rp_per_yard || 0;
+
+            // Populate form if data is already complete (for editing)
+            if (result.data.harga_sudah_diisi) {
+                completeDataForm.value = {
+                    supplier: result.data.supplier || '',
+                    nama_bahan: result.data.nama_bahan || '',
+                    quantity: result.data.quantity || 0,
+                    satuan: result.data.satuan || 'yard',
+                    rp_per_yard: result.data.rp_per_yard || 0,
+                    harga_keluar: result.data.harga_keluar || 0,
+                    no_surat_jalan: result.data.no_surat_jalan || '',
+                    tanggal_masuk: result.data.tanggal || new Date().toISOString().split('T')[0],
+                    kepemilikan_id: result.data.kepemilikan_id || null,
+                };
+            }
         } else {
             errorMessage.value = result.message || 'Barcode tidak ditemukan';
         }
@@ -887,7 +913,7 @@ const submitCompleteData = async () => {
             const swalResult = await Swal.fire({
                 icon: 'success',
                 title: 'Berhasil!',
-                text: 'Data lengkap berhasil disimpan!',
+                text: result.message || 'Data berhasil disimpan!',
                 confirmButtonColor: '#10b981',
                 confirmButtonText: 'OK',
                 showCancelButton: scanMethod.value === 'camera',

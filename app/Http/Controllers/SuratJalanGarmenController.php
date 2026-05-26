@@ -132,11 +132,12 @@ class SuratJalanGarmenController extends Controller
         $suratJalan = SuratJalanGarmen::with('items')->findOrFail($id);
 
         DB::transaction(function () use ($suratJalan) {
-            $this->rollbackBahanKeluarForSuratJalan($suratJalan);
-            $this->rollbackBahanMasukForSuratJalan($suratJalan);
+            // 1. Rollback pencatatan di bahan_keluar
+            BahanKeluar::where('no_surat_jalan', '=', $suratJalan->no_surat_jalan, 'and')->delete();
 
-            // Kembalikan stok ke gudang dan hapus item garmen
+            // 2. Kembalikan stok ke gudang, update tracking, dan hapus item garmen
             foreach ($suratJalan->items as $item) {
+                // Kembalikan stok ke tabel stok_bahan
                 DB::statement(
                     "INSERT INTO stok_bahan (kode_bahan, quantity, created_at, updated_at)
                     VALUES (?, ?, NOW(), NOW())
@@ -146,6 +147,10 @@ class SuratJalanGarmenController extends Controller
                     [$item->kode_bahan, $item->quantity]
                 );
 
+                // Update tracking lokasi kembali ke gudang
+                $barcode = BarcodeBahan::find($item->barcode_bahan_id);
+                $barcodeCode = $barcode ? $barcode->barcode_code : $item->kode_bahan;
+
                 DB::statement(
                     "
                     INSERT INTO tracking_bahan (kode_bahan, lokasi, created_at, updated_at)
@@ -154,56 +159,17 @@ class SuratJalanGarmenController extends Controller
                         lokasi = VALUES(lokasi),
                         updated_at = NOW()
                     ",
-                    [$item->kode_bahan],
+                    [$barcodeCode],
                 );
 
-                SuratJalanGarmenItem::destroy($item->id);
+                $item->delete();
             }
 
-            SuratJalanGarmen::destroy($suratJalan->id);
+            // 3. Hapus record surat jalan utama
+            $suratJalan->delete();
         });
 
-        return redirect()->route('surat-jalan-garmen.index')->with('message', 'Surat jalan berhasil dihapus.');
-    }
-
-    private function rollbackBahanMasukForSuratJalan(SuratJalanGarmen $suratJalan): void
-    {
-        $items = BahanMasuk::where('no_surat_jalan', '=', $suratJalan->no_surat_jalan, 'and')->get();
-        if ($items->isEmpty()) {
-            return;
-        }
-
-        foreach ($items as $item) {
-            DB::statement(
-                "UPDATE stok_bahan
-                SET quantity = GREATEST(0, quantity - ?), updated_at = NOW()
-                WHERE kode_bahan = ?",
-                [$item->quantity, $item->kode_bahan]
-            );
-        }
-
-        BahanMasuk::whereIn('id', $items->pluck('id'), 'and', false)->delete();
-    }
-
-    private function rollbackBahanKeluarForSuratJalan(SuratJalanGarmen $suratJalan): void
-    {
-        $items = BahanKeluar::where('no_surat_jalan', '=', $suratJalan->no_surat_jalan, 'and')->get();
-        if ($items->isEmpty()) {
-            return;
-        }
-
-        foreach ($items as $item) {
-            DB::statement(
-                "INSERT INTO stok_bahan (kode_bahan, quantity, created_at, updated_at)
-                VALUES (?, ?, NOW(), NOW())
-                ON DUPLICATE KEY UPDATE
-                    quantity = quantity + VALUES(quantity),
-                    updated_at = NOW()",
-                [$item->kode_bahan, $item->quantity]
-            );
-        }
-
-        BahanKeluar::whereIn('id', $items->pluck('id'), 'and', false)->delete();
+        return redirect()->route('surat-jalan-garmen.index')->with('message', 'Surat jalan garmen berhasil dihapus dan stok dikembalikan ke gudang.');
     }
 
     /**
@@ -255,7 +221,18 @@ class SuratJalanGarmenController extends Controller
                     'total_harga' => $barcode->quantity * $hargaKeluar,
                 ]);
 
-                // Kurangi stok gudang
+                // 1. Catat di tabel bahan_keluar sebagai log transaksi keluar
+                BahanKeluar::create([
+                    'tanggal' => $suratJalan->tanggal,
+                    'no_surat_jalan' => $suratJalan->no_surat_jalan,
+                    'kode_bahan' => $barcode->kode_bahan,
+                    'quantity' => $barcode->quantity,
+                    'satuan' => $barcode->satuan ?? 'yard',
+                    'harga_satuan' => $hargaKeluar,
+                    'total_harga' => $barcode->quantity * $hargaKeluar,
+                ]);
+
+                // 2. Kurangi stok gudang
                 DB::statement(
                     "
                     UPDATE stok_bahan
@@ -265,6 +242,7 @@ class SuratJalanGarmenController extends Controller
                     [(float) $barcode->quantity, $barcode->kode_bahan],
                 );
 
+                // 3. Update tracking lokasi ke garmen
                 DB::statement(
                     "
                     INSERT INTO tracking_bahan (kode_bahan, lokasi, created_at, updated_at)
@@ -273,7 +251,7 @@ class SuratJalanGarmenController extends Controller
                         lokasi = VALUES(lokasi),
                         updated_at = NOW()
                     ",
-                    [$barcode->kode_bahan],
+                    [$barcode->barcode_code],
                 );
 
                 return $item;
@@ -299,9 +277,16 @@ class SuratJalanGarmenController extends Controller
     public function removeItem($id, $itemId)
     {
         $item = SuratJalanGarmenItem::where('surat_jalan_garmen_id', '=', $id, 'and')->findOrFail($itemId);
+        $suratJalan = SuratJalanGarmen::findOrFail($id);
 
-        DB::transaction(function () use ($item) {
-            // Kembalikan stok
+        DB::transaction(function () use ($item, $suratJalan) {
+            // 1. Hapus record di bahan_keluar
+            BahanKeluar::where('no_surat_jalan', '=', $suratJalan->no_surat_jalan, 'and')
+                ->where('kode_bahan', '=', $item->kode_bahan, 'and')
+                ->where('quantity', '=', $item->quantity, 'and')
+                ->delete();
+
+            // 2. Kembalikan stok
             DB::statement(
                 "
                 UPDATE stok_bahan
@@ -311,6 +296,10 @@ class SuratJalanGarmenController extends Controller
                 [(float) $item->quantity, $item->kode_bahan],
             );
 
+            // 3. Update tracking lokasi kembali ke gudang
+            $barcode = BarcodeBahan::find($item->barcode_bahan_id);
+            $barcodeCode = $barcode ? $barcode->barcode_code : $item->kode_bahan;
+
             DB::statement(
                 "
                 INSERT INTO tracking_bahan (kode_bahan, lokasi, created_at, updated_at)
@@ -319,7 +308,7 @@ class SuratJalanGarmenController extends Controller
                     lokasi = VALUES(lokasi),
                     updated_at = NOW()
                 ",
-                [$item->kode_bahan],
+                [$barcodeCode],
             );
 
             $item->delete();

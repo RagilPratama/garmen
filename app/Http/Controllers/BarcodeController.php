@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Supplier;
 use App\Models\BarcodeBahan;
+use App\Models\BahanMasuk;
+use App\Traits\GeneratesSuratJalan;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -11,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 
 class BarcodeController extends Controller
 {
+    use GeneratesSuratJalan;
     public function index()
     {
         $suppliers = Supplier::orderBy('nama', 'asc')->get(['id', 'nama']);
@@ -297,6 +300,20 @@ class BarcodeController extends Controller
         ]);
     }
 
+    private function findMasterId(string $table, string $column, ?string $value): ?int
+    {
+        if (!$value) return null;
+        
+        $normalized = strtolower(trim($value));
+        $normalized = preg_replace('/[^a-z0-9 ]+/', '', $normalized);
+        $normalized = preg_replace('/\s+/', ' ', $normalized);
+        $normalized = trim($normalized);
+
+        $record = DB::table($table)->whereRaw("LOWER(REPLACE(REPLACE(REPLACE($column, '-', ''), '.', ''), ' ', '')) = ?", [str_replace(' ', '', $normalized)])->first();
+        
+        return $record ? $record->id : null;
+    }
+
     public function updateComplete(Request $request, $id)
     {
         $validated = $request->validate([
@@ -309,75 +326,156 @@ class BarcodeController extends Controller
             'no_surat_jalan' => 'required|string',
             'tanggal_masuk' => 'required|date',
             'kepemilikan_id' => 'required|exists:master_kepemilikans,id',
+            'master_bahan_id' => 'nullable|exists:master_bahan,id',
         ]);
 
         $barcode = BarcodeBahan::findOrFail($id);
 
-        // Cek apakah sudah pernah diisi sebelumnya (untuk menghindari double stok)
-        $sudahDiisiSebelumnya = $barcode->harga_sudah_diisi;
-        $qtyLama = (float) $barcode->quantity;
+        try {
+            DB::beginTransaction();
 
-        // Update all fields
-        $barcode->supplier = $validated['supplier'];
-        $barcode->nama_bahan = $validated['nama_bahan'];
-        $barcode->quantity = $validated['quantity'];
-        $barcode->satuan = $validated['satuan'];
-        $barcode->rp_per_yard = $validated['rp_per_yard'];
-        $barcode->harga_keluar = $validated['harga_keluar'];
-        $barcode->no_surat_jalan = $validated['no_surat_jalan'];
-        $barcode->tanggal = $validated['tanggal_masuk'];
-        $barcode->kepemilikan_id = $validated['kepemilikan_id'] ?? null;
-        $barcode->total_harga = $validated['quantity'] * $validated['rp_per_yard'];
-        $barcode->harga_sudah_diisi = true;
-        $barcode->save();
+            // Resolve IDs if not provided but names are present
+            $masterBahanId = $validated['master_bahan_id'] ?? $this->findMasterId('master_bahan', 'nama_bahan', $validated['nama_bahan']);
+            $masterKepemilikanId = $validated['kepemilikan_id'] ?? $this->findMasterId('master_kepemilikans', 'nama_kepemilikan', $validated['supplier']);
 
-        // Update stok bahan berdasarkan kode_bahan dari barcode
-        $kodeBahan = $barcode->kode_bahan;
-        $qty = (float) $validated['quantity'];
+            // Cek apakah sudah pernah diisi sebelumnya (untuk membedakan "Input Pertama" vs "Edit")
+            $sudahDiisiSebelumnya = $barcode->harga_sudah_diisi;
+            $qtyLama = (float) $barcode->quantity;
+            $kodeBahanLama = $barcode->kode_bahan;
 
-        if ($sudahDiisiSebelumnya) {
-            // Jika sudah pernah diisi, hitung selisih qty untuk update stok
-            $selisih = $qty - $qtyLama;
-            if ($selisih != 0) {
-                DB::statement(
-                    "
-                    UPDATE stok_bahan
-                    SET quantity = GREATEST(0, quantity + ?),
-                        updated_at = NOW()
-                    WHERE kode_bahan = ?
-                ",
-                    [$selisih, $kodeBahan],
-                );
+            // Update barcode record
+            $barcode->supplier = $validated['supplier'];
+            $barcode->nama_bahan = $validated['nama_bahan'];
+            $barcode->quantity = $validated['quantity'];
+            $barcode->satuan = $validated['satuan'];
+            $barcode->rp_per_yard = $validated['rp_per_yard'];
+            $barcode->harga_keluar = $validated['harga_keluar'];
+            $barcode->no_surat_jalan = $validated['no_surat_jalan'];
+            $barcode->tanggal = $validated['tanggal_masuk'];
+            $barcode->kepemilikan_id = $masterKepemilikanId;
+            $barcode->total_harga = $validated['quantity'] * $validated['rp_per_yard'];
+            $barcode->harga_sudah_diisi = true;
+            $barcode->save();
+
+            // 1. Sinkronisasi ke tabel bahan_masuk (barang_masuk)
+            if ($sudahDiisiSebelumnya) {
+                // Jika EDIT: Update record bahan_masuk yang berhubungan (berdasarkan kode_bahan lama dan no_surat_jalan lama jika ada)
+                // Kita coba cari yang paling mendekati (biasanya yang id-nya paling besar atau sesuai kode)
+                $bahanMasuk = BahanMasuk::where('kode_bahan', $kodeBahanLama)
+                    ->where('no_surat_jalan', $barcode->getOriginal('no_surat_jalan'))
+                    ->orderBy('id', 'desc')
+                    ->first();
+
+                if ($bahanMasuk) {
+                    $bahanMasuk->update([
+                        'tanggal' => $validated['tanggal_masuk'],
+                        'no_surat_jalan' => $validated['no_surat_jalan'],
+                        'supplier' => $validated['supplier'],
+                        'kode_bahan' => $barcode->kode_bahan,
+                        'nama_bahan' => $validated['nama_bahan'],
+                        'master_bahan_id' => $masterBahanId,
+                        'master_kepemilikan_id' => $masterKepemilikanId,
+                        'quantity' => $validated['quantity'],
+                        'satuan' => $validated['satuan'],
+                        'harga_satuan' => $validated['rp_per_yard'],
+                        'total_harga' => $validated['quantity'] * $validated['rp_per_yard'],
+                    ]);
+                }
+            } else {
+                // Jika INPUT BARU: Create entri baru
+                $noNota = $this->nextCode(BahanMasuk::class, 'no_nota', 'NT-');
+                BahanMasuk::create([
+                    'tanggal' => $validated['tanggal_masuk'],
+                    'no_surat_jalan' => $validated['no_surat_jalan'],
+                    'no_nota' => $noNota,
+                    'supplier' => $validated['supplier'],
+                    'kode_bahan' => $barcode->kode_bahan,
+                    'nama_bahan' => $validated['nama_bahan'],
+                    'master_bahan_id' => $masterBahanId,
+                    'master_kepemilikan_id' => $masterKepemilikanId,
+                    'quantity' => $validated['quantity'],
+                    'satuan' => $validated['satuan'],
+                    'harga_satuan' => $validated['rp_per_yard'],
+                    'total_harga' => $validated['quantity'] * $validated['rp_per_yard'],
+                ]);
             }
-        } else {
-            // Pertama kali diisi — tambahkan ke stok bahan (INSERT or UPDATE)
+
+            // 2. Update stok bahan
+            $kodeBahan = $barcode->kode_bahan;
+            $qty = (float) $validated['quantity'];
+
+            if ($sudahDiisiSebelumnya) {
+                // Jika EDIT: Hitung selisih
+                if ($kodeBahanLama === $kodeBahan) {
+                    $selisih = $qty - $qtyLama;
+                    if ($selisih != 0) {
+                        DB::statement("UPDATE stok_bahan SET quantity = GREATEST(0, quantity + ?), updated_at = NOW() WHERE kode_bahan = ?", [$selisih, $kodeBahan]);
+                    }
+                } else {
+                    // Jika KODE BERUBAH: Kurangi stok kode lama, tambah stok kode baru
+                    DB::statement("UPDATE stok_bahan SET quantity = GREATEST(0, quantity - ?), updated_at = NOW() WHERE kode_bahan = ?", [$qtyLama, $kodeBahanLama]);
+                    DB::statement("INSERT INTO stok_bahan (kode_bahan, quantity, created_at, updated_at) VALUES (?, ?, NOW(), NOW()) ON DUPLICATE KEY UPDATE quantity = quantity + ?, updated_at = NOW()", [$kodeBahan, $qty, $qty]);
+                }
+            } else {
+                // Jika INPUT BARU: Tambah stok
+                DB::statement("INSERT INTO stok_bahan (kode_bahan, quantity, created_at, updated_at) VALUES (?, ?, NOW(), NOW()) ON DUPLICATE KEY UPDATE quantity = quantity + ?, updated_at = NOW()", [$kodeBahan, $qty, $qty]);
+            }
+
+            // 3. Update tracking lokasi
             DB::statement(
-                "
-                INSERT INTO stok_bahan (kode_bahan, quantity, created_at, updated_at)
-                VALUES (?, ?, NOW(), NOW())
-                ON DUPLICATE KEY UPDATE
-                    quantity = quantity + ?,
-                    updated_at = NOW()
-            ",
-                [$kodeBahan, $qty, $qty],
+                "INSERT INTO tracking_bahan (kode_bahan, lokasi, created_at, updated_at)
+                VALUES (?, 'gudang', NOW(), NOW())
+                ON DUPLICATE KEY UPDATE lokasi = VALUES(lokasi), updated_at = NOW()",
+                [$barcode->barcode_code]
             );
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => $sudahDiisiSebelumnya ? 'Data berhasil diperbarui' : 'Data lengkap berhasil disimpan',
+                'data' => $barcode,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error completing/editing barcode data: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan data: ' . $e->getMessage(),
+            ], 500);
         }
+    }
 
-        DB::statement(
-            "
-            INSERT INTO tracking_bahan (kode_bahan, lokasi, created_at, updated_at)
-            VALUES (?, 'gudang', NOW(), NOW())
-            ON DUPLICATE KEY UPDATE
-                lokasi = VALUES(lokasi),
-                updated_at = NOW()
-            ",
-            [$kodeBahan],
-        );
+    public function destroy($id)
+    {
+        $barcode = BarcodeBahan::findOrFail($id);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Data lengkap berhasil disimpan',
-            'data' => $barcode,
-        ]);
+        try {
+            DB::beginTransaction();
+
+            // 1. Kurangi stok jika data sudah lengkap
+            if ($barcode->harga_sudah_diisi) {
+                DB::statement("UPDATE stok_bahan SET quantity = GREATEST(0, quantity - ?), updated_at = NOW() WHERE kode_bahan = ?", [(float)$barcode->quantity, $barcode->kode_bahan]);
+                
+                // 2. Hapus dari bahan_masuk (log transaksi masuk)
+                BahanMasuk::where('kode_bahan', $barcode->kode_bahan)
+                    ->where('no_surat_jalan', $barcode->no_surat_jalan)
+                    ->delete();
+            }
+
+            // 3. Hapus tracking
+            DB::table('tracking_bahan')->where('kode_bahan', $barcode->barcode_code)->delete();
+
+            // 4. Hapus barcode
+            $barcode->delete();
+
+            DB::commit();
+
+            return redirect()->back()->with('message', 'Barcode berhasil dihapus dan stok diperbarui');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error deleting barcode: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal menghapus barcode: ' . $e->getMessage());
+        }
     }
 }

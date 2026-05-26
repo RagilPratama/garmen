@@ -8,7 +8,20 @@ class BahanMasuk extends Model
 {
     protected $table = 'bahan_masuk';
 
-    protected $fillable = ['tanggal', 'no_surat_jalan', 'no_nota', 'supplier', 'kode_bahan', 'nama_bahan', 'quantity', 'satuan', 'harga_satuan', 'total'];
+    protected $fillable = [
+        'tanggal',
+        'no_surat_jalan',
+        'no_nota',
+        'supplier',
+        'kode_bahan',
+        'nama_bahan',
+        'master_bahan_id',
+        'master_kepemilikan_id',
+        'quantity',
+        'satuan',
+        'harga_satuan',
+        'total'
+    ];
 
     protected $casts = [
         'tanggal' => 'date',

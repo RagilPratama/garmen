@@ -24,8 +24,7 @@ class BahanMasukController extends Controller
         $supplier = request('supplier');
         $status = request('status');
 
-        // Bahan masuk = SEMUA barcode yang sudah lengkap (history tracking)
-        $query = \App\Models\BarcodeBahan::where('harga_sudah_diisi', '=', true, 'and')
+        $query = BahanMasuk::query()
             ->when(
                 $search,
                 fn($q) => $q->where(
@@ -36,25 +35,23 @@ class BahanMasukController extends Controller
                         ->orWhere('no_surat_jalan', 'like', "%{$search}%"),
                 ),
             )
-            ->when($namaBahan, fn($q) => $q->where('nama_bahan', '=', $namaBahan, 'and'))
-            ->when($supplier, fn($q) => $q->where('supplier', '=', $supplier, 'and'))
-            ->when($status === 'gudang', fn($q) => $q->whereDoesntHave('suratJalanGarmenItem'))
-            ->when($status === 'garmen', fn($q) => $q->whereHas('suratJalanGarmenItem'))
-            ->with('suratJalanGarmenItem.suratJalan')
+            ->when($namaBahan, fn($q) => $q->where('nama_bahan', '=', $namaBahan))
+            ->when($supplier, fn($q) => $q->where('supplier', '=', $supplier))
             ->orderBy('created_at', 'desc')
             ->paginate(20)
             ->appends(request()->query());
 
-        // Transform: tambahkan status lokasi
+        // Transform: tambahkan status lokasi (default Gudang karena BahanMasuk adalah data masuk ke gudang)
         $query->getCollection()->transform(function ($item) {
-            $item->lokasi = $item->suratJalanGarmenItem ? 'Garmen' : 'Gudang';
-            $item->no_sj_garmen = $item->suratJalanGarmenItem?->suratJalan?->no_surat_jalan ?? null;
+            $item->lokasi = 'Gudang';
+            $item->no_sj_garmen = null;
+            $item->rp_per_yard = $item->harga_satuan;
+            $item->total_harga = $item->total_harga ?? $item->total;
             return $item;
         });
 
         // Daftar supplier unik untuk filter
-        $supplierOptions = \App\Models\BarcodeBahan::where('harga_sudah_diisi', '=', true, 'and')
-            ->whereNotNull('supplier')
+        $supplierOptions = BahanMasuk::whereNotNull('supplier')
             ->where('supplier', '!=', '')
             ->select('supplier')
             ->distinct()
@@ -62,7 +59,11 @@ class BahanMasukController extends Controller
             ->pluck('supplier');
 
         // Daftar nama bahan unik untuk filter
-        $namaBahanOptions = \App\Models\BarcodeBahan::where('harga_sudah_diisi', '=', true, 'and')->whereNotNull('nama_bahan')->select('nama_bahan')->distinct()->orderBy('nama_bahan', 'asc')->pluck('nama_bahan');
+        $namaBahanOptions = BahanMasuk::whereNotNull('nama_bahan')
+            ->select('nama_bahan')
+            ->distinct()
+            ->orderBy('nama_bahan', 'asc')
+            ->pluck('nama_bahan');
 
         return Inertia::render('BahanMasuk/Index', [
             'data' => $query,
@@ -82,6 +83,20 @@ class BahanMasukController extends Controller
         return Inertia::render('BahanMasuk/Form');
     }
 
+    private function findMasterId(string $table, string $column, ?string $value): ?int
+    {
+        if (!$value) return null;
+        
+        $normalized = strtolower(trim($value));
+        $normalized = preg_replace('/[^a-z0-9 ]+/', '', $normalized);
+        $normalized = preg_replace('/\s+/', ' ', $normalized);
+        $normalized = trim($normalized);
+
+        $record = DB::table($table)->whereRaw("LOWER(REPLACE(REPLACE(REPLACE($column, '-', ''), '.', ''), ' ', '')) = ?", [str_replace(' ', '', $normalized)])->first();
+        
+        return $record ? $record->id : null;
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -94,12 +109,17 @@ class BahanMasukController extends Controller
             'items.*.quantity' => 'required|numeric|min:0',
             'items.*.satuan' => 'required|in:yard,meter,kg',
             'items.*.harga_satuan' => 'required|numeric|min:0',
+            'items.*.master_bahan_id' => 'nullable|exists:master_bahan,id',
+            'master_kepemilikan_id' => 'nullable|exists:master_kepemilikans,id',
         ]);
 
         $noNota = $this->nextCode(BahanMasuk::class, 'no_nota', 'NT-');
         $stokDeltas = [];
 
         foreach ($validated['items'] as $item) {
+            $masterBahanId = $item['master_bahan_id'] ?? $this->findMasterId('master_bahan', 'nama_bahan', $item['nama_bahan']);
+            $masterKepemilikanId = $validated['master_kepemilikan_id'] ?? $this->findMasterId('master_kepemilikans', 'nama_kepemilikan', $validated['supplier']);
+
             BahanMasuk::create([
                 'tanggal' => $validated['tanggal'],
                 'no_surat_jalan' => $validated['no_surat_jalan'],
@@ -107,6 +127,8 @@ class BahanMasukController extends Controller
                 'supplier' => $validated['supplier'],
                 'kode_bahan' => $item['kode_bahan'],
                 'nama_bahan' => $item['nama_bahan'] ?? null,
+                'master_bahan_id' => $masterBahanId,
+                'master_kepemilikan_id' => $masterKepemilikanId,
                 'quantity' => $item['quantity'],
                 'satuan' => $item['satuan'],
                 'harga_satuan' => $item['harga_satuan'],
