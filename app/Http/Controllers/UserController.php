@@ -85,7 +85,12 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
-            'password' => 'nullable|string|min:8|confirmed',
+            'password' => [
+                'nullable',
+                'string',
+                'min:8',
+                Rule::when($request->filled('password'), ['confirmed']),
+            ],
             'role' => ['required', Rule::in([
                 User::ROLE_SUPERADMIN,
                 User::ROLE_ADMIN_GUDANG,

@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Log;
 class BarcodeController extends Controller
 {
     use GeneratesSuratJalan;
-    public function index()
+    public function index(Request $request)
     {
         $suppliers = Supplier::orderBy('nama', 'asc')->get(['id', 'nama']);
 
@@ -31,13 +31,38 @@ class BarcodeController extends Controller
                 return $items->unique('kode_bahan')->values();
             });
 
-        // Get barcode yang belum lengkap (belum diisi harga/supplier)
-        $belumLengkap = BarcodeBahan::where('harga_sudah_diisi', '=', false, 'and')->orderBy('created_at', 'desc')->get();
+        // Get barcode yang belum lengkap (belum diisi harga/supplier) dengan pagination
+        $belumLengkap = BarcodeBahan::where('harga_sudah_diisi', '=', false, 'and')
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
 
         return Inertia::render('Barcode/Index', [
             'suppliers' => $suppliers,
             'bahanHistory' => $bahanHistory,
-            'belumLengkap' => $belumLengkap,
+            'belumLengkap' => [
+                'data' => $belumLengkap->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'barcode_code' => $item->barcode_code,
+                        'kode_bahan' => $item->kode_bahan,
+                        'nama_bahan' => $item->nama_bahan,
+                        'supplier' => $item->supplier,
+                        'quantity' => $item->quantity,
+                        'satuan' => $item->satuan,
+                        'rp_per_yard' => $item->rp_per_yard,
+                        'harga_keluar' => $item->harga_keluar,
+                        'total_harga' => $item->total_harga,
+                        'no_surat_jalan' => $item->no_surat_jalan,
+                        'tanggal' => $item->tanggal,
+                        'harga_sudah_diisi' => $item->harga_sudah_diisi,
+                        'created_at' => $item->created_at,
+                    ];
+                }),
+                'current_page' => $belumLengkap->currentPage(),
+                'total' => $belumLengkap->total(),
+                'per_page' => $belumLengkap->perPage(),
+                'last_page' => $belumLengkap->lastPage(),
+            ],
         ]);
     }
 

@@ -46,26 +46,14 @@
                         <span class="text-sm font-medium">Pola disetujui</span>
                     </label>
                     <label v-if="isSuperAdmin" class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer">
-                        <input
-                            type="checkbox"
-                            class="h-4 w-4 text-blue-600 rounded border-gray-300"
-                            v-model="approval.superadmin_allow_print"
-                            :disabled="approvalSaving"
-                            @change="saveApproval"
-                        />
+                        <input type="checkbox" class="h-4 w-4 text-blue-600 rounded border-gray-300" v-model="approval.superadmin_allow_print" :disabled="approvalSaving" @change="saveApproval" />
                         <span class="text-sm font-medium">Izinkan cetak tanpa marker/pola</span>
                     </label>
                 </div>
 
-                <p v-if="isAdminKantor && approval.superadmin_allow_print" class="mt-3 text-sm text-emerald-700">
-                    Superadmin telah mengizinkan cetak tanpa marker/pola.
-                </p>
-                <p v-else-if="isAdminKantor && !canPrint" class="mt-3 text-sm text-red-600">
-                    Anda harus menyetujui marker dan pola agar dapat mencetak surat jalan.
-                </p>
-                <p v-else-if="isSuperAdmin && !canPrint" class="mt-3 text-sm text-emerald-600">
-                    Superadmin dapat mencetak tanpa persetujuan marker/pola.
-                </p>
+                <p v-if="isAdminKantor && approval.superadmin_allow_print" class="mt-3 text-sm text-emerald-700">Superadmin telah mengizinkan cetak tanpa marker/pola.</p>
+                <p v-else-if="isAdminKantor && !canPrint" class="mt-3 text-sm text-red-600">Anda harus menyetujui marker dan pola agar dapat mencetak surat jalan.</p>
+                <p v-else-if="isSuperAdmin && !canPrint" class="mt-3 text-sm text-emerald-600">Superadmin dapat mencetak tanpa persetujuan marker/pola.</p>
             </div>
             <!-- Scan Barcode -->
             <div class="bg-white rounded-xl border-2 border-blue-200 shadow-sm p-6">
@@ -289,10 +277,7 @@ const approvalSaving = ref(false);
 const isSuperAdmin = computed(() => page.props.auth.user?.role === 'superadmin');
 const isAdminKantor = computed(() => page.props.auth.user?.role === 'adminkantor');
 const canEditApproval = computed(() => isSuperAdmin.value || isAdminKantor.value);
-const canPrint = computed(
-    () => isSuperAdmin.value ||
-        (isAdminKantor.value && (approval.value.superadmin_allow_print || (approval.value.marker_approved && approval.value.pola_approved)))
-);
+const canPrint = computed(() => isSuperAdmin.value || (isAdminKantor.value && (approval.value.superadmin_allow_print || (approval.value.marker_approved && approval.value.pola_approved))));
 
 let Html5Qrcode = null;
 let html5QrCode = null;

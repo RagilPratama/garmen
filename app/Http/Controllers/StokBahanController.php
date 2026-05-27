@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\StokBahan;
 use App\Models\BahanMasuk;
-use App\Models\BarcodeBahan;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -13,27 +12,33 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class StokBahanController extends Controller
 {
-    private function getFilteredQuery()
-    {
-        $search = request('search');
-        $namaBahan = request('nama_bahan');
-        $supplier = request('supplier');
 
-        $latestBahanMasukSub = BahanMasuk::query()
-            ->selectRaw('MAX(id) as id, kode_bahan', [])
+    private function baseQuery()
+    {
+        $latestBahanMasuk = BahanMasuk::query()
+            ->selectRaw('MAX(id) as id, kode_bahan')
             ->groupBy('kode_bahan');
 
         return StokBahan::query()
             ->where('stok_bahan.quantity', '>', 0)
             ->leftJoin('tracking_bahan as tb', 'tb.kode_bahan', '=', 'stok_bahan.kode_bahan')
-            ->leftJoinSub($latestBahanMasukSub, 'latest_bahan', function ($join) {
+            ->leftJoinSub($latestBahanMasuk, 'latest_bahan', function ($join) {
                 $join->on('stok_bahan.kode_bahan', '=', 'latest_bahan.kode_bahan');
             })
             ->leftJoin('bahan_masuk as bm', 'bm.id', '=', 'latest_bahan.id')
             ->leftJoin('master_kepemilikans as mk', 'mk.id', '=', 'bm.master_kepemilikan_id')
             ->where(function ($q) {
                 $q->whereNull('tb.lokasi')->orWhere('tb.lokasi', 'gudang');
-            })
+            });
+    }
+
+    private function getFilteredQuery()
+    {
+        $search = request('search');
+        $namaBahan = request('nama_bahan');
+        $supplier = request('supplier');
+
+        return $this->baseQuery()
             ->when($search, fn($q) => $q->where('stok_bahan.kode_bahan', 'like', "%{$search}%"))
             ->when($namaBahan, fn($q) => $q->where('bm.nama_bahan', $namaBahan))
             ->when($supplier, fn($q) => $q->where('bm.supplier', $supplier))
@@ -53,55 +58,45 @@ class StokBahanController extends Controller
             ->orderBy('stok_bahan.kode_bahan');
     }
 
+    private function getFilterOptions(): array
+    {
+        $base = $this->baseQuery();
+
+        $raw = (clone $base)
+            ->select([
+                'bm.nama_bahan',
+                'bm.supplier',
+            ])
+            ->whereNotNull('bm.nama_bahan')
+            ->get();
+
+        $namaBahanOptions = $raw->pluck('nama_bahan')
+            ->unique()
+            ->filter()
+            ->sort()
+            ->values();
+
+        $supplierOptions = $raw->pluck('supplier')
+            ->unique()
+            ->filter()
+            ->sort()
+            ->values();
+
+        return compact('namaBahanOptions', 'supplierOptions');
+    }
+
     public function index()
     {
-        $query = $this->getFilteredQuery()
+        $data = $this->getFilteredQuery()
             ->paginate(20)
             ->appends(request()->query());
 
-        $latestBahanMasukSub = BahanMasuk::query()
-            ->selectRaw('MAX(id) as id, kode_bahan', [])
-            ->groupBy('kode_bahan');
-
-        // Daftar nama bahan unik untuk filter (hanya yang stoknya masih ada)
-        $namaBahanOptions = DB::table('stok_bahan')
-            ->where('stok_bahan.quantity', '>', 0)
-            ->leftJoin('tracking_bahan as tb', 'tb.kode_bahan', '=', 'stok_bahan.kode_bahan')
-            ->leftJoinSub($latestBahanMasukSub, 'latest_bahan', function ($join) {
-                $join->on('stok_bahan.kode_bahan', '=', 'latest_bahan.kode_bahan');
-            })
-            ->leftJoin('bahan_masuk as bm', 'bm.id', '=', 'latest_bahan.id')
-            ->where(function ($q) {
-                $q->whereNull('tb.lokasi')->orWhere('tb.lokasi', 'gudang');
-            })
-            ->whereNotNull('bm.nama_bahan')
-            ->select('bm.nama_bahan')
-            ->distinct()
-            ->orderBy('bm.nama_bahan')
-            ->pluck('bm.nama_bahan');
-
-        // Daftar supplier unik untuk filter (hanya yang stoknya masih ada)
-        $supplierOptions = DB::table('stok_bahan')
-            ->where('stok_bahan.quantity', '>', 0)
-            ->leftJoin('tracking_bahan as tb', 'tb.kode_bahan', '=', 'stok_bahan.kode_bahan')
-            ->leftJoinSub($latestBahanMasukSub, 'latest_bahan', function ($join) {
-                $join->on('stok_bahan.kode_bahan', '=', 'latest_bahan.kode_bahan');
-            })
-            ->leftJoin('bahan_masuk as bm', 'bm.id', '=', 'latest_bahan.id')
-            ->where(function ($q) {
-                $q->whereNull('tb.lokasi')->orWhere('tb.lokasi', 'gudang');
-            })
-            ->whereNotNull('bm.supplier')
-            ->where('bm.supplier', '!=', '')
-            ->select('bm.supplier')
-            ->distinct()
-            ->orderBy('bm.supplier')
-            ->pluck('bm.supplier');
+        $filterOptions = $this->getFilterOptions();
 
         return Inertia::render('StokBahan/Index', [
-            'data' => $query,
-            'namaBahanOptions' => $namaBahanOptions,
-            'supplierOptions' => $supplierOptions,
+            'data' => $data,
+            'namaBahanOptions' => $filterOptions['namaBahanOptions'],
+            'supplierOptions' => $filterOptions['supplierOptions'],
             'filters' => [
                 'search' => request('search'),
                 'nama_bahan' => request('nama_bahan'),
@@ -121,27 +116,27 @@ class StokBahanController extends Controller
         // Header
         $headers = ['No', 'No. Surat Jalan', 'Kode Bahan', 'Nama Bahan', 'Supplier', 'Kepemilikan', 'Qty', 'Satuan', 'Harga/Yard', 'Total Harga'];
         $sheet->fromArray($headers, null, 'A1');
-
-        // Style header
         $sheet->getStyle('A1:J1')->getFont()->setBold(true);
 
-        // Data
         $row = 2;
-        foreach ($data as $i => $item) {
-            $sheet->fromArray([
-                $i + 1,
-                $item->no_surat_jalan,
-                $item->kode_bahan,
-                $item->nama_bahan,
-                $item->supplier,
-                $item->pemilik,
-                (float) $item->quantity,
-                $item->satuan ?? 'yard',
-                (float) $item->rp_per_yard,
-                (float) $item->total_harga,
-            ], null, "A{$row}");
-            $row++;
-        }
+        $no = 1;
+        $this->getFilteredQuery()->chunk(500, function ($items) use ($sheet, &$row, &$no) {
+            foreach ($items as $item) {
+                $sheet->fromArray([
+                    $no++,
+                    $item->no_surat_jalan,
+                    $item->kode_bahan,
+                    $item->nama_bahan,
+                    $item->supplier,
+                    $item->pemilik,
+                    (float) $item->quantity,
+                    $item->satuan ?? 'yard',
+                    (float) $item->rp_per_yard,
+                    (float) $item->total_harga,
+                ], null, "A{$row}");
+                $row++;
+            }
+        });
 
         // Auto width
         foreach (range('A', 'J') as $col) {

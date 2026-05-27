@@ -1,8 +1,5 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(ed *)",
-      "Bash(php *)"
-    ]
-  }
+    "permissions": {
+        "allow": ["Bash(ed *)", "Bash(php *)"]
+    }
 }

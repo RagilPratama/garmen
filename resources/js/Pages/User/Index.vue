@@ -88,14 +88,13 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">
                             Konfirmasi Password
-                            <span v-if="!editItem || form.password" class="text-red-500">*</span>
+                            <span v-if="!editItem || (editItem && form.password)" class="text-red-500">*</span>
                         </label>
                         <input
                             v-model="form.password_confirmation"
                             type="password"
                             class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition bg-white"
                             placeholder="Ulangi password"
-                            :required="!editItem || form.password"
                         />
                         <p v-if="form.errors.password_confirmation" class="mt-1 text-xs text-red-500">{{ form.errors.password_confirmation }}</p>
                     </div>
@@ -176,18 +175,42 @@ const openEdit = (user) => {
     showModal.value = true;
 };
 
+const closeModal = () => {
+    showModal.value = false;
+    editItem.value = null;
+    form.reset();
+    form.clearErrors();
+};
+
 const submit = () => {
     if (editItem.value) {
-        form.put(`/users/${editItem.value.id}`, {
+        form.transform((payload) => {
+            const data = {
+                name: payload.name,
+                email: payload.email,
+                role: payload.role,
+            };
+
+            if (payload.password) {
+                data.password = payload.password;
+                data.password_confirmation = payload.password_confirmation;
+            }
+
+            return data;
+        }).put(`/users/${editItem.value.id}`, {
+            preserveScroll: true,
             onSuccess: () => {
-                showModal.value = false;
+                closeModal();
+            },
+            onFinish: () => {
+                form.transform((data) => data);
             },
         });
     } else {
         form.post('/users', {
+            preserveScroll: true,
             onSuccess: () => {
-                showModal.value = false;
-                form.reset();
+                closeModal();
             },
         });
     }

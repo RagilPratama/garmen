@@ -7,17 +7,30 @@
                     <h1 class="text-xl font-semibold text-gray-800">Barcode Generator</h1>
                     <p class="text-sm text-gray-500 mt-0.5">Generate barcode untuk tracking bahan masuk</p>
                 </div>
-                <button @click="printBarcodes" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-                        />
-                    </svg>
-                    Print Semua
-                </button>
+                <div class="flex items-center gap-3">
+                    <button @click="printCurrentPage" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                            />
+                        </svg>
+                        Print Halaman Ini
+                    </button>
+                    <button @click="printBarcodes" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                            />
+                        </svg>
+                        Print Semua
+                    </button>
+                </div>
             </div>
 
             <!-- Form Input -->
@@ -74,16 +87,21 @@
             </div>
 
             <!-- Generated Barcodes -->
-            <div v-if="barcodes.length > 0" class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+            <div v-if="barcodes.length > 0 || loading" class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div>
-                        <h2 class="text-base font-semibold text-gray-800">Barcode Belum Lengkap ({{ barcodes.length }})</h2>
+                        <h2 class="text-base font-semibold text-gray-800">Barcode Belum Lengkap ({{ totalItems }})</h2>
                         <p class="text-xs text-gray-500 mt-0.5">Barcode yang belum diisi supplier & harga. Scan barcode untuk melengkapi data.</p>
                     </div>
                 </div>
 
+                <!-- Loading State -->
+                <div v-if="loading" class="flex justify-center items-center py-12">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
+                </div>
+
                 <!-- Barcode Grid -->
-                <div id="barcode-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div v-else id="barcode-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div v-for="(item, idx) in barcodes" :key="idx" class="barcode-item border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition">
                         <div class="flex justify-between items-start mb-3">
                             <div class="flex-1">
@@ -122,6 +140,89 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Pagination -->
+                <div v-if="lastPage > 1 && !loading" class="flex items-center justify-between border-t border-gray-200 pt-4 mt-6">
+                    <div class="flex-1 flex justify-between sm:hidden">
+                        <button
+                            @click="loadBarcodes(currentPage - 1)"
+                            :disabled="currentPage === 1"
+                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Previous
+                        </button>
+                        <button
+                            @click="loadBarcodes(currentPage + 1)"
+                            :disabled="currentPage === lastPage"
+                            class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Next
+                        </button>
+                    </div>
+                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-sm text-gray-700">
+                                Showing
+                                <span class="font-medium">{{ (currentPage - 1) * 20 + 1 }}</span>
+                                to
+                                <span class="font-medium">{{ Math.min(currentPage * 20, totalItems) }}</span>
+                                of
+                                <span class="font-medium">{{ totalItems }}</span>
+                                results
+                            </p>
+                        </div>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                <button
+                                    @click="loadBarcodes(currentPage - 1)"
+                                    :disabled="currentPage === 1"
+                                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <span class="sr-only">Previous</span>
+                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+
+                                <!-- Page Numbers -->
+                                <template v-for="page in getPageNumbers()" :key="page">
+                                    <button v-if="page === '...'" disabled class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                        ...
+                                    </button>
+                                    <button
+                                        v-else
+                                        @click="loadBarcodes(page)"
+                                        :class="[
+                                            'relative inline-flex items-center px-4 py-2 border text-sm font-medium',
+                                            currentPage === page ? 'z-10 bg-amber-50 border-amber-500 text-amber-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50',
+                                        ]"
+                                    >
+                                        {{ page }}
+                                    </button>
+                                </template>
+
+                                <button
+                                    @click="loadBarcodes(currentPage + 1)"
+                                    :disabled="currentPage === lastPage"
+                                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <span class="sr-only">Next</span>
+                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4-4a1 1 0 011.414 0z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Empty State -->
@@ -135,7 +236,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, computed } from 'vue';
+import { ref, onMounted, nextTick, computed, watch } from 'vue';
+import { router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import JsBarcode from 'jsbarcode';
 import Swal from 'sweetalert2';
@@ -161,7 +263,7 @@ const getCsrfToken = () => {
 const props = defineProps({
     suppliers: Array,
     bahanHistory: Object,
-    belumLengkap: Array,
+    belumLengkap: Object,
 });
 
 const savedItems = ref([]); // Not used anymore but keep for compatibility
@@ -175,17 +277,68 @@ const form = ref({
     date: new Date().toISOString().split('T')[0],
 });
 
-// Load barcode yang belum lengkap dari database saat halaman dimuat
-onMounted(() => {
-    if (props.belumLengkap && props.belumLengkap.length > 0) {
-        barcodes.value = props.belumLengkap.map((item) => ({
+// Load barcode dari props
+const loadBarcodesFromProps = () => {
+    if (props.belumLengkap && props.belumLengkap.data && props.belumLengkap.data.length > 0) {
+        barcodes.value = props.belumLengkap.data.map((item) => ({
             id: item.id,
             code: item.barcode_code,
             kodeBahan: item.kode_bahan,
             date: item.tanggal,
         }));
     }
+};
+
+// Watch props untuk update ketika pagination berubah
+watch(
+    () => props.belumLengkap,
+    () => {
+        loadBarcodesFromProps();
+    },
+    { deep: true },
+);
+
+onMounted(() => {
+    loadBarcodesFromProps();
 });
+
+const loadBarcodes = (page = 1) => {
+    router.get('/barcode', { page }, { preserveState: true });
+};
+
+const currentPage = computed(() => props.belumLengkap?.current_page || 1);
+const totalItems = computed(() => props.belumLengkap?.total || 0);
+const lastPage = computed(() => props.belumLengkap?.last_page || 1);
+const loading = computed(() => false); // Inertia handles loading state
+
+const getPageNumbers = () => {
+    const totalPages = lastPage.value;
+    const current = currentPage.value;
+    const delta = 2;
+    const range = [];
+    const rangeWithDots = [];
+    let l;
+
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= current - delta && i <= current + delta)) {
+            range.push(i);
+        }
+    }
+
+    range.forEach((i) => {
+        if (l) {
+            if (i - l === 2) {
+                rangeWithDots.push(l + 1);
+            } else if (i - l !== 1) {
+                rangeWithDots.push('...');
+            }
+        }
+        rangeWithDots.push(i);
+        l = i;
+    });
+
+    return rangeWithDots;
+};
 
 const generateBarcodes = async () => {
     const quantity = Math.min(Math.max(1, batchQuantity.value || 1), 100); // Between 1-100
@@ -433,6 +586,106 @@ const downloadSingle = (index) => {
     link.download = `barcode-${item.code}.png`;
     link.href = canvas.toDataURL();
     link.click();
+};
+
+const printCurrentPage = () => {
+    if (barcodes.value.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Tidak Ada Barcode',
+            text: 'Belum ada barcode di halaman ini untuk di-print!',
+            confirmButtonColor: '#3b82f6',
+        });
+        return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    let html = `
+    <html>
+      <head>
+        <title>Print Halaman ${currentPage.value} Barcodes</title>
+        <style>
+          @page {
+            size: 60mm 40mm;
+            margin: 0;
+          }
+          body { 
+            font-family: Arial, sans-serif; 
+            margin: 0;
+            padding: 0;
+          }
+          .barcode-page {
+            width: 60mm;
+            height: 40mm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            page-break-after: always;
+            padding: 2mm;
+            box-sizing: border-box;
+          }
+          .barcode-page:last-child {
+            page-break-after: auto;
+          }
+          .barcode-sticker { 
+            text-align: center;
+            width: 100%;
+          }
+          .barcode-sticker svg {
+            max-width: 100%;
+            height: auto;
+          }
+          .info-text {
+            margin-top: 1mm;
+            font-size: 8pt;
+            line-height: 1.3;
+            color: #000;
+            font-weight: 600;
+          }
+        </style>
+      </head>
+      <body>
+  `;
+
+    let barcodeIdx = 0;
+    barcodes.value.forEach((item) => {
+        // Print 2x per barcode
+        for (let copy = 0; copy < 2; copy++) {
+            html += `
+        <div class="barcode-page">
+          <div class="barcode-sticker">
+            <svg id="barcode-${barcodeIdx}"></svg>
+            <div class="info-text">${item.kodeBahan}</div>
+          </div>
+        </div>
+      `;
+            barcodeIdx++;
+        }
+    });
+
+    html += `
+        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+        <script>
+  `;
+
+    barcodeIdx = 0;
+    barcodes.value.forEach((item) => {
+        for (let copy = 0; copy < 2; copy++) {
+            html += `JsBarcode("#barcode-${barcodeIdx}", "${item.code}", { format: "CODE128", width: 2, height: 40, displayValue: false, margin: 0 });\n`;
+            barcodeIdx++;
+        }
+    });
+
+    html += `
+          setTimeout(() => window.print(), 100);
+        <\/script>
+      </body>
+    </html>
+  `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
 };
 
 const printBarcodes = () => {

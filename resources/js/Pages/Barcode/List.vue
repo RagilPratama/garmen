@@ -192,7 +192,10 @@
                                     <span v-else class="text-xs text-gray-400">-</span>
                                 </td>
                                 <td class="px-4 py-3 text-center">
-                                    <span v-if="barcode.harga_sudah_diisi && barcode.rp_per_yard > 0" class="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full">
+                                    <span
+                                        v-if="barcode.harga_sudah_diisi && barcode.rp_per_yard > 0"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full"
+                                    >
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                         </svg>
@@ -213,7 +216,9 @@
                                         <a
                                             :href="`/barcode/scan?code=${barcode.barcode_code}`"
                                             class="px-3 py-1.5 text-xs font-medium rounded transition"
-                                            :class="barcode.harga_sudah_diisi && barcode.rp_per_yard > 0 ? 'bg-amber-50 hover:bg-amber-100 text-amber-700' : 'bg-blue-50 hover:bg-blue-100 text-blue-700'"
+                                            :class="
+                                                barcode.harga_sudah_diisi && barcode.rp_per_yard > 0 ? 'bg-amber-50 hover:bg-amber-100 text-amber-700' : 'bg-blue-50 hover:bg-blue-100 text-blue-700'
+                                            "
                                         >
                                             {{ barcode.harga_sudah_diisi && barcode.rp_per_yard > 0 ? 'Ubah Data' : 'Lengkapi Data' }}
                                         </a>
