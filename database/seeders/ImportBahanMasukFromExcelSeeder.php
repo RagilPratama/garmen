@@ -61,7 +61,16 @@ class ImportBahanMasukFromExcelSeeder extends Seeder
                 return;
             }
 
-            $rows = array_slice($rows, $headerInfo['index'] + 1);
+            $rowKeys = array_keys($rows);
+            $headerPos = array_search($headerInfo['index'], $rowKeys, true);
+            if ($headerPos === false) {
+                echo "❌ Header Excel ditemukan, tapi posisi baris tidak dapat dihitung.\n";
+                return;
+            }
+
+            $dataStartPos = $headerPos + 1;
+            $rows = array_slice($rows, $dataStartPos);
+            $dataRowKeys = array_slice($rowKeys, $dataStartPos);
 
             // Pre-load Master Data
             $masterBahanRecords = MasterBahan::orderBy('nama_bahan')->get(['id', 'nama_bahan']);
@@ -96,9 +105,9 @@ class ImportBahanMasukFromExcelSeeder extends Seeder
             $errors = [];
             $stokDeltas = [];
 
-            DB::transaction(function () use ($rows, $columnMap, $masterBahanMap, $masterKepemilikanMap, $supplierMap, &$imported, &$skipped, &$errors, &$stokDeltas) {
+            DB::transaction(function () use ($rows, $dataRowKeys, $columnMap, $masterBahanMap, $masterKepemilikanMap, $supplierMap, &$imported, &$skipped, &$errors, &$stokDeltas) {
                 foreach ($rows as $index => $row) {
-                    $rowNumber = $index + 2;
+                    $rowNumber = $dataRowKeys[$index] ?? ($index + 1);
 
                     if ($this->isEmptyRow($row)) {
                         continue;
