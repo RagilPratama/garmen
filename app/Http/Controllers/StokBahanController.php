@@ -62,24 +62,20 @@ class StokBahanController extends Controller
     {
         $base = $this->baseQuery();
 
-        $raw = (clone $base)
-            ->select([
-                'bm.nama_bahan',
-                'bm.supplier',
-            ])
+        $namaBahanOptions = (clone $base)
             ->whereNotNull('bm.nama_bahan')
-            ->get();
-
-        $namaBahanOptions = $raw->pluck('nama_bahan')
-            ->unique()
-            ->filter()
-            ->sort()
+            ->where('bm.nama_bahan', '!=', '')
+            ->distinct()
+            ->orderBy('bm.nama_bahan')
+            ->pluck('bm.nama_bahan')
             ->values();
 
-        $supplierOptions = $raw->pluck('supplier')
-            ->unique()
-            ->filter()
-            ->sort()
+        $supplierOptions = (clone $base)
+            ->whereNotNull('bm.supplier')
+            ->where('bm.supplier', '!=', '')
+            ->distinct()
+            ->orderBy('bm.supplier')
+            ->pluck('bm.supplier')
             ->values();
 
         return compact('namaBahanOptions', 'supplierOptions');
@@ -107,8 +103,6 @@ class StokBahanController extends Controller
 
     public function exportExcel()
     {
-        $data = $this->getFilteredQuery()->get();
-
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Stok Bahan Gudang');

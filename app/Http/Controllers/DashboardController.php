@@ -20,12 +20,19 @@ use App\Models\PengeluaranToko;
 use App\Models\Toko;
 use App\Models\KasToko;
 use App\Models\SaldoKas;
+use App\Models\User;
+use App\Models\SuratJalanGarmenItem;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $user = auth()->user();
+        $user = Auth::user();
+        if (!$user instanceof User) {
+            abort(403);
+        }
         $bulan = now()->month;
         $tahun = now()->year;
 
@@ -66,10 +73,18 @@ class DashboardController extends Controller
         $bahanGudang = 0;
         $bahanGarmen = 0;
         if ($isAdmin) {
-            $bahanGudang = \App\Models\BarcodeBahan::where('harga_sudah_diisi', true)
-                ->whereDoesntHave('suratJalanGarmenItem')
-                ->count();
-            $bahanGarmen = \App\Models\SuratJalanGarmenItem::count();
+            $bahanGudang = StokBahan::query()
+                ->where('stok_bahan.quantity', '>', 0)
+                ->leftJoin('tracking_bahan as tb', 'tb.kode_bahan', '=', 'stok_bahan.kode_bahan')
+                ->where(function ($q) {
+                    $q->whereNull('tb.lokasi')->orWhere('tb.lokasi', 'gudang');
+                })
+                ->distinct()
+                ->count('stok_bahan.kode_bahan');
+
+            $bahanGarmen = SuratJalanGarmenItem::query()
+                ->distinct()
+                ->count('kode_bahan');
         }
 
         // Hutang bahan masuk - hanya admin (dari surat jalan masuk)
@@ -94,7 +109,7 @@ class DashboardController extends Controller
 
         // Piutang penjualan
         if ($isAdmin) {
-            $piutangRow = \DB::selectOne("
+            $piutangRow = DB::selectOne("
                 SELECT
                     COALESCE(SUM(j.total_harga), 0) - COALESCE(SUM(pp.dibayar), 0) AS sisa_piutang,
                     COUNT(DISTINCT CASE WHEN COALESCE(pp.dibayar, 0) < j.total_nota THEN j.no_nota END) AS nota_belum_lunas
