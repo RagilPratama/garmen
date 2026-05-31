@@ -143,33 +143,76 @@
                 </div>
             </div>
 
-            <!-- Stok Cards -->
+            <!-- Stok Cards dengan Detail Bahan -->
             <div v-if="isAdmin" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                        <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
-                        </svg>
+                <!-- Bahan di Gudang -->
+                <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div class="px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-cyan-50">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-800">Bahan di Gudang</h3>
+                                    <p class="text-xs text-gray-500">{{ stokBahan }} jenis bahan · ringkasan per satuan</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-xs text-gray-500 font-medium">Bahan di Gudang</p>
-                        <div class="flex items-baseline gap-1 mt-0.5">
-                            <p class="text-xl font-bold text-gray-800 truncate">{{ stokBahan }}</p>
-                            <span class="text-sm font-normal text-gray-400 shrink-0">roll</span>
+                    <div class="max-h-96 overflow-y-auto">
+                        <div v-if="detailBahanGudang.length === 0" class="px-5 py-8 text-center text-gray-300 text-sm">Belum ada bahan di gudang</div>
+                        <div v-else class="divide-y divide-gray-100">
+                            <div v-for="bahan in detailBahanGudang" :key="bahan.satuan" class="px-5 py-3 hover:bg-blue-50/30 transition-colors">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-800 truncate">{{ bahan.satuan }}</p>
+                                        <p class="text-xs text-gray-500 mt-0.5 truncate">{{ bahan.jumlah_jenis }} jenis bahan</p>
+                                    </div>
+                                    <div class="text-right shrink-0">
+                                        <p class="text-sm font-bold text-blue-600">{{ Number(bahan.total_quantity).toLocaleString('id-ID', { maximumFractionDigits: 2 }) }}</p>
+                                        <p class="text-xs text-gray-500 mt-0.5">{{ bahan.satuan }}</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
-                        <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
-                        </svg>
+
+                <!-- Bahan di Garmen/Pabrik -->
+                <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div class="px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-green-50 to-emerald-50">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-800">Bahan di Pabrik</h3>
+                                    <p class="text-xs text-gray-500">{{ totalSisaBahan }} jenis bahan · ringkasan per satuan</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-xs text-gray-500 font-medium">Bahan di Garmen</p>
-                        <div class="flex items-baseline gap-1 mt-0.5">
-                            <p class="text-xl font-bold text-gray-800 truncate">{{ totalSisaBahan }}</p>
-                            <span class="text-sm font-normal text-gray-400 shrink-0">roll</span>
+                    <div class="max-h-96 overflow-y-auto">
+                        <div v-if="detailBahanGarmen.length === 0" class="px-5 py-8 text-center text-gray-300 text-sm">Belum ada bahan di pabrik</div>
+                        <div v-else class="divide-y divide-gray-100">
+                            <div v-for="bahan in detailBahanGarmen" :key="bahan.satuan" class="px-5 py-3 hover:bg-green-50/30 transition-colors">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-800 truncate">{{ bahan.satuan }}</p>
+                                        <p class="text-xs text-gray-500 mt-0.5 truncate">{{ bahan.jumlah_jenis }} jenis bahan</p>
+                                    </div>
+                                    <div class="text-right shrink-0">
+                                        <p class="text-sm font-bold text-green-600">{{ Number(bahan.total_quantity).toLocaleString('id-ID', { maximumFractionDigits: 2 }) }}</p>
+                                        <p class="text-xs text-gray-500 mt-0.5">{{ bahan.satuan }}</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -376,54 +419,32 @@
                 </div>
             </div>
 
-            <!-- Transaksi Kas Terbaru + Pipeline Produksi (50/50) -->
-            <div v-if="isAdmin" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                <!-- Transaksi Kas Terbaru -->
-                <div v-if="recentKasToko && recentKasToko.length > 0" class="bg-white rounded-xl border border-gray-100 shadow-sm">
-                    <div class="px-5 py-4 border-b border-gray-100">
-                        <h3 class="font-semibold text-gray-800">Transaksi Kas Terbaru</h3>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="text-left px-4 py-2.5 text-xs text-gray-400 font-medium">Tanggal</th>
-                                    <th class="text-left px-4 py-2.5 text-xs text-gray-400 font-medium">Toko</th>
-                                    <th class="text-left px-4 py-2.5 text-xs text-gray-400 font-medium">Kategori</th>
-                                    <th class="text-right px-4 py-2.5 text-xs text-gray-400 font-medium">Jumlah</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-50">
-                                <tr v-for="kas in recentKasToko" :key="kas.id" class="hover:bg-gray-50/60">
-                                    <td class="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">{{ formatDate(kas.tanggal) }}</td>
-                                    <td class="px-4 py-3 text-gray-700 font-medium text-xs">{{ kas.toko }}</td>
-                                    <td class="px-4 py-3 text-gray-700 text-xs">{{ kas.kategori }}</td>
-                                    <td class="px-4 py-3 text-right font-semibold text-xs" :class="kas.jenis === 'masuk' ? 'text-green-600' : 'text-red-600'">
-                                        {{ kas.jenis === 'masuk' ? '+' : '-' }} {{ formatRupiah(kas.jumlah) }}
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+            <!-- Transaksi Kas Terbaru -->
+            <div v-if="isAdmin" class="bg-white rounded-xl border border-gray-100 shadow-sm">
+                <div class="px-5 py-4 border-b border-gray-100">
+                    <h3 class="font-semibold text-gray-800">Transaksi Kas Terbaru</h3>
                 </div>
-
-                <!-- Pipeline Produksi -->
-                <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-                    <h3 class="font-semibold text-gray-800 mb-4">
-                        Pipeline Produksi
-                        <span class="text-xs font-normal text-gray-400 ml-1">(total PO per stage)</span>
-                    </h3>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div v-for="stage in pipelineStages" :key="stage.key" class="rounded-xl border p-4 flex flex-col items-center gap-2" :class="stage.border">
-                            <div class="w-10 h-10 rounded-full flex items-center justify-center" :class="stage.bg">
-                                <span class="text-xl font-bold" :class="stage.color">{{ pipeline[stage.key] ?? 0 }}</span>
-                            </div>
-                            <p class="text-xs text-center font-medium text-gray-600">{{ stage.label }}</p>
-                            <p class="text-xs text-center" :class="(pipeline[stage.key] ?? 0) > 0 ? 'text-amber-500 font-semibold' : 'text-gray-300'">
-                                {{ (pipeline[stage.key] ?? 0) > 0 ? `${pipeline[stage.key]} PO` : 'Belum ada' }}
-                            </p>
-                        </div>
-                    </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="text-left px-4 py-2.5 text-xs text-gray-400 font-medium">Tanggal</th>
+                                <th class="text-left px-4 py-2.5 text-xs text-gray-400 font-medium">Toko</th>
+                                <th class="text-left px-4 py-2.5 text-xs text-gray-400 font-medium">Kategori</th>
+                                <th class="text-right px-4 py-2.5 text-xs text-gray-400 font-medium">Jumlah</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50">
+                            <tr v-for="kas in recentKasToko" :key="kas.id" class="hover:bg-gray-50/60">
+                                <td class="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">{{ formatDate(kas.tanggal) }}</td>
+                                <td class="px-4 py-3 text-gray-700 font-medium text-xs">{{ kas.toko }}</td>
+                                <td class="px-4 py-3 text-gray-700 text-xs">{{ kas.kategori }}</td>
+                                <td class="px-4 py-3 text-right font-semibold text-xs" :class="kas.jenis === 'masuk' ? 'text-green-600' : 'text-red-600'">
+                                    {{ kas.jenis === 'masuk' ? '+' : '-' }} {{ formatRupiah(kas.jumlah) }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -603,9 +624,10 @@ const props = defineProps({
     omsetKamiko: { type: Number, default: 0 },
     stokBahan: { type: Number, default: 0 },
     totalSisaBahan: { type: Number, default: 0 },
+    detailBahanGudang: { type: Array, default: () => [] },
+    detailBahanGarmen: { type: Array, default: () => [] },
     stokKantor: { type: Number, default: 0 },
     stokToko: { type: Number, default: 0 },
-    pipeline: { type: Object, default: () => ({}) },
     recentBahanMasuk: { type: Array, default: () => [] },
     recentPenjualan: { type: Array, default: () => [] },
     topModels: { type: Array, default: () => [] },
@@ -635,13 +657,6 @@ const statusClass = (status) => ({
     'bg-yellow-100 text-yellow-700': status === 'pending',
     'bg-red-100 text-red-700': status === 'ditolak' || status === 'batal',
 });
-
-const pipelineStages = [
-    { key: 'potong', label: 'Proses Potong', bg: 'bg-amber-50', color: 'text-amber-600', border: 'border-amber-100' },
-    { key: 'jahit', label: 'Proses Jahit', bg: 'bg-orange-50', color: 'text-orange-600', border: 'border-orange-100' },
-    { key: 'cuci', label: 'Proses Cuci', bg: 'bg-cyan-50', color: 'text-cyan-600', border: 'border-cyan-100' },
-    { key: 'finishing', label: 'Finishing & Pack', bg: 'bg-purple-50', color: 'text-purple-600', border: 'border-purple-100' },
-];
 
 const processSteps = [
     { name: 'Bahan Masuk', color: 'bg-blue-500' },

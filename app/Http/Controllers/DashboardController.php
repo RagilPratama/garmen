@@ -72,19 +72,44 @@ class DashboardController extends Controller
         // Stok bahan gudang & garmen - hanya admin yang lihat
         $bahanGudang = 0;
         $bahanGarmen = 0;
+        $summaryBahanGudang = [];
+        $summaryBahanGarmen = [];
+        
         if ($isAdmin) {
-            $bahanGudang = StokBahan::query()
-                ->where('stok_bahan.quantity', '>', 0)
-                ->leftJoin('tracking_bahan as tb', 'tb.kode_bahan', '=', 'stok_bahan.kode_bahan')
+            // Summary bahan di gudang per satuan
+            $summaryBahanGudang = \App\Models\BarcodeBahan::query()
+                ->select('barcode_bahan.satuan', DB::raw('COUNT(DISTINCT barcode_bahan.kode_bahan) as jumlah_jenis'), DB::raw('SUM(barcode_bahan.quantity) as total_quantity'))
+                ->leftJoin('tracking_bahan as tb', 'tb.kode_bahan', '=', 'barcode_bahan.kode_bahan')
                 ->where(function ($q) {
                     $q->whereNull('tb.lokasi')->orWhere('tb.lokasi', 'gudang');
                 })
-                ->distinct()
-                ->count('stok_bahan.kode_bahan');
+                ->where('barcode_bahan.quantity', '>', 0)
+                ->groupBy('barcode_bahan.satuan')
+                ->get()
+                ->map(fn($r) => [
+                    'satuan' => $r->satuan ?? 'yard',
+                    'jumlah_jenis' => (int) $r->jumlah_jenis,
+                    'total_quantity' => (float) $r->total_quantity,
+                ])
+                ->values();
 
-            $bahanGarmen = SuratJalanGarmenItem::query()
-                ->distinct()
-                ->count('kode_bahan');
+            $bahanGudang = $summaryBahanGudang->sum('jumlah_jenis');
+
+            // Summary bahan di garmen per satuan
+            $summaryBahanGarmen = \App\Models\BarcodeBahan::query()
+                ->select('barcode_bahan.satuan', DB::raw('COUNT(DISTINCT barcode_bahan.kode_bahan) as jumlah_jenis'), DB::raw('SUM(barcode_bahan.quantity) as total_quantity'))
+                ->join('surat_jalan_garmen_items as sgi', 'sgi.barcode_bahan_id', '=', 'barcode_bahan.id')
+                ->where('barcode_bahan.quantity', '>', 0)
+                ->groupBy('barcode_bahan.satuan')
+                ->get()
+                ->map(fn($r) => [
+                    'satuan' => $r->satuan ?? 'yard',
+                    'jumlah_jenis' => (int) $r->jumlah_jenis,
+                    'total_quantity' => (float) $r->total_quantity,
+                ])
+                ->values();
+
+            $bahanGarmen = $summaryBahanGarmen->sum('jumlah_jenis');
         }
 
         // Hutang bahan masuk - hanya admin (dari surat jalan masuk)
@@ -170,39 +195,6 @@ class DashboardController extends Controller
             $stokToko   = $kirimToko->sum(fn($r) => max(0, (int)$r->total - (int)($jualToko->get($r->model)?->total ?? 0)));
         }
 
-        // Pipeline produksi - hanya admin
-        $pipeline = ['potong' => 0, 'jahit' => 0, 'cuci' => 0, 'finishing' => 0];
-        if ($isAdmin) {
-            $tpotong    = BahanProsesPotong::select('po', 'model', 'hasil_potongan')->get()->groupBy(fn($r) => $r->po.'|||'.$r->model);
-            $tjahit     = ProsesJahit::select('po', 'model', 'tanggal_selesai_jahit')->get()->groupBy(fn($r) => $r->po.'|||'.$r->model);
-            $tcuci      = ProsesCuci::select('po', 'model', 'tanggal_kembali_dari_cuci')->get()->groupBy(fn($r) => $r->po.'|||'.$r->model);
-            $tfinishing = ProsesFinishing::select('po', 'model', 'tanggal_selesai')->get()->groupBy(fn($r) => $r->po.'|||'.$r->model);
-
-            $trackingKeys = $tpotong->keys()->concat($tjahit->keys())->concat($tcuci->keys())->concat($tfinishing->keys())->unique();
-
-            $stageOrder = ['potong', 'jahit', 'cuci', 'finishing'];
-            foreach ($trackingKeys as $key) {
-                $p = $tpotong->get($key); $j = $tjahit->get($key); $c = $tcuci->get($key); $f = $tfinishing->get($key);
-                $stages = [
-                    'potong'    => $p ? ($p->filter(fn($r) => $r->hasil_potongan > 0)->isNotEmpty() ? 'done' : 'active') : 'pending',
-                    'jahit'     => $j ? ($j->filter(fn($r) => $r->tanggal_selesai_jahit !== null)->isNotEmpty() ? 'done' : 'active') : 'pending',
-                    'cuci'      => $c ? ($c->filter(fn($r) => $r->tanggal_kembali_dari_cuci !== null)->isNotEmpty() ? 'done' : 'active') : 'pending',
-                    'finishing' => $f ? ($f->filter(fn($r) => $r->tanggal_selesai !== null)->isNotEmpty() ? 'done' : 'active') : 'pending',
-                ];
-                if ($stages['finishing'] === 'done') continue;
-                $currentStage = 'potong';
-                foreach (array_reverse($stageOrder) as $s) {
-                    if ($stages[$s] === 'active') { $currentStage = $s; break; }
-                    if ($stages[$s] === 'done') {
-                        $idx = array_search($s, $stageOrder);
-                        $currentStage = $stageOrder[$idx + 1] ?? $s;
-                        break;
-                    }
-                }
-                if (isset($pipeline[$currentStage])) $pipeline[$currentStage]++;
-            }
-        }
-
         // Top model terlaris
         if ($isAdmin) {
             $topToko   = ProsesJual::selectRaw('model, SUM(pcs) as total_pcs, SUM(total_harga) as total_omset')
@@ -233,7 +225,17 @@ class DashboardController extends Controller
         }
 
         // Recent data
-        $recentBahanMasuk = $isAdmin ? \App\Models\BarcodeBahan::where('harga_sudah_diisi', true)->latest()->take(5)->get(['id', 'supplier', 'kode_bahan', 'nama_bahan', 'quantity', 'created_at']) : collect();
+        $recentBahanMasuk = $isAdmin ? \App\Models\BarcodeBahan::query()
+            ->select(['barcode_bahan.id', 'barcode_bahan.supplier', 'barcode_bahan.kode_bahan', 'barcode_bahan.nama_bahan', 'barcode_bahan.quantity', 'barcode_bahan.created_at'])
+            ->leftJoin('tracking_bahan as tb', 'tb.kode_bahan', '=', 'barcode_bahan.kode_bahan')
+            ->where('barcode_bahan.quantity', '>', 0)
+            ->where(function ($q) {
+                $q->whereNull('tb.lokasi')->orWhere('tb.lokasi', 'gudang');
+            })
+            ->groupBy('barcode_bahan.id', 'barcode_bahan.supplier', 'barcode_bahan.kode_bahan', 'barcode_bahan.nama_bahan', 'barcode_bahan.quantity', 'barcode_bahan.created_at')
+            ->orderByDesc('barcode_bahan.created_at')
+            ->take(5)
+            ->get() : collect();
 
         if ($isAdmin) {
             $recentPenjualan = ProsesJual::with('toko')->latest()->take(5)->get(['id', 'buyer', 'model', 'pcs', 'total_harga', 'status', 'tanggal_nota', 'toko_id'])
@@ -353,9 +355,12 @@ class DashboardController extends Controller
             'omsetKamiko'          => (float) ($omsetKamiko ?? 0),
             'stokBahan'            => (int) $bahanGudang,
             'totalSisaBahan'       => (int) $bahanGarmen,
+            'detailBahanGudang'    => $summaryBahanGudang ?? [],
+            'detailBahanGarmen'    => $summaryBahanGarmen ?? [],
+            'summaryBahanGudang'   => $summaryBahanGudang ?? [],
+            'summaryBahanGarmen'   => $summaryBahanGarmen ?? [],
             'stokKantor'           => (int) $stokKantor,
             'stokToko'             => (int) $stokToko,
-            'pipeline'             => $pipeline,
             'recentBahanMasuk'     => $recentBahanMasuk,
             'recentPenjualan'      => $recentPenjualan,
             'topModels'            => $topModels,
