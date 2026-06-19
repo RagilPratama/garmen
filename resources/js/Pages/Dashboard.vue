@@ -165,11 +165,11 @@
                     <div class="max-h-96 overflow-y-auto">
                         <div v-if="detailBahanGudang.length === 0" class="px-5 py-8 text-center text-gray-300 text-sm">Belum ada bahan di gudang</div>
                         <div v-else class="divide-y divide-gray-100">
-                            <div v-for="bahan in detailBahanGudang" :key="bahan.satuan" class="px-5 py-3 hover:bg-blue-50/30 transition-colors">
+                            <div v-for="bahan in summaryBahanGudang" :key="bahan.satuan" class="px-5 py-3 hover:bg-blue-50/30 transition-colors">
                                 <div class="flex items-start justify-between gap-3">
                                     <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-gray-800 truncate">{{ bahan.satuan }}</p>
-                                        <p class="text-xs text-gray-500 mt-0.5 truncate">{{ bahan.jumlah_jenis }} jenis bahan</p>
+                                        <p class="text-sm font-medium text-gray-800 truncate">{{ bahan.satuan.toUpperCase() }}</p>
+                                        <p class="text-xs text-gray-500 mt-0.5 truncate">{{ bahan.jumlah_jenis }} jenis</p>
                                     </div>
                                     <div class="text-right shrink-0">
                                         <p class="text-sm font-bold text-blue-600">{{ Number(bahan.total_quantity).toLocaleString('id-ID', { maximumFractionDigits: 2 }) }}</p>
@@ -201,11 +201,11 @@
                     <div class="max-h-96 overflow-y-auto">
                         <div v-if="detailBahanGarmen.length === 0" class="px-5 py-8 text-center text-gray-300 text-sm">Belum ada bahan di pabrik</div>
                         <div v-else class="divide-y divide-gray-100">
-                            <div v-for="bahan in detailBahanGarmen" :key="bahan.satuan" class="px-5 py-3 hover:bg-green-50/30 transition-colors">
+                            <div v-for="bahan in summaryBahanGarmen" :key="bahan.satuan" class="px-5 py-3 hover:bg-green-50/30 transition-colors">
                                 <div class="flex items-start justify-between gap-3">
                                     <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-gray-800 truncate">{{ bahan.satuan }}</p>
-                                        <p class="text-xs text-gray-500 mt-0.5 truncate">{{ bahan.jumlah_jenis }} jenis bahan</p>
+                                        <p class="text-sm font-medium text-gray-800 truncate">{{ bahan.satuan.toUpperCase() }}</p>
+                                        <p class="text-xs text-gray-500 mt-0.5 truncate">{{ bahan.jumlah_jenis }} jenis</p>
                                     </div>
                                     <div class="text-right shrink-0">
                                         <p class="text-sm font-bold text-green-600">{{ Number(bahan.total_quantity).toLocaleString('id-ID', { maximumFractionDigits: 2 }) }}</p>
@@ -626,6 +626,8 @@ const props = defineProps({
     totalSisaBahan: { type: Number, default: 0 },
     detailBahanGudang: { type: Array, default: () => [] },
     detailBahanGarmen: { type: Array, default: () => [] },
+    summaryBahanGudang: { type: Array, default: () => [] },
+    summaryBahanGarmen: { type: Array, default: () => [] },
     stokKantor: { type: Number, default: 0 },
     stokToko: { type: Number, default: 0 },
     recentBahanMasuk: { type: Array, default: () => [] },
